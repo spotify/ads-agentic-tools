@@ -1,0 +1,4 @@
+.claude/*.local.md
+.DS_Store
+*.log
+internal-v3.yaml
