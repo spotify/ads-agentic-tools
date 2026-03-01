@@ -1,10 +1,10 @@
 {
   "name": "spotify-ads-api",
-  "version": "0.1.0",
-  "description": "Translate natural language into Spotify Ads API v3 calls. Manage campaigns, ad sets, ads, assets, audiences, and reporting.",
+  "version": "1.0.0",
+  "description": "Manage Spotify ad campaigns with natural language. Create campaigns, ad sets, ads, pull reports, and handle OAuth — all through conversation.",
   "author": {
     "name": "Alex Murphy"
   },
   "license": "MIT",
-  "keywords": ["spotify", "ads", "api", "campaigns", "advertising"]
+  "keywords": ["spotify", "ads", "api", "campaigns", "advertising", "oauth", "reporting"]
 }

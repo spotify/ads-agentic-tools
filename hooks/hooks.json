@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if the Bash command in $ARGUMENTS targets api-partner.spotify.com. If it does, read .claude/spotify-ads-api.local.md and check if token_expires_at is in the past. If expired and refresh_token + client_id + client_secret exist, run: python3 ${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py --client-id <id> --client-secret <secret> --refresh-token <token>. Parse the JSON output, update .claude/spotify-ads-api.local.md with the new access_token and token_expires_at (current time + expires_in seconds). Then allow the original command to proceed with the new token. If no refresh credentials exist, warn the user their token may be expired. If the command doesn't target the Spotify API, do nothing."
+          }
+        ]
+      }
+    ]
+  }
+}

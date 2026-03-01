@@ -1,0 +1,7 @@
+{
+  "agent": {
+    "tools": {
+      "allow": ["Read", "Bash", "Grep", "Glob", "AskUserQuestion", "Write"]
+    }
+  }
+}

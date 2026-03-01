@@ -23,6 +23,8 @@ All requests require a Bearer token in the `Authorization` header:
 Authorization: Bearer <access_token>
 ```
 
+To set up authentication, run `/spotify-ads-api:configure` which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
+
 ## Resource Hierarchy
 
 ```

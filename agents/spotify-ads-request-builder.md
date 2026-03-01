@@ -113,8 +113,9 @@ Pass IDs from each step's response to the next step.
 - `tagline` max 40 chars, `advertiser_name` max 25 chars.
 
 **Error Handling:**
-- If the API returns an error, read the error message and explain what went wrong in plain language
-- Suggest fixes for common errors (invalid token, missing fields, budget too low, etc.)
+- If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id, client_secret in settings), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running `/spotify-ads-api:configure` to re-authenticate.
+- If the API returns other errors, read the error message and explain what went wrong in plain language
+- Suggest fixes for common errors (missing fields, budget too low, targeting too narrow, etc.)
 - Never retry automatically on 4xx errors — explain the issue to the user
 
 **Output Format:**
