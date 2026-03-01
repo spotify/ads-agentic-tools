@@ -65,7 +65,8 @@ Active campaigns: 3 | Total spend: $1,234.56
 
 ### Formatting rules
 
-- **Spend**: Always convert micro-amounts to dollars (divide by 1,000,000), display as `$X.XX`
+- **Spend from `aggregate_reports`**: Already in dollars — display directly as `$X.XX` (do NOT divide by 1,000,000)
+- **Budget `micro_amount` from entity details** (campaigns, ad sets): In micro-units — divide by 1,000,000 to get dollars
 - **Impressions/Reach/Clicks**: Format with thousands separators (e.g., `156,234`)
 - **CTR**: Display as percentage with 2 decimal places (e.g., `0.79%`)
 - **Frequency**: Display with 2 decimal places
@@ -137,7 +138,7 @@ Status: ACTIVE | Created: 2026-02-15
 | US 25-54 Video   | VIDEO  | $50/day    |      58,234 | $150.00 | 13,600 |    344 |    42,000 |
 ```
 
-Apply the same formatting rules as the account overview (micro-amount conversion, thousands separators, etc.).
+Apply the same formatting rules as the account overview (spend from reports is already in dollars; budget micro_amount from entity details must be divided by 1,000,000).
 
 Show targeting summary for each ad set if available (geo, age range, platforms).
 
@@ -158,7 +159,7 @@ entity_type=AD_SET&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=COMPLETES&\
 granularity=LIFETIME&\
 include_parent_entity=true&\
-entity_status_type=CAMPAIGN&\
+entity_status_type=AD_SET&\
 statuses=ACTIVE&\
 limit=50"
 ```
@@ -197,4 +198,4 @@ Q2 Brand (CLICKS) — $225.50 spent
 - If `auto_execute` is `true`, execute all API calls directly and display the dashboard.
 - If `auto_execute` is `false`, present the curl commands and ask for confirmation before executing.
 - On error, show the error message from the response body.
-- Always convert micro-amounts to dollars for display — never show raw micro-amounts to the user.
+- Spend values from `aggregate_reports` are already in dollars — display directly. Budget `micro_amount` values from entity details (campaigns, ad sets) must be divided by 1,000,000. Never show raw micro-amounts to the user.

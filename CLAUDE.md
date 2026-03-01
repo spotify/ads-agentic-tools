@@ -29,7 +29,7 @@ The plugin follows the Claude Code plugin structure with four component types:
 
 These non-obvious API quirks were discovered through real testing and are critical when modifying any command or agent:
 
-- **Micro-amounts**: All budget and bid values are in micro-units ($1 = 1,000,000). Both `budget.micro_amount` and `bid_micro_amount` use this.
+- **Micro-amounts**: Budget and bid values in entity payloads (`budget.micro_amount`, `bid_micro_amount`) are in micro-units ($1 = 1,000,000). However, SPEND values returned by `aggregate_reports` are already in dollars — do NOT divide those by 1,000,000.
 - **`bid_strategy`** is a plain string enum (`MAX_BID`, `COST_PER_RESULT`, `UNSET`), not an object. Default to `MAX_BID` with a required `bid_micro_amount`.
 - **`geo_targets`** is a flat object `{"country_code": "US"}`, not an array.
 - **`platforms`** valid values are `ANDROID`, `DESKTOP`, `IOS` — not "MOBILE" or "CONNECTED_DEVICE".
@@ -40,6 +40,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Report field name** is `fields`, not `report_fields`.
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
 - **Base URLs**: sandbox is `ads-sandbox/v3`, production is `ads/v3`, both under `api-partner.spotify.com`.
+- **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
 
 ## OpenAPI Spec

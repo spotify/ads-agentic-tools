@@ -11,7 +11,8 @@ Usage:
     uv run refresh-token.py --client-id ID --client-secret SECRET --refresh-token TOKEN
 
 Output (stdout):
-    {"access_token": "...", "expires_in": 3600}
+    {"access_token": "...", "expires_in": 3600, "refresh_token": "..."}
+    Note: refresh_token is only included if Spotify rotates it.
 
 Diagnostics go to stderr. Exit codes:
     0  Success
@@ -85,6 +86,8 @@ def main():
         "access_token": tokens["access_token"],
         "expires_in": tokens.get("expires_in", 3600),
     }
+    if "refresh_token" in tokens:
+        output["refresh_token"] = tokens["refresh_token"]
     print(json.dumps(output))
     sys.exit(0)
 

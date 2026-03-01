@@ -2,7 +2,7 @@
 name: configure
 description: Configure Spotify Ads API credentials via OAuth 2.0 or direct token. Sets up authentication, ad account, environment, and execution preferences.
 argument-hint: "[oauth | manual | token <access_token>]"
-allowed-tools: ["Read", "Write", "Bash", "AskUserQuestion"]
+allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
 # Spotify Ads API Configuration
@@ -55,11 +55,13 @@ uv run "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
 
 8. Write the settings file (see Settings File Format below).
 
-9. Verify with a test API call:
+9. Verify with a test API call using the chosen environment's base URL:
 ```bash
+# sandbox:    https://api-partner.spotify.com/ads-sandbox/v3
+# production: https://api-partner.spotify.com/ads/v3
 curl -s -o /dev/null -w "%{http_code}" \
   -H "Authorization: Bearer <token>" \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<ad_account_id>"
+  "$BASE_URL/ad_accounts/<ad_account_id>"
 ```
 
 ### `manual`

@@ -65,6 +65,8 @@ tags:
     description: Operations to manage partnerships.
   - name: podcast-shows
     description: Operations to fetch podcast shows.
+  - name: podcast-episodes
+    description: Operations to fetch podcast episodes.
   - name: prepay
     description: Operations to manage prepay transactions
   - name: pricing
@@ -288,6 +290,44 @@ paths:
                   playlist_ids:
                     - cooking
                     - holidays
+          links:
+            GetCampaignForCampaignId:
+              operationId: getCampaign
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                campaign_id: $response.body#/campaign_id
+                fields: ./campaigns-v3.yaml#/components/parameters/fields
+              description: |
+                Returns list of campaigns linked to an ad account.
+            GetReservationsForAdSet:
+              operationId: getReservations
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                adset_id: $response.body#/id
+            GetArtistForTargets:
+              operationId: getArtistTargets
+              parameters:
+                ids: $response.body#/targets/artist_ids
+              description: |
+                Returns artist information based on given artist id.
+            GetGenreForTargets:
+              operationId: getGenreTargets
+              parameters:
+                ids: $response.body#/targets/genre_ids
+            GetGeoForTargets:
+              operationId: getGeoTargets
+              parameters:
+                ids: $response.body#/targets/geo_ids
+            GetInterestForTargets:
+              operationId: getInterestTargets
+              parameters:
+                ids: $response.body#/targets/interest_ids
+              description: |
+                Returns interest information based on given interest ids.
+            GetPlaylistForTargets:
+              operationId: getPlaylistTargets
+              parameters:
+                ids: $response.body#/targets/playlist_ids
         '400':
           description: Bad request.
           content:
@@ -463,6 +503,12 @@ paths:
     post:
       description: Create a new ad set.
       operationId: createAdSet
+      x-spotify-flow-step:
+        flow: campaign-creation
+        step: 2
+        previous: createCampaign
+        next: createAd
+        description: Create an ad set under the campaign. Requires campaign_id from step 1. Pass the returned ad set ID to createAd.
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
       requestBody:
@@ -615,6 +661,23 @@ paths:
                   playlist_ids:
                     - cooking
                     - holidays
+          links:
+            CreateAdForAdSet:
+              operationId: createAd
+              description: |
+                Create an ad under this ad set. Pass the returned ad set ID as ad_set_id in the ad creation request body.
+            GetCreatedAdSet:
+              operationId: getAdSetById
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                ad_set_id: $response.body#/id
+              description: Retrieve the newly created ad set.
+            UpdateCreatedAdSet:
+              operationId: updateAdSet
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                ad_set_id: $response.body#/id
+              description: Update the ad set.
         '400':
           description: Bad request.
           content:
@@ -804,6 +867,12 @@ paths:
                       playlist_ids:
                         - holidays
                         - cooking
+          links:
+            GetAdsForAdSets:
+              operationId: getAds
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                ad_set_ids: $response.body#/ad_set.id
         '400':
           description: Bad request.
           content:
@@ -835,6 +904,11 @@ paths:
     post:
       description: Create a new Ad.
       operationId: createAd
+      x-spotify-flow-step:
+        flow: campaign-creation
+        step: 3
+        previous: createAdSet
+        description: Create an ad under the ad set. Requires ad_set_id from step 2. For AUDIO format, also requires asset IDs from prior uploads.
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
       requestBody:
@@ -850,6 +924,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdResponse'
+          links:
+            GetCreatedAd:
+              operationId: getAd
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                ad_id: $response.body#/id
+              description: Retrieve the newly created ad.
+            GetAdSetForAd:
+              $ref: '#/components/links/GetAdSetForAd'
         '400':
           description: Bad request.
           content:
@@ -972,6 +1055,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdResponse'
+          links:
+            GetAdSetForAd:
+              $ref: '#/components/links/GetAdSetForAd'
+            GetAssetForAssetId:
+              operationId: getAsset
+              parameters:
+                ad_account_id: $parameters.ad_account_id
+                asset_id: $response.body#/assets/asset_id
+              description: |
+                Returns asset metadata for a given asset ID.
+            GetCompanionForAssetId:
+              operationId: getAsset
+              parameters:
+                ad_account_id: $parameters.ad_account_id
+                asset_id: $response.body#/assets/companion_asset_id
+              description: |
+                Returns companion asset metadata for a given asset ID.
+            GetLogoForAssetId:
+              operationId: getAsset
+              parameters:
+                ad_account_id: $parameters.ad_account_id
+                asset_id: $response.body#/assets/logo_asset_id
+              description: |
+                Returns logo asset metadata for a given asset ID.
+            GetCanvasForAssetId:
+              operationId: getAsset
+              parameters:
+                ad_account_id: $parameters.ad_account_id
+                asset_id: $response.body#/assets/canvas_asset_id
+              description: |
+                Returns canvas asset metadata for a given asset ID.
         '400':
           description: Bad request.
           content:
@@ -988,7 +1102,9 @@ paths:
       tags:
         - ads
     patch:
-      description: Updates the given existing ad.
+      description: |
+        Updates the given existing ad. There is no DELETE endpoint for ads.
+        To archive an ad, set status to "ARCHIVED".
       operationId: updateAd
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
@@ -1859,6 +1975,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CampaignsListResponse'
+          links:
+            GetAdSetsForCampaign:
+              operationId: getAdSetsByAdAccountId
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                campaign_ids: $response.body#/campaign.id
+            GetSalesforceOpportunityForCampaign:
+              operationId: getOpportunitiesByAdAccountId
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                search_key: $response.body#/campaign.salesforceOpportunity
         '400':
           description: Bad request.
           content:
@@ -1877,6 +2004,11 @@ paths:
     post:
       description: Creates campaign under a given ad account.
       operationId: createCampaign
+      x-spotify-flow-step:
+        flow: campaign-creation
+        step: 1
+        next: createAdSet
+        description: Create a campaign first. Pass the returned campaign ID to createAdSet.
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
       requestBody:
@@ -1892,6 +2024,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CampaignResponse'
+          links:
+            CreateAdSetForCampaign:
+              operationId: createAdSet
+              description: |
+                Create an ad set under this campaign. Pass the returned campaign ID as campaign_id in the ad set creation request body.
+            GetCreatedCampaign:
+              operationId: getCampaign
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                campaign_id: $response.body#/id
+              description: Retrieve the newly created campaign.
+            UpdateCreatedCampaign:
+              operationId: updateCampaign
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                campaign_id: $response.body#/id
+              description: Update the campaign (e.g. change status to PAUSED or ARCHIVED).
         '400':
           description: Bad request.
           content:
@@ -1922,6 +2071,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CampaignResponse'
+          links:
+            GetAdSetsForCampaign:
+              operationId: getAdSetsByAdAccountId
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                campaign_ids: $response.body#/campaigns.id
+            GetSalesforceOpportunityForCampaign:
+              operationId: getOpportunitiesByAdAccountId
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                search_key: $response.body#/campaigns.salesforceOpportunity
         '400':
           description: Bad request.
           content:
@@ -1938,7 +2098,9 @@ paths:
       tags:
         - campaigns
     patch:
-      description: Updates the given existing campaign.
+      description: |
+        Updates the given existing campaign. There is no DELETE endpoint for campaigns.
+        To archive a campaign, set status to "ARCHIVED". To pause, set status to "PAUSED".
       operationId: updateCampaign
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
@@ -3949,9 +4111,10 @@ components:
       type: integer
       format: int64
       description: |
-        The amount of your bid per 1000 impressions, multiplied by x10 to the 6th power.
-        Behavior of this field depends on the bid_strategy specified. Ex: In order to set a
-        bid of $20, you would specify a bid_micro_amount of 20000000.
+        Bid amount per 1,000 impressions in micro-units. 1 USD = 1,000,000 micro-units (10^6).
+        Required when bid_strategy is "MAX_BID" (acts as bid cap) or "COST_PER_RESULT"
+        (acts as target cost-per-click). Examples: $10 bid = 10000000, $20 bid = 20000000.
+        Uses the same micro-unit scale as budget.micro_amount.
       example: 1000000
     CostModifier:
       type: object
@@ -4009,6 +4172,7 @@ components:
         frequency_caps:
           $ref: '#/components/schemas/AdSetFrequencyCaps'
         bid_micro_amount:
+          x-spotify-requires: Required when bid_strategy is MAX_BID or COST_PER_RESULT
           $ref: '#/components/schemas/BidMicroAmount'
         base_rate_micro_amount:
           type: integer
@@ -4033,7 +4197,10 @@ components:
           $ref: '#/components/schemas/VideoDeliveryFormats'
     AdSetCategory:
       type: string
-      description: Category ID of the ad set.
+      x-spotify-requires: Required on creation. Obtain valid codes from GET /ad_categories
+      description: |
+        Category ID of the ad set. Required when creating an ad set. Must be a valid
+        ADV_X_Y code obtained from GET /ad_categories. Example: "ADV_1_1".
       example: ADV_1_1
     CostModel:
       type: string
@@ -4056,14 +4223,18 @@ components:
     BudgetRequest:
       x-parent: true
       type: object
+      x-spotify-common-mistakes:
+        - Values are in micro-units, not dollars — multiply dollar amounts by 1,000,000
       description: Users should specify one budget when creating an ad set.
       properties:
         micro_amount:
           type: integer
           format: int64
           description: |
-            Total budget for the ad set multiplied by x10 to the 6th power. Ex: In order to set a
-            budget of $250, you would specify a budget_micro_amount of 250000000.
+            Budget amount in micro-units. 1 USD = 1,000,000 micro-units (10^6).
+            To convert dollars to micro-units, multiply the dollar amount by 1,000,000.
+            Examples: $15 = 15000000, $250 = 250000000, $1000 = 1000000000.
+            Uses the same micro-unit scale as bid_micro_amount.
           example: 15000000
         type:
           type: string
@@ -4220,11 +4391,21 @@ components:
           example: 65
     GeoTargets:
       type: object
-      description: Geographical areas to target.
+      x-spotify-common-mistakes:
+        - Do not wrap geo_targets in an array — it is a flat object
+        - country_code is a single string, not an array
+      description: |
+        Geographical areas to target. This is a single flat object, not an array.
+        The country_code field is a single string value (e.g. "US"), not an array.
+        One country per ad set. Optionally refine with city_ids, dma_ids, postal_code_ids,
+        or region_ids arrays.
+        Example: {"country_code": "US", "dma_ids": ["500", "503"]}
       properties:
         country_code:
           type: string
-          description: Two-letter ISO code of the country to target.
+          description: |
+            Two-letter ISO country code to target. Single string value, not an array.
+            Only one country can be targeted per ad set.
           example: US
         city_ids:
           type: array
@@ -4266,6 +4447,10 @@ components:
         - NON_BINARY
     Platform:
       type: string
+      description: |
+        Device platform to target. Valid values are ANDROID, DESKTOP, and IOS.
+        Note: "MOBILE" and "CONNECTED_DEVICE" are not valid values.
+        If omitted, all platforms are targeted by default.
       enum:
         - ANDROID
         - DESKTOP
@@ -4636,10 +4821,15 @@ components:
             $ref: '#/components/schemas/AdSetResponse'
     BidStrategyRequest:
       type: string
+      x-spotify-common-mistakes:
+        - 'Do not wrap in an object like {type: MAX_BID} — pass the string directly'
+        - bid_micro_amount is required when bid_strategy is MAX_BID
       description: |
-        Strategy for how bids will be applied in the auction.
-         - "MAX_BID": the bid_micro_amount will act as a bid cap, meaning the maximum amount paid
-        per 1000 impressions.
+        Strategy for how bids will be applied in the auction. This is a plain string
+        enum value, not an object.
+        - "MAX_BID": bid_micro_amount is required and acts as a bid cap (max paid per 1,000 impressions).
+        - "COST_PER_RESULT": Only compatible with CLICKS objective. bid_micro_amount acts as target CPC.
+        - "UNSET": Pre-auction ad sets will not have a bid strategy set.
       example: MAX_BID
       enum:
         - COST_PER_RESULT
@@ -4837,7 +5027,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/Uuid'
         companion_asset_id:
-          description: A unique identifier for an IMAGE asset.
+          description: |
+            Unique identifier for an IMAGE asset used as the companion display.
+            Required when the ad set's asset_format is AUDIO. Upload the image
+            via POST /ad_accounts/{ad_account_id}/assets first, then reference
+            the returned asset_id here.
           example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
           allOf:
             - $ref: '#/components/schemas/Uuid'
@@ -4938,6 +5132,9 @@ components:
             $ref: '#/components/schemas/AdResponse'
     AdAssets:
       type: object
+      x-spotify-common-mistakes:
+        - companion_asset_id is required for AUDIO format ads
+        - companion_asset_id must reference an IMAGE asset, not an AUDIO asset
       description: Assets for the ad.
       properties:
         asset_id:
@@ -4946,7 +5143,12 @@ components:
           allOf:
             - $ref: '#/components/schemas/Uuid'
         companion_asset_id:
-          description: A unique identifier for an IMAGE asset.
+          x-spotify-requires: Required when asset_format is AUDIO
+          description: |
+            Unique identifier for an IMAGE asset used as the companion display.
+            Required when the ad set's asset_format is AUDIO. Upload the image
+            via POST /ad_accounts/{ad_account_id}/assets first, then reference
+            the returned asset_id here.
           example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
           allOf:
             - $ref: '#/components/schemas/Uuid'
@@ -5026,9 +5228,12 @@ components:
       type: string
       enum:
         - ARABIC
+        - ARABIC_EGYPT
+        - BULGARIAN
         - CHINESE
         - CHINESE_HK
         - CHINESE_TAIWAN
+        - CROATIAN
         - CZECH
         - DANISH
         - DUTCH
@@ -5043,10 +5248,14 @@ components:
         - INDONESIAN
         - ITALIAN
         - JAPANESE
+        - KOREAN
         - NORWEGIAN
         - POLISH
         - PORTUGUESE
         - PORTUGUESE_PORTUGAL
+        - ROMANIAN
+        - RUSSIAN
+        - SLOVAK
         - SPANISH
         - SPANISH_ARGENTINA
         - SPANISH_LATAM_CARIBBEAN
@@ -5054,6 +5263,7 @@ components:
         - SWEDISH
         - THAI
         - TURKISH
+        - UKRAINIAN
         - VIETNAMESE
       default: ENGLISH
       description: The language which the ad is presented.
@@ -5069,7 +5279,14 @@ components:
           type: string
           description: The link to the ads desired landing page.
           example: https://www.spotify.com
-      description: The metadata for the behavior of the call-to-action button.
+      x-spotify-common-mistakes:
+        - The field is named 'key', not 'type'
+        - The URL field is named 'clickthrough_url', not 'url'
+      description: |
+        Call-to-action button configuration. Important: the button type field is
+        named "key" (not "type"), and the URL field is named "clickthrough_url"
+        (not "url").
+        Example: {"key": "LEARN_MORE", "language": "ENGLISH", "clickthrough_url": "https://example.com"}
     CreateAdRequest:
       description: Represents a create request.
       type: object
@@ -8628,3 +8845,10 @@ components:
       description: A list of unique identifiers for sensitive topics.
       example:
         - gambling
+  links:
+    GetAdSetForAd:
+      operationId: getAdSetById
+      parameters:
+        ad_account_id: $parameters.ad_account_id
+        ad_set_id: $response.body#/ad_set_id
+      description: Get an ad set by ID.
