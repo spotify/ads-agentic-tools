@@ -93,7 +93,7 @@ Every CRUD operation on campaigns, ad sets, ads, assets, and audiences is scoped
 - `GET /businesses/{id}` — Get business by ID
 - `GET /targets/artists` — Search artist targets
 - `GET /ad_categories` — List ad categories
-- `POST /estimates/audience` — Estimate audience size
+- `POST /estimates/audience` — Estimate audience size for targeting parameters (recommended before creating ad sets to validate reach)
 - `POST /estimates/bid` — Get bid recommendations
 
 ## Making API Calls

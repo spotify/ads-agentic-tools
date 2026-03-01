@@ -317,3 +317,126 @@ Edit `.claude/spotify-ads-api.local.md` and set `token_expires_at` to `2026-02-0
 - Settings file updated with new `access_token` and future `token_expires_at`
 - API call succeeds with the refreshed token
 - No manual re-authentication required
+
+---
+
+## Scenario 11: Upload Asset
+
+**Prompt:** `/spotify-ads-api:assets upload /path/to/my-creative.mp3`
+
+**Quirks tested:** Two-step create-then-upload flow, multipart form-data, status polling, file type detection
+
+**Expected behavior:**
+1. Plugin detects `.mp3` extension → asset type `AUDIO`
+2. Prompts for asset name (defaults to `my-creative`)
+3. Creates asset metadata via `POST /assets` with `{"asset_type":"AUDIO","name":"my-creative"}`
+4. Extracts `id` from response
+5. Checks file size — if ≤ 20MB, uploads via `POST /assets/{id}/upload` with multipart form-data
+6. Polls `GET /assets/{id}` every 3 seconds until status is `READY` or `REJECTED`
+7. Displays asset ID, name, type, status, and URL
+
+**Expected curl (create):**
+```bash
+curl -s -X POST -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"asset_type":"AUDIO","name":"my-creative"}' \
+  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/assets"
+```
+
+**Expected curl (upload):**
+```bash
+curl -s -X POST -H "Authorization: Bearer <token>" \
+  -F "media=@/path/to/my-creative.mp3" \
+  -F "asset_type=AUDIO" \
+  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/assets/<asset_id>/upload"
+```
+
+**Success criteria:**
+- Asset type correctly detected from file extension
+- Two-step flow: metadata creation, then file upload
+- Upload uses multipart form-data (`-F` flags), not JSON
+- Status polling runs until asset reaches `READY` or `REJECTED`
+- Final display shows asset ID usable in ad creation
+
+---
+
+## Scenario 12: Pre-flight Audience Estimate
+
+**Prompt:** "Build me a video campaign called Narrow Test targeting US listeners aged 50-54 in Portland with $25/day budget"
+
+**Quirks tested:** Pre-flight audience validation, `POST /estimates/audience` (top-level, not under ad_accounts), narrow targeting warning
+
+**Expected behavior:**
+1. Plugin parses the campaign plan (VIDEO, ages 50-54, geo: Portland/US)
+2. After user confirms the plan, runs `POST /estimates/audience` for the ad set targeting
+3. Endpoint is top-level: `https://api-partner.spotify.com/ads-sandbox/v3/estimates/audience` (NOT under `/ad_accounts/{id}/`)
+4. Displays audience estimate (projected users, reach, impressions, CPM)
+5. If audience is too small (likely with VIDEO + narrow age + single city), warns user
+6. Suggests: broaden age range, add platforms, switch to AUDIO, expand geo
+7. Asks whether to proceed, adjust, or cancel
+
+**Expected curl (estimate):**
+```bash
+curl -s -X POST -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ad_account_id": "<account_id>",
+    "start_date": "2026-03-01T00:00:00Z",
+    "asset_format": "VIDEO",
+    "objective": "REACH",
+    "bid_strategy": "MAX_BID",
+    "bid_micro_amount": 15000000,
+    "budget": {"micro_amount": 25000000, "type": "DAILY", "currency": "USD"},
+    "targets": {
+      "age_ranges": [{"min": 50, "max": 54}],
+      "geo_targets": {"country_code": "US"},
+      "platforms": ["ANDROID", "DESKTOP", "IOS"],
+      "placements": ["MUSIC"]
+    }
+  }' \
+  "https://api-partner.spotify.com/ads-sandbox/v3/estimates/audience"
+```
+
+**Success criteria:**
+- Audience estimate runs BEFORE ad set creation (not after)
+- Endpoint is top-level `/estimates/audience`, NOT under `/ad_accounts/{id}/`
+- Warning displayed when audience is too small
+- User given options to proceed, adjust, or cancel
+- If user adjusts targeting, estimate re-runs with new parameters
+
+---
+
+## Scenario 13: Dashboard
+
+**Prompt:** `/spotify-ads-api:dashboard`
+
+**Quirks tested:** Micro-amount to dollar conversion for spend, aggregate report field format, active campaign filtering, zero-impression filtering
+
+**Expected behavior:**
+1. Plugin fetches aggregate report for active campaigns (entity_type=CAMPAIGN, statuses=ACTIVE)
+2. Uses repeated `fields` parameters (`&fields=IMPRESSIONS&fields=SPEND&...`), NOT comma-separated
+3. Fetches campaign details for names and budget info
+4. Displays formatted table with campaign metrics
+5. Spend values converted from micro-amounts to dollars (e.g., 450000000 → $450.00)
+6. Rows with zero impressions are filtered out
+7. Shows pacing info when budget data is available
+
+**Expected curl (metrics):**
+```bash
+curl -s -H "Authorization: Bearer <token>" \
+  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/aggregate_reports?\
+entity_type=CAMPAIGN&\
+fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=CTR&fields=COMPLETES&\
+granularity=LIFETIME&\
+entity_status_type=CAMPAIGN&\
+statuses=ACTIVE&\
+limit=50"
+```
+
+**Success criteria:**
+- Spend displayed in dollars (`$450.00`), NOT micro-amounts (`450000000`)
+- Fields use repeated parameter format, NOT comma-separated
+- All active campaigns appear in the table
+- Zero-impression rows are excluded
+- Table is cleanly formatted with aligned columns
+- Total spend is shown in the header summary

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0] - 2026-03-01
+
+### Added
+- Asset management skill: upload, list, get, archive creative assets
+- Pre-flight audience validation before ad set creation
+- Campaign dashboard skill with performance overview and pacing
+
+
 ## [1.0.0] - 2026-03-01
 
 ### Added

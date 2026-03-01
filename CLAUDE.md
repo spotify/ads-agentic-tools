@@ -18,6 +18,8 @@ The plugin follows the Claude Code plugin structure with four component types:
   - `skills/ads/` — Ad set and ad management
   - `skills/build-campaign/` — Full campaign builder from natural language descriptions
   - `skills/report/` — Aggregate, insight, and async CSV reporting
+  - `skills/assets/` — Upload, list, and manage creative assets (audio, video, images)
+  - `skills/dashboard/` — Quick performance overview with pacing for active campaigns
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
@@ -38,6 +40,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Report field name** is `fields`, not `report_fields`.
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
 - **Base URLs**: sandbox is `ads-sandbox/v3`, production is `ads/v3`, both under `api-partner.spotify.com`.
+- **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
 
 ## OpenAPI Spec
 

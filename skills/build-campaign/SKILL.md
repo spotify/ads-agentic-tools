@@ -84,6 +84,55 @@ Also show a table with all field values for each entity. Ask the user to confirm
 If the ad category was not specified, ask the user to select one using AskUserQuestion.
 You can fetch valid categories from `GET /ad_categories` to present options.
 
+## Step 2.5: Validate Audience Size
+
+After the user confirms the plan but before executing API calls, run an audience estimate for each ad set's targeting:
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ad_account_id": "<AD_ACCOUNT_ID>",
+    "start_date": "<start_time>",
+    "asset_format": "<AUDIO|VIDEO|IMAGE>",
+    "objective": "<campaign_objective>",
+    "bid_strategy": "<MAX_BID|COST_PER_RESULT|UNSET>",
+    "bid_micro_amount": <bid>,
+    "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
+    "targets": { <same targets object as the ad set> }
+  }' \
+  "https://api-partner.spotify.com/ads-sandbox/v3/estimates/audience"
+```
+
+**Important:** This endpoint is NOT scoped under `/ad_accounts/{id}/` — it's at the top level: `POST /estimates/audience`. Use the base URL directly (sandbox or production) followed by `/estimates/audience`.
+
+Display the estimate results in a summary:
+
+```
+Audience Estimate for "Ad Set A":
+  Projected unique users: ~142,000
+  Estimated daily reach: 8,500 – 12,000
+  Estimated daily impressions: 15,000 – 22,000
+  Estimated CPM: $12.50 – $18.00
+  Likely to deliver budget: Yes
+```
+
+Convert any CPM micro-amounts to dollars for display.
+
+**If the audience is too small** (very low `projected_unique_users` or the API returns a 400 error indicating audience too small), warn the user and suggest:
+- Broadening the age range
+- Adding more platforms
+- Removing restrictive targeting (artist/genre/interest)
+- Switching from VIDEO to AUDIO format (lower thresholds)
+- Expanding geo targeting
+
+Use AskUserQuestion to ask whether to:
+1. Proceed anyway with current targeting
+2. Adjust targeting (then re-estimate)
+3. Cancel this ad set
+
+Run the estimate for each ad set in the plan before proceeding to Step 3.
+
 ## Step 3: Prompt for Assets
 
 For each ad, fetch available assets from the account:

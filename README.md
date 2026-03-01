@@ -49,6 +49,8 @@ Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained acce
 | `/spotify-ads-api:ads` | Manage ad sets and ads (list, create, get, update) |
 | `/spotify-ads-api:build-campaign` | Create a full campaign hierarchy from a plain-text description |
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
+| `/spotify-ads-api:assets` | Upload, list, and manage creative assets |
+| `/spotify-ads-api:dashboard` | Quick performance overview of active campaigns |
 
 ## Natural Language Examples
 
@@ -60,6 +62,8 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Pause the Summer Sale campaign"
 - "Generate a CSV report of daily spend by campaign for January"
 - "Build me a complete audio campaign targeting US listeners aged 25-44"
+- "Upload my-audio.mp3 as a creative asset"
+- "How are my campaigns performing?"
 
 ## Configuration Reference
 
@@ -98,6 +102,10 @@ Run `/spotify-ads-api:configure` to create the settings file.
 
 **"Min audience threshold was not met"**
 Your targeting is too narrow for the selected ad format. Try broadening the age range, adding more platforms, or switching from VIDEO to AUDIO format.
+
+**"Asset stuck in PROCESSING"**
+Large files may take longer to transcode. Check status with `/spotify-ads-api:assets get <id>`. If status is REJECTED, the file may not meet format requirements.
+
 
 **Sandbox returns unexpected errors**
 Some API behaviors differ between sandbox and production. If a call works in production but not sandbox, this may be a sandbox limitation.

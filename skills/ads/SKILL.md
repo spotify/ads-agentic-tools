@@ -51,6 +51,45 @@ Prompt for required fields:
 
 Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
 
+**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting:
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ad_account_id": "<AD_ACCOUNT_ID>",
+    "start_date": "<start_time>",
+    "asset_format": "<AUDIO|VIDEO|IMAGE>",
+    "objective": "<campaign_objective>",
+    "bid_strategy": "<MAX_BID|COST_PER_RESULT|UNSET>",
+    "bid_micro_amount": <bid>,
+    "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
+    "targets": { <same targets as above> }
+  }' \
+  "https://api-partner.spotify.com/ads-sandbox/v3/estimates/audience"
+```
+
+**Note:** This endpoint is NOT scoped under `/ad_accounts/{id}/` — it's at the top level: `POST /estimates/audience`. Use the base URL directly followed by `/estimates/audience`.
+
+Display the estimate summary:
+```
+Audience Estimate:
+  Projected unique users: ~142,000
+  Estimated daily reach: 8,500 – 12,000
+  Estimated daily impressions: 15,000 – 22,000
+  Estimated CPM: $12.50 – $18.00
+```
+
+If the audience is too small (low projected users or 400 error), warn the user and suggest:
+- Broadening the age range
+- Adding more platforms
+- Switching from VIDEO to AUDIO format (lower thresholds)
+- Expanding geo targeting
+
+Ask whether to proceed, adjust targeting, or cancel before creating the ad set.
+
+**Create the ad set:**
+
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
