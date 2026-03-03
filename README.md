@@ -11,18 +11,38 @@ A Claude Code plugin that lets you manage Spotify advertising campaigns through 
 
 ## Quick Start
 
-1. Install the plugin:
+### Option A: Install from registry
+
+```bash
+claude plugin add spotify-ads-api
+```
+
+### Option B: Install from source (local development / testing)
+
+1. Clone the repository:
    ```bash
-   claude plugin add spotify-ads-api
+   git clone git@ghe.spotify.net:alexmurphy/sp-ads-api-plugin.git
    ```
 
-2. Configure OAuth credentials:
+2. Launch Claude Code with the plugin directory:
+   ```bash
+   claude --plugin-dir /path/to/sp-ads-api-plugin
+   ```
+
+   The `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
+   ```bash
+   alias claude-ads='claude --plugin-dir /path/to/sp-ads-api-plugin'
+   ```
+
+### Configure
+
+1. Configure OAuth credentials:
    ```
    /spotify-ads-api:configure
    ```
    This opens your browser for Spotify authorization, then saves your tokens locally with automatic refresh.
 
-3. Create your first campaign:
+2. Create your first campaign:
    ```
    /spotify-ads-api:build-campaign Create an audio campaign called Summer Promo targeting US listeners aged 25-44 with $100/day budget
    ```
