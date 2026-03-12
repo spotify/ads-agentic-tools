@@ -3,7 +3,6 @@ access_token: ""
 refresh_token: ""
 token_expires_at: ""
 client_id: ""
-client_secret: ""
 ad_account_id: ""
 environment: "sandbox"
 auto_execute: false
@@ -13,6 +12,7 @@ auto_execute: false
 
 Local configuration for the spotify-ads-api plugin.
 Do not commit this file to version control.
+Client secret is stored in the macOS Keychain, not in this file.
 
 ## Fields
 
@@ -20,7 +20,10 @@ Do not commit this file to version control.
 - **refresh_token**: OAuth2 refresh token for automatic token renewal.
 - **token_expires_at**: ISO 8601 timestamp when the access token expires.
 - **client_id**: Your Spotify app client ID from the developer dashboard.
-- **client_secret**: Your Spotify app client secret.
 - **ad_account_id**: The UUID of the ad account to use by default.
 - **environment**: `sandbox` (testing) or `production` (live).
 - **auto_execute**: Set to `true` to execute API calls without confirmation, `false` to preview first.
+
+## Client Secret
+
+The client secret is stored securely in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`) and is never written to this file.

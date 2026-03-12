@@ -42,7 +42,7 @@ Prompt for required fields:
 - **category** (required — valid `ADV_X_Y` code, fetch from `GET /ad_categories` if needed)
 - **targets** — ask for targeting preferences:
   - Age range (e.g., 18-34) → `"age_ranges": [{"min": 18, "max": 34}]`
-  - Country (e.g., US) → `"geo_targets": {"country_code": "US"}` (**flat object, NOT array**)
+  - **Geo targeting** — see detailed instructions below
   - Genders (optional) → `"genders": ["MALE", "FEMALE", "NON_BINARY"]`
   - Platforms (optional) → `"platforms": ["ANDROID", "DESKTOP", "IOS"]` (**NOT "MOBILE" or "CONNECTED_DEVICE"**)
   - Placements (required) → `"placements": ["MUSIC"]`
@@ -50,6 +50,89 @@ Prompt for required fields:
 - **bid_micro_amount** (required with MAX_BID) — ask for the bid cap in dollars, convert to micro-amount. This is the maximum CPM the user is willing to pay. Example: "$15 bid cap" = `15000000`
 
 Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
+
+#### Geo-Targeting
+
+**Structure:** `geo_targets` is a **flat object** (NOT an array) with a required `country_code` and optional refinement arrays.
+
+**Lookup Geo IDs:** Use the `/targets/geos` endpoint to find geo IDs:
+
+```bash
+# Search by location name
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE_URL/targets/geos?country_code=US&q=Connecticut&limit=20"
+
+# Search by postal code
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE_URL/targets/geos?country_code=US&q=06103&limit=20"
+```
+
+Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
+
+**Geo Types:**
+- `REGION` — States/provinces (e.g., Connecticut, California, Ontario)
+- `DMA_REGION` — Designated Market Areas for media targeting (e.g., "Hartford & New Haven, CT")
+- `CITY` — Cities and towns
+- `POSTAL_CODE` — ZIP codes (format: "US:06103", "CA:M5H")
+
+**Targeting Examples:**
+
+1. **Country-level** (broadest):
+```json
+"geo_targets": {
+  "country_code": "US"
+}
+```
+
+2. **State/Region-level**:
+```json
+"geo_targets": {
+  "country_code": "US",
+  "region_ids": ["4831725"]  // Connecticut
+}
+```
+
+3. **DMA-level** (media markets):
+```json
+"geo_targets": {
+  "country_code": "US",
+  "dma_ids": ["533"]  // Hartford & New Haven, CT
+}
+```
+
+4. **City-level**:
+```json
+"geo_targets": {
+  "country_code": "US",
+  "city_ids": ["4845411", "5284283"]  // West Hartford, Colchester
+}
+```
+
+5. **Postal code-level** (most granular):
+```json
+"geo_targets": {
+  "country_code": "US",
+  "postal_code_ids": ["US:06103", "US:06105"]
+}
+```
+
+6. **Multi-level** (combine different geo types):
+```json
+"geo_targets": {
+  "country_code": "US",
+  "region_ids": ["4831725"],  // Connecticut
+  "dma_ids": ["533"],          // Hartford & New Haven DMA
+  "city_ids": ["4845411"]      // West Hartford
+}
+```
+
+**Workflow:**
+1. Ask user for geo preference (e.g., "Connecticut", "Hartford DMA", "West Hartford")
+2. Call `/targets/geos` with user's query
+3. Display results with type, name, and parent location
+4. Let user select from results or refine search
+5. Build `geo_targets` object with appropriate IDs
+6. NEVER fall back to country-only without asking user first
 
 **Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting:
 

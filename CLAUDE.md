@@ -23,7 +23,7 @@ The plugin follows the Claude Code plugin structure with four component types:
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
-- **Settings** (`.claude/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, client_secret, token_expires_at), ad_account_id, environment, and auto_execute. Template lives in `templates/settings-template.md`. This file is gitignored.
+- **Settings** (`.claude/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, environment, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. This file is gitignored.
 
 ## API Conventions to Know
 
@@ -31,7 +31,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 
 - **Micro-amounts**: Budget and bid values in entity payloads (`budget.micro_amount`, `bid_micro_amount`) are in micro-units ($1 = 1,000,000). However, SPEND values returned by `aggregate_reports` are already in dollars — do NOT divide those by 1,000,000.
 - **`bid_strategy`** is a plain string enum (`MAX_BID`, `COST_PER_RESULT`, `UNSET`), not an object. Default to `MAX_BID` with a required `bid_micro_amount`.
-- **`geo_targets`** is a flat object `{"country_code": "US"}`, not an array.
+- **`geo_targets`** is a flat object (not an array) with a required `country_code` and optional refinement arrays (`region_ids`, `dma_ids`, `city_ids`, `postal_code_ids`). Use `GET /targets/geos?country_code=<code>&q=<query>` to look up geo IDs. Geo types: `REGION` (states/provinces), `DMA_REGION` (media markets), `CITY`, `POSTAL_CODE`. Example: `{"country_code": "US", "region_ids": ["4831725"]}` targets Connecticut. NEVER fall back to country-only without looking up the user's requested location first.
 - **`platforms`** valid values are `ANDROID`, `DESKTOP`, `IOS` — not "MOBILE" or "CONNECTED_DEVICE".
 - **`category`** is required on ad sets — must be a valid `ADV_X_Y` code from `GET /ad_categories`.
 - **`call_to_action`** uses field `key` (not `type`) and `clickthrough_url` (not `url`).

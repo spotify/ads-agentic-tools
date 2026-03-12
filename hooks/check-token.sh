@@ -45,7 +45,7 @@ if [ -f "$SETTINGS_FILE" ]; then
   token_expires_at=$(get_setting "token_expires_at")
   refresh_token=$(get_setting "refresh_token")
   client_id=$(get_setting "client_id")
-  client_secret=$(get_setting "client_secret")
+  client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w 2>/dev/null || echo "")
 
   # Determine if token needs refresh
   needs_refresh=false

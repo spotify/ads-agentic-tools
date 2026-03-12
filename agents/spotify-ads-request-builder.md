@@ -94,11 +94,49 @@ Pass IDs from each step's response to the next step.
 - Bid cap: "$15" → `"bid_strategy": "MAX_BID", "bid_micro_amount": 15000000`
 - Dates: "next Monday" → compute ISO 8601 UTC datetime
 - Age: "18-34" → `{"age_ranges": [{"min": 18, "max": 34}]}`
-- Countries: "US" → `{"geo_targets": {"country_code": "US"}}` — **flat object, NOT an array**
 - Platforms: → `["ANDROID", "DESKTOP", "IOS"]` — **NOT "MOBILE" or "CONNECTED_DEVICE"**
 - "Pause" → `{"status": "PAUSED"}`
 - "Archive" → `{"status": "ARCHIVED"}`
 - Audience estimates: Display projected_unique_users, reach ranges, and CPM ranges in human-readable format. Convert CPM micro-amounts to dollars.
+
+**Geo-Targeting Conversions:**
+
+When the user specifies a geographic location (state, city, region, DMA), you MUST look up the geo ID using the `/targets/geos` endpoint BEFORE creating the ad set. NEVER fall back to country-only targeting without user confirmation.
+
+1. **Lookup process:**
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE_URL/targets/geos?country_code=US&q=<user_location>&limit=20"
+```
+
+2. **Geo types returned:**
+   - `REGION` — States/provinces (e.g., Connecticut id: 4831725)
+   - `DMA_REGION` — Designated Market Areas (e.g., "Hartford & New Haven, CT" id: 533)
+   - `CITY` — Cities (e.g., West Hartford id: 4845411)
+   - `POSTAL_CODE` — ZIP codes (e.g., "US:06103")
+
+3. **User input → geo_targets mapping:**
+   - "Connecticut" → Look up → `{"country_code": "US", "region_ids": ["4831725"]}`
+   - "Hartford DMA" → Look up → `{"country_code": "US", "dma_ids": ["533"]}`
+   - "West Hartford, CT" → Look up → `{"country_code": "US", "city_ids": ["4845411"]}`
+   - "06103" → Look up → `{"country_code": "US", "postal_code_ids": ["US:06103"]}`
+   - "New York and California" → Look up both → `{"country_code": "US", "region_ids": ["5128638", "5332921"]}`
+
+4. **Handling ambiguity:**
+   - If multiple geos match, display them to the user with type, name, and parent location
+   - Let user select the intended target
+   - If no results found, inform user and ask for clarification
+
+5. **Structure rules:**
+   - `geo_targets` is a **flat object**, NOT an array
+   - `country_code` is always required (single string)
+   - Refinement arrays (`region_ids`, `dma_ids`, `city_ids`, `postal_code_ids`) are optional
+   - You can mix multiple geo types in one ad set
+
+**Example workflow for "target Connecticut ages 25-44":**
+1. Call `/targets/geos?country_code=US&q=Connecticut`
+2. Find: `{"id": "4831725", "type": "REGION", "name": "Connecticut"}`
+3. Build: `{"geo_targets": {"country_code": "US", "region_ids": ["4831725"]}, "age_ranges": [{"min": 25, "max": 44}]}`
 
 **Ad Set Required Fields (commonly missed):**
 - `category` is **required** — must be a valid `ADV_X_Y` code. Fetch from `GET /ad_categories` if needed.
@@ -119,7 +157,7 @@ Pass IDs from each step's response to the next step.
 - `tagline` max 40 chars, `advertiser_name` max 25 chars.
 
 **Error Handling:**
-- If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id, client_secret in settings), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running `/spotify-ads-api:configure` to re-authenticate.
+- If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id in settings, client_secret in keychain), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running `/spotify-ads-api:configure` to re-authenticate.
 - If the API returns other errors, read the error message and explain what went wrong in plain language
 - Suggest fixes for common errors (missing fields, budget too low, targeting too narrow, etc.)
 - Never retry automatically on 4xx errors — explain the issue to the user

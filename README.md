@@ -36,7 +36,12 @@ claude plugin add spotify-ads-api
 
 ### Configure
 
-1. Configure OAuth credentials:
+1. **Set up the redirect URI in Spotify Developer Dashboard:**
+   - Go to [developer.spotify.com](https://developer.spotify.com/) and open your app settings
+   - Under **Redirect URIs**, add: `http://127.0.0.1:8080/callback`
+   - Save the changes
+
+2. Configure OAuth credentials:
    ```
    /spotify-ads-api:configure
    ```
@@ -95,10 +100,11 @@ Settings are stored in `.claude/spotify-ads-api.local.md` (gitignored):
 | `refresh_token` | Token for automatic renewal | — |
 | `token_expires_at` | ISO 8601 expiry timestamp | — |
 | `client_id` | Spotify app client ID | — |
-| `client_secret` | Spotify app client secret | — |
 | `ad_account_id` | Default ad account UUID | — |
 | `environment` | `sandbox` or `production` | `sandbox` |
 | `auto_execute` | Skip confirmation prompts | `false` |
+
+The client secret is stored in the **macOS Keychain** (not in the settings file) for security. It is saved during `/spotify-ads-api:configure` and retrieved automatically by the token refresh hook.
 
 ## Sandbox vs Production
 

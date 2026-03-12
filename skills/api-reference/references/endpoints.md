@@ -375,7 +375,71 @@ Search for artist targets.
 Get available genre targets.
 
 ### GET /targets/geos
-Get available geographic targets.
+Get available geographic targets. Use this to look up geo IDs for ad set targeting.
+
+**Query Parameters:**
+- `country_code` (string, required) — Two-letter ISO country code (e.g., "US", "CA", "GB")
+- `q` (string, optional) — Search query for location name or postal code (e.g., "Connecticut", "Hartford", "06103")
+- `ids` (array, optional) — List of geo IDs to retrieve
+- `limit` (integer, optional) — Max results per page (default: 50, max: 1000)
+- `offset` (integer, optional) — Pagination offset
+
+**Response:** 200 — `GeoTargetsResponse`
+```json
+{
+  "geos": [
+    {
+      "id": "4831725",
+      "type": "REGION",
+      "name": "Connecticut",
+      "parent_geo_name": "United States of America",
+      "country_code": "US"
+    },
+    {
+      "id": "533",
+      "type": "DMA_REGION",
+      "name": "Hartford & New Haven, CT",
+      "parent_geo_name": "United States of America",
+      "country_code": "US"
+    },
+    {
+      "id": "4845411",
+      "type": "CITY",
+      "name": "West Hartford",
+      "parent_geo_name": "Connecticut",
+      "country_code": "US"
+    },
+    {
+      "id": "US:06103",
+      "type": "POSTAL_CODE",
+      "name": "06103, Capitol Region, Hartford",
+      "parent_geo_name": "Connecticut",
+      "country_code": "US"
+    }
+  ],
+  "offset": 0,
+  "page_size": 20
+}
+```
+
+**Geo Types:**
+- `REGION` — States, provinces, territories
+- `DMA_REGION` — Designated Market Areas for media targeting
+- `CITY` — Cities and towns
+- `POSTAL_CODE` — ZIP codes (format: "US:06103")
+
+**Usage in ad set `geo_targets`:**
+```json
+{
+  "geo_targets": {
+    "country_code": "US",
+    "region_ids": ["4831725"],           // Connecticut
+    "dma_ids": ["533"],                  // Hartford & New Haven DMA
+    "city_ids": ["4845411"],             // West Hartford
+    "postal_code_ids": ["US:06103"]      // Specific ZIP code
+  }
+}
+```
 
 ### GET /targets/interests
 Get available interest targets.
