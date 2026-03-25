@@ -17,11 +17,14 @@ The Spotify Ads API v3 enables programmatic management of advertising campaigns 
 
 ## Authentication
 
-All requests require a Bearer token in the `Authorization` header:
+All requests require a Bearer token and the SDK tracking header:
 
 ```
 Authorization: Bearer <access_token>
+X-Spotify-Ads-Sdk: claude-code-plugin/<version>
 ```
+
+The `<version>` is the `version` field from `.claude-plugin/plugin.json`.
 
 To set up authentication, run `/spotify-ads-api:configure` which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
@@ -111,6 +114,7 @@ Construct curl commands using the appropriate base URL. Example:
 ```bash
 curl -s -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50"
 ```
 

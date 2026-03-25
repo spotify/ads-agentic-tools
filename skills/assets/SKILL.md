@@ -16,6 +16,7 @@ Upload, list, retrieve, and archive creative assets (audio, video, images) for u
    - sandbox: `https://api-partner.spotify.com/ads-sandbox/v3`
    - production: `https://api-partner.spotify.com/ads/v3`
 3. If settings file is missing, instruct the user to run `/spotify-ads-api:configure` first.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
 
 ## Parsing Arguments
 
@@ -53,6 +54,7 @@ Use AskUserQuestion to ask for the asset name (2-120 characters). Default to the
 
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   -H "Content-Type: application/json" \
   -d '{"asset_type":"AUDIO","name":"my-creative"}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"

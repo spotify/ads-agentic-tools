@@ -14,6 +14,7 @@ Manage ad sets and ads via the Spotify Ads API. Read settings from `.claude/spot
 1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `environment`, `auto_execute`.
 2. Determine base URL from environment.
 3. If settings missing, instruct user to run `/spotify-ads-api:configure` first.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
 
 ## Parsing Arguments
 
@@ -27,6 +28,7 @@ The argument format is: `<resource> <operation> [id]`
 ### `ad-sets list`
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?limit=50&sort_direction=DESC"
 ```
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start

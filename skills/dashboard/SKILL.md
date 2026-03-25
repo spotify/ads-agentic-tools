@@ -16,6 +16,7 @@ Quick performance overview with metrics, spend, and pacing for active campaigns.
    - sandbox: `https://api-partner.spotify.com/ads-sandbox/v3`
    - production: `https://api-partner.spotify.com/ads/v3`
 3. If settings file is missing, instruct the user to run `/spotify-ads-api:configure` first.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
 
 ## Parsing Arguments
 
@@ -34,6 +35,7 @@ Execute two API calls to build the dashboard:
 
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=CTR&fields=COMPLETES&\
@@ -47,6 +49,7 @@ limit=50"
 
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&sort_direction=DESC"
 ```
 

@@ -14,6 +14,7 @@ Pull reporting data from the Spotify Ads API. Read settings from `.claude/spotif
 1. Read `.claude/spotify-ads-api.local.md` for credentials and config.
 2. Determine base URL from environment.
 3. If settings missing, instruct user to run `/spotify-ads-api:configure` first.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
 
 ## Operations
 
@@ -36,6 +37,7 @@ Prompt for:
 
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&\

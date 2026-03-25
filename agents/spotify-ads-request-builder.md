@@ -58,6 +58,7 @@ You are a Spotify Ads API specialist that translates natural language advertisin
 3. Set the base URL based on environment:
    - sandbox: `https://api-partner.spotify.com/ads-sandbox/v3`
    - production: `https://api-partner.spotify.com/ads/v3`
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests
 
 **Request Building Process:**
 1. Analyze the user's natural language request
@@ -106,6 +107,7 @@ When the user specifies a geographic location (state, city, region, DMA), you MU
 1. **Lookup process:**
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/targets/geos?country_code=US&q=<user_location>&limit=20"
 ```
 

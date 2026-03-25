@@ -17,6 +17,7 @@ calls and create the full campaign hierarchy: Campaign → Ad Sets → Ads.
    - sandbox: `https://api-partner.spotify.com/ads-sandbox/v3`
    - production: `https://api-partner.spotify.com/ads/v3`
 3. If settings file is missing, instruct the user to run `/spotify-ads-api:configure` first.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
 
 ## Step 1: Parse the Campaign Description
 
@@ -90,6 +91,7 @@ After the user confirms the plan but before executing API calls, run an audience
 
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   -H "Content-Type: application/json" \
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",

@@ -3,8 +3,7 @@ set -uo pipefail
 
 # Spotify Ads API PreToolUse hook
 #
-# 1. Injects X-Spotify-Ads-Sdk tracking header on all Spotify Ads API calls
-# 2. Auto-refreshes expired OAuth tokens before API calls
+# Auto-refreshes expired OAuth tokens before API calls
 
 # Read all stdin (hook input JSON)
 input=$(cat)
@@ -28,9 +27,6 @@ fi
 # Start with the original command; will be modified as needed
 modified_command="$command"
 system_message=""
-
-# Read plugin version for tracking header
-PLUGIN_VERSION=$(jq -r '.version // "unknown"' "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json" 2>/dev/null || echo "unknown")
 
 # --- Locate settings file and attempt token refresh ---
 SETTINGS_FILE="${CLAUDE_PROJECT_DIR:-.}/.claude/spotify-ads-api.local.md"
@@ -102,11 +98,6 @@ if [ -f "$SETTINGS_FILE" ]; then
   fi
 fi
 
-# --- Inject tracking header (idempotent) ---
-if [[ "$modified_command" != *"X-Spotify-Ads-Sdk"* ]]; then
-  modified_command="${modified_command/curl /curl -H \"X-Spotify-Ads-Sdk: claude-code-plugin/${PLUGIN_VERSION}\" }"
-fi
-
 # --- Emit output ---
 if [[ "$modified_command" != "$command" ]]; then
   if [ -n "$system_message" ]; then
@@ -116,17 +107,17 @@ if [[ "$modified_command" != "$command" ]]; then
         "updatedInput": {"command": $cmd}
       },
       "systemMessage": $msg
-    }'
+    }' 2>/dev/null
   else
     jq -n --arg cmd "$modified_command" '{
       "hookSpecificOutput": {
         "permissionDecision": "allow",
         "updatedInput": {"command": $cmd}
       }
-    }'
+    }' 2>/dev/null
   fi
 elif [ -n "$system_message" ]; then
-  jq -n --arg msg "$system_message" '{"systemMessage": $msg}'
+  jq -n --arg msg "$system_message" '{"systemMessage": $msg}' 2>/dev/null
 fi
 
 exit 0
