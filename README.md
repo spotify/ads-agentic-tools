@@ -21,17 +21,17 @@ claude plugin add spotify-ads-api
 
 1. Clone the repository:
    ```bash
-   git clone git@ghe.spotify.net:alexmurphy/sp-ads-api-plugin.git
+   git clone https://github.com/spotify/ads-claude-plugin.git
    ```
 
 2. Launch Claude Code with the plugin directory:
    ```bash
-   claude --plugin-dir /path/to/sp-ads-api-plugin
+   claude --plugin-dir /path/to/ads-claude-plugin
    ```
 
    The `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
    ```bash
-   alias claude-ads='claude --plugin-dir /path/to/sp-ads-api-plugin'
+   alias claude-ads='claude --plugin-dir /path/to/ads-claude-plugin'
    ```
 
 ### Configure
