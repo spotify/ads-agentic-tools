@@ -4,7 +4,7 @@ refresh_token: ""
 token_expires_at: ""
 client_id: ""
 ad_account_id: ""
-environment: "sandbox"
+environment: "production"
 auto_execute: false
 ---
 
@@ -21,7 +21,7 @@ Client secret is stored in the macOS Keychain, not in this file.
 - **token_expires_at**: ISO 8601 timestamp when the access token expires.
 - **client_id**: Your Spotify app client ID from the developer dashboard.
 - **ad_account_id**: The UUID of the ad account to use by default.
-- **environment**: `sandbox` (testing) or `production` (live).
+- **environment**: `production`.
 - **auto_execute**: Set to `true` to execute API calls without confirmation, `false` to preview first.
 
 ## Client Secret

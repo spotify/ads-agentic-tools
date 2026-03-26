@@ -44,7 +44,7 @@ We follow the [GitHub Flow Workflow](https://guides.github.com/introduction/flow
 
 There is no automated test suite. Before submitting a pull request:
 
-- Verify your changes work against the Spotify Ads API sandbox environment
+- Verify your changes work against the Spotify Ads API
 - Confirm that existing skills (`/spotify-ads-api:campaigns`, `/spotify-ads-api:ads`, etc.) still function correctly
 - If adding a new skill, include a `SKILL.md` following the patterns in existing skill directories
 

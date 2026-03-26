@@ -11,10 +11,8 @@ Quick performance overview with metrics, spend, and pacing for active campaigns.
 
 ## Setup
 
-1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `environment`, `auto_execute`.
-2. Base URL:
-   - sandbox: `https://api-partner.spotify.com/ads-sandbox/v3`
-   - production: `https://api-partner.spotify.com/ads/v3`
+1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `auto_execute`.
+2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If settings file is missing, instruct the user to run `/spotify-ads-api:configure` first.
 4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
 

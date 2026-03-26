@@ -1,11 +1,11 @@
 # Test Harness
 
-Structured test scenarios for validating the Spotify Ads API plugin against a sandbox account.
+Structured test scenarios for validating the Spotify Ads API plugin.
 
 ## Prerequisites
 
 1. A Spotify Developer app with OAuth credentials (client ID and secret)
-2. A Spotify Ads sandbox ad account
+2. A Spotify Ads ad account
 3. Python 3.8+ (for OAuth script tests)
 4. Claude Code CLI with the plugin installed
 
@@ -18,7 +18,7 @@ Structured test scenarios for validating the Spotify Ads API plugin against a sa
    claude plugin add spotify-ads-api
    ```
 
-2. Configure with sandbox credentials:
+2. Configure credentials:
    ```
    /spotify-ads-api:configure
    ```
@@ -46,13 +46,10 @@ For each scenario, verify:
 
 - [ ] Curl command matches expected format in `test-scenarios.md`
 - [ ] API-specific quirks are handled correctly (see each scenario's "Quirks tested")
-- [ ] API response is 2xx (or expected error in sandbox)
+- [ ] API response is 2xx
 - [ ] Output is formatted readably (tables, masked tokens)
 - [ ] No internal endpoints or credentials leaked in output
 
-### Known Sandbox Limitations
+### Notes
 
-- Campaigns, ad sets, and ads can be created but won't deliver
-- Reporting data may be empty or synthetic
-- Some async report operations may have limited functionality
 - Token refresh requires valid OAuth credentials configured on the Spotify app

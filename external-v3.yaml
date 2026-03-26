@@ -10,8 +10,6 @@ info:
 servers:
   - url: https://api-partner.spotify.com/ads/v3
     description: Production server.
-  - url: https://api-partner.spotify.com/ads-sandbox/v3
-    description: Sandbox server for user testing.
 security:
   - oauth2: []
 tags:

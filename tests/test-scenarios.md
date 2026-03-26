@@ -16,12 +16,12 @@
 1. Plugin prompts for `client_id` and `client_secret`
 2. Runs `oauth-flow.py` to open browser and complete authorization
 3. Parses JSON output with `access_token`, `refresh_token`, `expires_in`
-4. Prompts for `ad_account_id`, `environment`, `auto_execute`
+4. Prompts for `ad_account_id`, `auto_execute`
 5. Writes `.claude/spotify-ads-api.local.md` with all fields
 6. Verifies token with test API call
 
 **Success criteria:**
-- Settings file exists with all 8 YAML fields populated
+- Settings file exists with all YAML fields populated
 - `token_expires_at` is a valid ISO 8601 timestamp in the future
 - Test API call returns 200
 - Access token and client_secret are masked in output (last 8 chars only)
@@ -43,7 +43,7 @@
 **Expected curl:**
 ```bash
 curl -s -H "Authorization: Bearer <token>" \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/campaigns?limit=50&sort_direction=DESC"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns?limit=50&sort_direction=DESC"
 ```
 
 **Success criteria:**
@@ -69,7 +69,7 @@ curl -s -H "Authorization: Bearer <token>" \
 curl -s -X POST -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"name":"[Test reject] Q1 Brand Awareness","objective":"REACH"}' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/campaigns"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns"
 ```
 
 **Success criteria:**
@@ -121,7 +121,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
     "bid_strategy": "MAX_BID",
     "bid_micro_amount": 20000000
   }' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/ad_sets"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ad_sets"
 ```
 
 **Success criteria:**
@@ -170,7 +170,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
     },
     "delivery": "ON"
   }' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/ads"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ads"
 ```
 
 **Success criteria:**
@@ -216,7 +216,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
 **Expected curl:**
 ```bash
 curl -s -H "Authorization: Bearer <token>" \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/aggregate_reports?\
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&\
 granularity=LIFETIME&\
@@ -250,7 +250,7 @@ limit=50"
 curl -s -X PATCH -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"status":"PAUSED"}' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/campaigns/<campaign_id>"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns/<campaign_id>"
 ```
 
 **Success criteria:**
@@ -285,7 +285,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
     "report_start": "2026-02-01T00:00:00Z",
     "report_end": "2026-02-28T23:59:59Z"
   }' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/async_reports"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/async_reports"
 ```
 
 **Success criteria:**
@@ -343,7 +343,7 @@ Edit `.claude/spotify-ads-api.local.md` and set `token_expires_at` to `2026-02-0
 curl -s -X POST -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"asset_type":"AUDIO","name":"my-creative"}' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/assets"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/assets"
 ```
 
 **Expected curl (upload):**
@@ -351,7 +351,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
 curl -s -X POST -H "Authorization: Bearer <token>" \
   -F "media=@/path/to/my-creative.mp3" \
   -F "asset_type=AUDIO" \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/assets/<asset_id>/upload"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/assets/<asset_id>/upload"
 ```
 
 **Success criteria:**
@@ -372,7 +372,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
 **Expected behavior:**
 1. Plugin parses the campaign plan (VIDEO, ages 50-54, geo: Portland/US)
 2. After user confirms the plan, runs `POST /estimates/audience` for the ad set targeting
-3. Endpoint is top-level: `https://api-partner.spotify.com/ads-sandbox/v3/estimates/audience` (NOT under `/ad_accounts/{id}/`)
+3. Endpoint is top-level: `https://api-partner.spotify.com/ads/v3/estimates/audience` (NOT under `/ad_accounts/{id}/`)
 4. Displays audience estimate (projected users, reach, impressions, CPM)
 5. If audience is too small (likely with VIDEO + narrow age + single city), warns user
 6. Suggests: broaden age range, add platforms, switch to AUDIO, expand geo
@@ -397,7 +397,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
       "placements": ["MUSIC"]
     }
   }' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/estimates/audience"
+  "https://api-partner.spotify.com/ads/v3/estimates/audience"
 ```
 
 **Success criteria:**
@@ -427,7 +427,7 @@ curl -s -X POST -H "Authorization: Bearer <token>" \
 **Expected curl (metrics):**
 ```bash
 curl -s -H "Authorization: Bearer <token>" \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/<account_id>/aggregate_reports?\
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=CTR&fields=COMPLETES&\
 granularity=LIFETIME&\

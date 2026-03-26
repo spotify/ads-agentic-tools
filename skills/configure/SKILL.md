@@ -62,18 +62,15 @@ uv run "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
 
 8. Prompt for remaining settings:
    - **ad_account_id** (required) — Try fetching the list from `GET /ad_accounts` using the new token and let the user select, or ask them to paste it
-   - **environment** (optional, default: sandbox) — `sandbox` or `production`
    - **auto_execute** (optional, default: false) — Whether to execute API calls without confirmation
 
 9. Write the settings file (see Settings File Format below).
 
-10. Verify with a test API call using the chosen environment's base URL:
+10. Verify with a test API call:
 ```bash
-# sandbox:    https://api-partner.spotify.com/ads-sandbox/v3
-# production: https://api-partner.spotify.com/ads/v3
 curl -s -o /dev/null -w "%{http_code}" \
   -H "Authorization: Bearer <token>" \
-  "$BASE_URL/ad_accounts/<ad_account_id>"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<ad_account_id>"
 ```
 
 ### `manual`
@@ -127,7 +124,6 @@ Legacy direct token mode for users who already have an access token.
 
 3. Read existing settings or prompt for:
    - **ad_account_id** (required)
-   - **environment** (optional, default: sandbox)
    - **auto_execute** (optional, default: false)
 
 4. Write the settings file with the token but without refresh credentials. Set `token_expires_at` to empty.
@@ -145,7 +141,7 @@ refresh_token: "<refresh_token>"
 token_expires_at: "<ISO 8601 timestamp>"
 client_id: "<client_id>"
 ad_account_id: "<uuid>"
-environment: "sandbox"
+environment: "production"
 auto_execute: false
 ---
 

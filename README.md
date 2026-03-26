@@ -102,19 +102,9 @@ Settings are stored in `.claude/spotify-ads-api.local.md` (gitignored):
 | `token_expires_at` | ISO 8601 expiry timestamp | — |
 | `client_id` | Spotify app client ID | — |
 | `ad_account_id` | Default ad account UUID | — |
-| `environment` | `sandbox` or `production` | `sandbox` |
 | `auto_execute` | Skip confirmation prompts | `false` |
 
 The client secret is stored in the **macOS Keychain** (not in the settings file) for security. It is saved during `/spotify-ads-api:configure` and retrieved automatically by the token refresh hook.
-
-## Sandbox vs Production
-
-By default, the plugin uses the **sandbox** environment (`ads-sandbox/v3`). Sandbox lets you test API calls without spending real budget. To switch to production, run `/spotify-ads-api:configure` and select `production`, or edit the `environment` field in `.claude/spotify-ads-api.local.md`.
-
-Sandbox limitations:
-- No real ad delivery
-- Limited reporting data
-- Some features may behave differently
 
 ## Troubleshooting
 
@@ -132,10 +122,6 @@ Your targeting is too narrow for the selected ad format. Try broadening the age 
 
 **"Asset stuck in PROCESSING"**
 Large files may take longer to transcode. Check status with `/spotify-ads-api:assets get <id>`. If status is REJECTED, the file may not meet format requirements.
-
-
-**Sandbox returns unexpected errors**
-Some API behaviors differ between sandbox and production. If a call works in production but not sandbox, this may be a sandbox limitation.
 
 ## License
 

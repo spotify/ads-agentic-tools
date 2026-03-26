@@ -10,10 +10,9 @@ version: 0.1.0
 
 The Spotify Ads API v3 enables programmatic management of advertising campaigns on Spotify. It follows a strict resource hierarchy and uses OAuth 2.0 bearer token authentication.
 
-## Base URLs
+## Base URL
 
-- **Sandbox**: `https://api-partner.spotify.com/ads-sandbox/v3`
-- **Production**: `https://api-partner.spotify.com/ads/v3`
+`https://api-partner.spotify.com/ads/v3`
 
 ## Authentication
 
@@ -104,7 +103,6 @@ Every CRUD operation on campaigns, ad sets, ads, assets, and audiences is scoped
 Read the user's plugin settings from `.claude/spotify-ads-api.local.md` (created by the `/spotify-ads-api:configure` command) to get:
 - `access_token` — Bearer token for authentication
 - `ad_account_id` — Default ad account ID
-- `environment` — `sandbox` or `production` (default: sandbox)
 - `auto_execute` — Whether to execute API calls automatically or present them first (default: false)
 
 If the settings file does not exist, instruct the user to run `/spotify-ads-api:configure` first.
@@ -115,7 +113,7 @@ Construct curl commands using the appropriate base URL. Example:
 curl -s -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
-  "https://api-partner.spotify.com/ads-sandbox/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50"
 ```
 
 For error response format and common HTTP status codes, see `references/endpoints.md` (Error Responses section).

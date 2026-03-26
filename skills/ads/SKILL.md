@@ -11,8 +11,8 @@ Manage ad sets and ads via the Spotify Ads API. Read settings from `.claude/spot
 
 ## Setup
 
-1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `environment`, `auto_execute`.
-2. Determine base URL from environment.
+1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `auto_execute`.
+2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If settings missing, instruct user to run `/spotify-ads-api:configure` first.
 4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
 
@@ -151,7 +151,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
     "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
     "targets": { <same targets as above> }
   }' \
-  "https://api-partner.spotify.com/ads-sandbox/v3/estimates/audience"
+  "https://api-partner.spotify.com/ads/v3/estimates/audience"
 ```
 
 **Note:** This endpoint is NOT scoped under `/ad_accounts/{id}/` — it's at the top level: `POST /estimates/audience`. Use the base URL directly followed by `/estimates/audience`.

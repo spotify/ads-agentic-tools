@@ -23,7 +23,7 @@ The plugin follows the Claude Code plugin structure with four component types:
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
-- **Settings** (`.claude/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, environment, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. This file is gitignored.
+- **Settings** (`.claude/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. This file is gitignored.
 
 ## API Conventions to Know
 
@@ -39,7 +39,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Array query params** use repeated parameter names (`&fields=X&fields=Y`), not comma-separated.
 - **Report field name** is `fields`, not `report_fields`.
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
-- **Base URLs**: sandbox is `ads-sandbox/v3`, production is `ads/v3`, both under `api-partner.spotify.com`.
+- **Base URL**: `https://api-partner.spotify.com/ads/v3`.
 - **Tracking header**: Every API request must include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` alongside the Authorization header, where `$PLUGIN_VERSION` is the `version` field from `.claude-plugin/plugin.json`.
 - **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
@@ -50,4 +50,4 @@ These non-obvious API quirks were discovered through real testing and are critic
 
 ## Execution Pattern
 
-All skills follow the same pattern: read settings file -> determine base URL from environment -> construct curl command -> if `auto_execute` is false, show curl and confirm before executing -> format and display response. This pattern is duplicated across skills rather than abstracted, so changes to the execution flow must be applied to each skill individually.
+All skills follow the same pattern: read settings file -> construct curl command with base URL `https://api-partner.spotify.com/ads/v3` -> if `auto_execute` is false, show curl and confirm before executing -> format and display response. This pattern is duplicated across skills rather than abstracted, so changes to the execution flow must be applied to each skill individually.

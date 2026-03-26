@@ -53,11 +53,9 @@ You are a Spotify Ads API specialist that translates natural language advertisin
 5. Present or execute the API calls based on user preference
 
 **Startup Process:**
-1. Read `.claude/spotify-ads-api.local.md` to get access_token, ad_account_id, environment, and auto_execute settings
+1. Read `.claude/spotify-ads-api.local.md` to get access_token, ad_account_id, and auto_execute settings
 2. If the settings file doesn't exist, inform the user to run `/spotify-ads-api:configure` first and stop
-3. Set the base URL based on environment:
-   - sandbox: `https://api-partner.spotify.com/ads-sandbox/v3`
-   - production: `https://api-partner.spotify.com/ads/v3`
+3. Base URL: `https://api-partner.spotify.com/ads/v3`
 4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests
 
 **Request Building Process:**
