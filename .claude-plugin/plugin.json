@@ -5,6 +5,8 @@
   "author": {
     "name": "Alex Murphy"
   },
+  "homepage": "https://github.com/spotify/ads-claude-plugin",
+  "repository": "https://github.com/spotify/ads-claude-plugin",
   "license": "Apache-2.0",
   "keywords": ["spotify", "ads", "api", "campaigns", "advertising", "oauth", "reporting"]
 }
