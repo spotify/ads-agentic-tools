@@ -46,7 +46,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 
 ## OpenAPI Spec
 
-- `external-v3.yaml` — Public OpenAPI v3 spec (~8.6K lines), committed to repo.
+- `skills/api-reference/references/external-v3.yaml` — Public OpenAPI v3 spec (~8.6K lines), committed to repo.
 
 ## Execution Pattern
 

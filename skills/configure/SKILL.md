@@ -1,6 +1,6 @@
 ---
 name: configure
-description: Configure Spotify Ads API credentials via OAuth 2.0 or direct token. Sets up authentication, ad account, environment, and execution preferences.
+description: Configure Spotify Ads API credentials via OAuth 2.0 or direct token. Sets up authentication, ad account, and execution preferences.
 argument-hint: "[oauth | manual | token <access_token>]"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---

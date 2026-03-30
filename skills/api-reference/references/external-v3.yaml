@@ -2,8 +2,8 @@ openapi: 3.0.3
 info:
   contact:
     name: Ads API Team
-    url: http://go/ads-api
-    email: selfserve-infra-api@spotify.com
+    url: https://developer.spotify.com/documentation/ads-api
+    email: fossboard@spotify.com
   description: The Spotify Ads API.
   title: Ads API
   version: 3.0.0
