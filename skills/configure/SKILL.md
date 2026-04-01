@@ -61,7 +61,11 @@ uv run "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
 7. Calculate `token_expires_at` as the current time + `expires_in` seconds, formatted as ISO 8601.
 
 8. Prompt for remaining settings:
-   - **ad_account_id** (required) — Try fetching the list from `GET /ad_accounts` using the new token and let the user select, or ask them to paste it
+   - **ad_account_id** (required) — Discover the user's ad accounts using this two-step flow:
+     1. Fetch businesses: `GET /businesses` → returns `{ "businesses": [...] }` with each business having an `id` and `name`.
+     2. For each business (or the one the user selects), fetch its ad accounts: `GET /businesses/{business_id}/ad_accounts` → returns `{ "ad_accounts": [...] }` with each account having an `id`, `name`, and `status`.
+     3. Present the list and let the user select. If only one ad account exists across all businesses, select it automatically.
+     4. If the API calls fail or return empty, ask the user to paste their ad account ID manually.
    - **auto_execute** (optional, default: false) — Whether to execute API calls without confirmation
 
 9. Write the settings file (see Settings File Format below).
@@ -123,7 +127,7 @@ Legacy direct token mode for users who already have an access token.
 2. Warn the user: "Direct token mode — this token will expire in ~1 hour with no automatic refresh. For auto-refresh, re-run with `/spotify-ads-api:configure oauth` using your client credentials."
 
 3. Read existing settings or prompt for:
-   - **ad_account_id** (required)
+   - **ad_account_id** (required) — Use the same businesses → ad accounts discovery flow as the oauth mode (`GET /businesses` then `GET /businesses/{business_id}/ad_accounts`), or ask the user to paste it.
    - **auto_execute** (optional, default: false)
 
 4. Write the settings file with the token but without refresh credentials. Set `token_expires_at` to empty.

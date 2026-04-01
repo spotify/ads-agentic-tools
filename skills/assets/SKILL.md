@@ -51,7 +51,7 @@ Use AskUserQuestion to ask for the asset name (2-120 characters). Default to the
 #### Step 3: Create asset metadata
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   -H "Content-Type: application/json" \
   -d '{"asset_type":"AUDIO","name":"my-creative"}' \
@@ -119,7 +119,7 @@ rm /tmp/chunk_*
 After upload, poll `GET /assets/{id}` until status changes from `PROCESSING` to `READY` or `REJECTED`. Poll every 3 seconds, max 60 seconds.
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -146,7 +146,7 @@ If the asset was REJECTED, explain that the file may not meet format requirement
 List assets in the account, optionally filtered by type.
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?asset_types=AUDIO&limit=50&sort_direction=DESC"
 ```
 
@@ -171,7 +171,7 @@ If `continuation_token` is present in the response, note that more assets exist.
 Get full details of a specific asset.
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -187,7 +187,7 @@ Display all fields in readable format:
 Archive or unarchive an asset using the bulk action endpoint.
 
 ```bash
-curl -s -X PATCH -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"action":"ARCHIVE","ids":["<asset_id>"]}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"

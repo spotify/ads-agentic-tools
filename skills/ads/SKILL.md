@@ -27,7 +27,7 @@ The argument format is: `<resource> <operation> [id]`
 
 ### `ad-sets list`
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?limit=50&sort_direction=DESC"
 ```
@@ -61,11 +61,11 @@ Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. 
 
 ```bash
 # Search by location name
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/targets/geos?country_code=US&q=Connecticut&limit=20"
 
 # Search by postal code
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/targets/geos?country_code=US&q=06103&limit=20"
 ```
 
@@ -139,7 +139,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 **Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting:
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
@@ -176,7 +176,7 @@ Ask whether to proceed, adjust targeting, or cancel before creating the ad set.
 **Create the ad set:**
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{...}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets"
@@ -184,7 +184,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 
 ### `ad-sets get <id>`
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID"
 ```
 
@@ -195,7 +195,7 @@ Prompt for fields to update (min 1). Same fields as create, all optional.
 
 ### `ads list`
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?limit=50&sort_direction=DESC"
 ```
 Format as table: ID | Name | Ad Set ID | Status | Delivery
@@ -216,7 +216,7 @@ Prompt for required fields:
 - **delivery** (ON/OFF, default ON)
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{...}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads"
@@ -224,7 +224,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 
 ### `ads get <id>`
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID"
 ```
 
@@ -236,5 +236,6 @@ Updateable fields: `call_to_action`, `delivery`, `status`.
 - If `auto_execute` is `true`, execute directly.
 - If `auto_execute` is `false`, present the curl command and ask for confirmation.
 - Display responses in readable format.
-- On error, show the error message from the response body.
+- Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
+- On error, show the error message from the response body. Never automatically retry POST or PATCH requests — they may have succeeded server-side despite an error response.
 - When converting budgets, always confirm the micro-amount with the user (e.g., "$50/day = 50,000,000 micro-amount").

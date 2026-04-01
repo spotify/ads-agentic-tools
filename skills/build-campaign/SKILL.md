@@ -88,7 +88,7 @@ You can fetch valid categories from `GET /ad_categories` to present options.
 After the user confirms the plan but before executing API calls, run an audience estimate for each ad set's targeting:
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   -H "Content-Type: application/json" \
   -d '{
@@ -138,7 +138,7 @@ Run the estimate for each ad set in the plan before proceeding to Step 3.
 For each ad, fetch available assets from the account:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?limit=50&sort_direction=DESC"
 ```
 
@@ -154,7 +154,7 @@ Execute each step in order, passing IDs forward from each response.
 ### 4a. Create Campaign
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","objective":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -167,7 +167,7 @@ Extract the campaign `id` from the response.
 For each ad set:
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -198,7 +198,7 @@ Extract each ad set `id` for use in ad creation.
 For each ad:
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -236,8 +236,8 @@ After all entities are created, display a final summary table:
 - If `auto_execute` is `true`, execute each API call directly after presenting the plan.
 - If `auto_execute` is `false`, present the full plan and ask for confirmation before
   executing. Then execute all calls in sequence without additional confirmation per call.
-- On error, show the error message and stop. Do not continue creating dependent entities
-  if a parent fails.
+- Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
+- On error, show the error message and stop. Do not continue creating dependent entities if a parent fails. Never automatically retry a POST — if a campaign/ad set/ad creation fails with a 5xx, check if the entity was actually created (e.g., list campaigns) before suggesting a retry.
 
 ## Critical Schema Notes
 
