@@ -109,7 +109,7 @@ If the settings file does not exist, instruct the user to run `/spotify-ads-api:
 Construct curl commands using the appropriate base URL. Example:
 
 ```bash
-curl -s -X GET \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50"

@@ -7,7 +7,7 @@ This example shows how to pull aggregated campaign performance metrics.
 **Important:** The `fields` parameter must use **repeated parameter names** (`fields=X&fields=Y`), NOT comma-separated values. The parameter is called `fields`, NOT `report_fields`.
 
 ```bash
-curl -s -X GET \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=AD_SET&\
@@ -56,7 +56,7 @@ When using `DAY` or `LIFETIME` granularity, the date range must be within 90 day
 When using `HOUR` granularity, the date range must be within the last 2 weeks.
 
 ```bash
-curl -s -X GET \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
@@ -72,7 +72,7 @@ limit=50"
 If `continuation_token` is non-null, there are more results. Pass it as a query parameter:
 
 ```bash
-curl -s -X GET \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
@@ -97,7 +97,7 @@ These are the valid values for the `fields` parameter on aggregate/insight repor
 For large datasets, use async reports. Note: async reports use **different metric names** than aggregate reports.
 
 ```bash
-curl -s -X POST \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -115,7 +115,7 @@ curl -s -X POST \
 Then check status with the returned report ID:
 
 ```bash
-curl -s -X GET \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
 ```

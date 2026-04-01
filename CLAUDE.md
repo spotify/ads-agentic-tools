@@ -51,3 +51,24 @@ These non-obvious API quirks were discovered through real testing and are critic
 ## Execution Pattern
 
 All skills follow the same pattern: read settings file -> construct curl command with base URL `https://api-partner.spotify.com/ads/v3` -> if `auto_execute` is false, show curl and confirm before executing -> format and display response. This pattern is duplicated across skills rather than abstracted, so changes to the execution flow must be applied to each skill individually.
+
+**Curl status code capture**: All API curl commands (except file uploads) must use `-w "\nHTTP_STATUS:%{http_code}"` to append the HTTP status code to the response. This makes success/failure unambiguous:
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  "$BASE_URL/..."
+```
+
+After execution, check the `HTTP_STATUS:` line first:
+- **2xx**: Request succeeded — parse and display the response body.
+- **4xx/5xx**: Request failed — display the error from the response body. **Never retry a POST or PATCH that returned a non-timeout 4xx** — the request was received and rejected, not lost.
+- **Retry safety**: Only retry on network errors or 5xx responses, and only for idempotent methods (GET). Never automatically retry POST or PATCH — these are non-idempotent and may have already been applied server-side (e.g., a 500 after the entity was created). On POST/PATCH failure, check for the created/modified resource first before suggesting a retry.
+
+## Ad Account Discovery
+
+There is no `GET /ad_accounts` list endpoint. To discover a user's ad accounts during onboarding:
+1. `GET /businesses` — lists businesses the authenticated user belongs to
+2. `GET /businesses/{business_id}/ad_accounts` — lists ad accounts under a specific business
+
+This two-step flow is used by the configure skill during setup.

@@ -104,7 +104,7 @@ When the user specifies a geographic location (state, city, region, DMA), you MU
 
 1. **Lookup process:**
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/targets/geos?country_code=US&q=<user_location>&limit=20"
 ```
@@ -156,11 +156,21 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 - `assets` requires `asset_id` and `logo_asset_id` (always), plus `companion_asset_id` (required for AUDIO ads).
 - `tagline` max 40 chars, `advertiser_name` max 25 chars.
 
+**Curl Status Code Capture:**
+All API curl commands (except file uploads) must include `-w "\nHTTP_STATUS:%{http_code}"` to append the HTTP status code after the response body:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}"-w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  "$BASE_URL/..."
+```
+Always check the `HTTP_STATUS:` line first before interpreting the response.
+
 **Error Handling:**
 - If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id in settings, client_secret in keychain), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running `/spotify-ads-api:configure` to re-authenticate.
 - If the API returns other errors, read the error message and explain what went wrong in plain language
 - Suggest fixes for common errors (missing fields, budget too low, targeting too narrow, etc.)
 - Never retry automatically on 4xx errors — explain the issue to the user
+- **POST/PATCH retry safety**: Never automatically retry a failed POST or PATCH. These are non-idempotent — a 500 or timeout may mean the resource was created/modified server-side. On failure, first check if the resource exists (e.g., list campaigns to see if the POST actually succeeded) before suggesting the user retry.
 
 **Output Format:**
 - Always show the curl command being executed (even in auto-execute mode)

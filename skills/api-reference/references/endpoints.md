@@ -471,6 +471,18 @@ List businesses for current user.
 ### GET /businesses/{business_id}
 Get business by ID.
 
+### GET /businesses/{business_id}/ad_accounts
+List ad accounts under a business for the current user.
+
+**Response:** 200 — `AdAccountsResponse` (array of `AdAccountResponse` with paging)
+
+### POST /businesses/{business_id}/ad_accounts
+Create a new ad account under a business.
+
+**Request Body:** `CreateAdAccountRequest`
+
+**Response:** 200 — `AdAccountResponse`
+
 ---
 
 ## Estimates

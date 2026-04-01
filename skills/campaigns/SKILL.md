@@ -24,7 +24,7 @@ Parse the user's argument to determine the operation:
 List campaigns for the configured ad account.
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&sort_direction=DESC"
 ```
@@ -37,7 +37,7 @@ Prompt the user for required fields:
 - **objective** (REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY)
 
 ```bash
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","objective":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -47,7 +47,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 Fetch a specific campaign by ID.
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
 ```
 
@@ -59,7 +59,7 @@ Prompt the user for fields to update (at least 1 required):
 - **status** (ACTIVE, PAUSED, ARCHIVED, optional)
 
 ```bash
-curl -s -X PATCH -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}"-X PATCH -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","status":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
@@ -70,4 +70,5 @@ curl -s -X PATCH -H "Authorization: Bearer $TOKEN" \
 - If `auto_execute` is `true`, execute the curl command directly.
 - If `auto_execute` is `false`, present the curl command to the user and ask for confirmation before executing.
 - Always display the API response in a readable format.
-- On error (non-2xx response), show the error message from the response body.
+- Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
+- On error (non-2xx response), show the error message from the response body. Never automatically retry POST or PATCH requests — they may have succeeded server-side despite an error response.
