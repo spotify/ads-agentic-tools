@@ -1,6 +1,6 @@
 ---
 name: spotify-ads-request-builder
-description: Use this agent when the user describes an advertising task in natural language and needs it translated into Spotify Ads API calls. Examples:
+description: "Use this agent when the user describes an advertising task in natural language and needs it translated into Spotify Ads API calls."
 
   <example>
   Context: User wants to create a campaign using plain English
