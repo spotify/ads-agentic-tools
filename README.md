@@ -14,7 +14,7 @@ A Claude Code plugin that lets you manage Spotify advertising campaigns through 
 ### Option A: Install from registry
 
 ```bash
-claude plugin add spotify-ads-api
+claude plugin i spotify-ads-api
 ```
 
 ### Option B: Install from source (local development / testing)
