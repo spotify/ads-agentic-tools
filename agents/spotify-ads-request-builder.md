@@ -103,7 +103,7 @@ When the user specifies a geographic location (state, city, region, DMA), you MU
 
 1. **Lookup process:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/targets/geos?country_code=US&q=<user_location>&limit=20"
 ```
@@ -158,7 +158,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
 **Curl Status Code Capture:**
 All API curl commands (except file uploads) must include `-w "\nHTTP_STATUS:%{http_code}"` to append the HTTP status code after the response body:
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/..."
 ```

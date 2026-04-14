@@ -88,7 +88,7 @@ You can fetch valid categories from `GET /ad_categories` to present options.
 After the user confirms the plan but before executing API calls, run an audience estimate for each ad set's targeting:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   -H "Content-Type: application/json" \
   -d '{
@@ -138,7 +138,7 @@ Run the estimate for each ad set in the plan before proceeding to Step 3.
 For each ad, fetch available assets from the account:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?limit=50&sort_direction=DESC"
 ```
 
@@ -154,7 +154,7 @@ Execute each step in order, passing IDs forward from each response.
 ### 4a. Create Campaign
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","objective":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -167,7 +167,7 @@ Extract the campaign `id` from the response.
 For each ad set:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -198,7 +198,7 @@ Extract each ad set `id` for use in ad creation.
 For each ad:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
