@@ -36,7 +36,7 @@ Prompt for:
 **Important:** Array query parameters must use **repeated parameter names**, NOT comma-separated.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
@@ -60,7 +60,7 @@ Prompt for:
 - **entity_ids** — Campaign or ad set IDs to analyze
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/insight_reports?\
 insight_dimension=GENDER&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&\
@@ -89,7 +89,7 @@ Prompt for:
 - **statuses** (optional, default: [ACTIVE])
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -108,7 +108,7 @@ After creating, show the report ID and suggest checking status with `async-statu
 Check the status of an async report and get the download URL when ready.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
 ```
 

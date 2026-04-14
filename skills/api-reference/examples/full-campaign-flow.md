@@ -5,7 +5,7 @@ This example shows the complete sequence of API calls to create a campaign, ad s
 ## Step 1: Create Campaign
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -35,7 +35,7 @@ Save the `id` from the response — it's needed for the ad set.
 Uses the `campaign_id` from Step 1. Note: budget `micro_amount` is in micro-units ($50 = 50000000).
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -92,7 +92,7 @@ Save the `id` for the ad.
 Uses the `ad_set_id` from Step 2.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

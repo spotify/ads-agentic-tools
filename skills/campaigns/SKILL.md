@@ -24,7 +24,7 @@ Parse the user's argument to determine the operation:
 List campaigns for the configured ad account.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&sort_direction=DESC"
 ```
@@ -37,7 +37,7 @@ Prompt the user for required fields:
 - **objective** (REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY)
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","objective":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -47,7 +47,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}"-X POST -H "Authorization: Bearer $TOKEN"
 Fetch a specific campaign by ID.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
 ```
 
@@ -59,7 +59,7 @@ Prompt the user for fields to update (at least 1 required):
 - **status** (ACTIVE, PAUSED, ARCHIVED, optional)
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}"-X PATCH -H "Authorization: Bearer $TOKEN" \
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","status":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
