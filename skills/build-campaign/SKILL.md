@@ -15,7 +15,7 @@ calls and create the full campaign hierarchy: Campaign → Ad Sets → Ads.
 1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `auto_execute`.
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If settings file is missing, instruct the user to run `/spotify-ads-api:configure` first.
-4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
 ## Step 1: Parse the Campaign Description
 
@@ -89,7 +89,7 @@ After the user confirms the plan but before executing API calls, run an audience
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
@@ -139,6 +139,7 @@ For each ad, fetch available assets from the account:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?limit=50&sort_direction=DESC"
 ```
 
@@ -155,6 +156,7 @@ Execute each step in order, passing IDs forward from each response.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","objective":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -168,6 +170,7 @@ For each ad set:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -199,6 +202,7 @@ For each ad:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",

@@ -70,10 +70,13 @@ uv run "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
 
 9. Write the settings file (see Settings File Format below).
 
-10. Verify with a test API call:
+10. Read `.claude-plugin/plugin.json` to get the plugin `version` and set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"`.
+
+11. Verify with a test API call:
 ```bash
 curl -s -o /dev/null -w "%{http_code}" \
   -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<ad_account_id>"
 ```
 

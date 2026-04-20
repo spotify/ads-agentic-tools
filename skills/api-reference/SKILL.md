@@ -22,7 +22,7 @@ Authorization: Bearer <access_token>
 X-Spotify-Ads-Sdk: claude-code-plugin/<version>
 ```
 
-The `<version>` is the `version` field from `.claude-plugin/plugin.json`.
+The `<version>` is the `version` field from `.claude-plugin/plugin.json`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
 To set up authentication, run `/spotify-ads-api:configure` which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
@@ -111,7 +111,7 @@ Construct curl commands using the appropriate base URL. Example:
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50"
 ```
 

@@ -14,7 +14,7 @@ Manage campaigns via the Spotify Ads API. Read settings from `.claude/spotify-ad
 1. Read `.claude/spotify-ads-api.local.md` to get `access_token`, `ad_account_id`, and `auto_execute`.
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If settings file is missing, instruct the user to run `/spotify-ads-api:configure` first.
-4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
 ## Operations
 
@@ -25,7 +25,7 @@ List campaigns for the configured ad account.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&sort_direction=DESC"
 ```
 
@@ -38,6 +38,7 @@ Prompt the user for required fields:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","objective":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -48,6 +49,7 @@ Fetch a specific campaign by ID.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
 ```
 
@@ -60,6 +62,7 @@ Prompt the user for fields to update (at least 1 required):
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","status":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"

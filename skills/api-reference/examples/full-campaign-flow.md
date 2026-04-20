@@ -1,5 +1,7 @@
 # Example: Full Campaign Setup Flow
 
+**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` (version from `.claude-plugin/plugin.json`).
+
 This example shows the complete sequence of API calls to create a campaign, ad set, and ad.
 
 ## Step 1: Create Campaign
@@ -7,6 +9,7 @@ This example shows the complete sequence of API calls to create a campaign, ad s
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Summer Sale 2025",
@@ -37,6 +40,7 @@ Uses the `campaign_id` from Step 1. Note: budget `micro_amount` is in micro-unit
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Summer Sale - Audio US 18-34",
@@ -94,6 +98,7 @@ Uses the `ad_set_id` from Step 2.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Summer Sale - 30s Audio Spot",

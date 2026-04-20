@@ -14,7 +14,7 @@ Manage ad sets and ads via the Spotify Ads API. Read settings from `.claude/spot
 1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `auto_execute`.
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If settings missing, instruct user to run `/spotify-ads-api:configure` first.
-4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
 ## Parsing Arguments
 
@@ -28,7 +28,7 @@ The argument format is: `<resource> <operation> [id]`
 ### `ad-sets list`
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?limit=50&sort_direction=DESC"
 ```
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
@@ -62,10 +62,12 @@ Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. 
 ```bash
 # Search by location name
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/targets/geos?country_code=US&q=Connecticut&limit=20"
 
 # Search by postal code
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/targets/geos?country_code=US&q=06103&limit=20"
 ```
 
@@ -140,6 +142,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
@@ -177,6 +180,7 @@ Ask whether to proceed, adjust targeting, or cancel before creating the ad set.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{...}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets"
@@ -185,6 +189,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 ### `ad-sets get <id>`
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID"
 ```
 
@@ -196,6 +201,7 @@ Prompt for fields to update (min 1). Same fields as create, all optional.
 ### `ads list`
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?limit=50&sort_direction=DESC"
 ```
 Format as table: ID | Name | Ad Set ID | Status | Delivery
@@ -217,6 +223,7 @@ Prompt for required fields:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{...}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads"
@@ -225,6 +232,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 ### `ads get <id>`
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID"
 ```
 

@@ -6,6 +6,13 @@
 
 ---
 
+**Variables used in curl examples below:**
+- `$TOKEN` — OAuth access token from settings
+- `$BASE_URL` — `https://api-partner.spotify.com/ads/v3`
+- `$SDK_HEADER` — `X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION` (version from `.claude-plugin/plugin.json`)
+
+---
+
 ## Scenario 1: Configure OAuth
 
 **Prompt:** `/spotify-ads-api:configure`
@@ -36,13 +43,14 @@
 
 **Expected behavior:**
 1. Agent reads settings file
-2. Constructs: `curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&sort_direction=DESC"`
+2. Constructs: `curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" -H "$SDK_HEADER" "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&sort_direction=DESC"`
 3. If `auto_execute` is false, shows command and asks for confirmation
 4. Formats response as table: ID | Name | Status | Objective | Created
 
 **Expected curl:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns?limit=50&sort_direction=DESC"
 ```
 
@@ -67,6 +75,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
 **Expected curl:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"name":"[Test reject] Q1 Brand Awareness","objective":"REACH"}' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns"
@@ -104,6 +113,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Expected curl:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "[Test reject] ...",
@@ -153,6 +163,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Expected curl:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "[Test reject] ...",
@@ -216,6 +227,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Expected curl:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&\
@@ -248,6 +260,7 @@ limit=50"
 **Expected curl:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"status":"PAUSED"}' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns/<campaign_id>"
@@ -276,6 +289,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer <toke
 **Expected curl:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "daily_impressions_spend_feb2026",
@@ -341,6 +355,7 @@ Edit `.claude/spotify-ads-api.local.md` and set `token_expires_at` to `2026-02-0
 **Expected curl (create):**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"asset_type":"AUDIO","name":"my-creative"}' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/assets"
@@ -349,6 +364,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Expected curl (upload):**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -F "media=@/path/to/my-creative.mp3" \
   -F "asset_type=AUDIO" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/assets/<asset_id>/upload"
@@ -381,6 +397,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Expected curl (estimate):**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "ad_account_id": "<account_id>",
@@ -427,6 +444,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Expected curl (metrics):**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=CTR&fields=COMPLETES&\

@@ -14,7 +14,7 @@ Pull reporting data from the Spotify Ads API. Read settings from `.claude/spotif
 1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `auto_execute`.
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If settings missing, instruct user to run `/spotify-ads-api:configure` first.
-4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
 ## Operations
 
@@ -37,7 +37,7 @@ Prompt for:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&\
@@ -61,6 +61,7 @@ Prompt for:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/insight_reports?\
 insight_dimension=GENDER&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&\
@@ -90,6 +91,7 @@ Prompt for:
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -109,6 +111,7 @@ Check the status of an async report and get the download URL when ready.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
 ```
 

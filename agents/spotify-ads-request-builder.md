@@ -55,7 +55,7 @@ You are a Spotify Ads API specialist that translates natural language advertisin
 1. Read `.claude/spotify-ads-api.local.md` to get access_token, ad_account_id, and auto_execute settings
 2. If the settings file doesn't exist, inform the user to run `/spotify-ads-api:configure` first and stop
 3. Base URL: `https://api-partner.spotify.com/ads/v3`
-4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"`. Include `-H "$SDK_HEADER"` on all API requests
 
 **Request Building Process:**
 1. Analyze the user's natural language request
@@ -104,7 +104,7 @@ When the user specifies a geographic location (state, city, region, DMA), you MU
 1. **Lookup process:**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/targets/geos?country_code=US&q=<user_location>&limit=20"
 ```
 
@@ -159,7 +159,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 All API curl commands (except file uploads) must include `-w "\nHTTP_STATUS:%{http_code}"` to append the HTTP status code after the response body:
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/..."
 ```
 Always check the `HTTP_STATUS:` line first before interpreting the response.

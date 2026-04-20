@@ -14,7 +14,7 @@ Upload, list, retrieve, and archive creative assets (audio, video, images) for u
 1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `auto_execute`.
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If settings file is missing, instruct the user to run `/spotify-ads-api:configure` first.
-4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` on all API requests.
+4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
 ## Parsing Arguments
 
@@ -52,7 +52,7 @@ Use AskUserQuestion to ask for the asset name (2-120 characters). Default to the
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"asset_type":"AUDIO","name":"my-creative"}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"
@@ -73,6 +73,7 @@ stat -f%z "/path/to/file"  # macOS
 
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -F "media=@/path/to/file" \
   -F "asset_type=AUDIO" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/upload"
@@ -83,6 +84,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 1. Start the chunked upload session:
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/start"
 ```
@@ -96,6 +98,7 @@ split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file /tmp/chunk_
 3. Upload each chunk (numbered starting from 1):
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -F "media=@/tmp/chunk_aa" \
   -F "upload_section=1" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/transfer"
@@ -104,6 +107,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 4. Complete the chunked upload:
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"upload_session_id":"<session_id>","number_of_sections":<total_chunks>}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/complete"
@@ -120,6 +124,7 @@ After upload, poll `GET /assets/{id}` until status changes from `PROCESSING` to 
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -147,6 +152,7 @@ List assets in the account, optionally filtered by type.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?asset_types=AUDIO&limit=50&sort_direction=DESC"
 ```
 
@@ -172,6 +178,7 @@ Get full details of a specific asset.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -188,6 +195,7 @@ Archive or unarchive an asset using the bulk action endpoint.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"action":"ARCHIVE","ids":["<asset_id>"]}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"

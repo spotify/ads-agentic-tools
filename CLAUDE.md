@@ -40,7 +40,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Report field name** is `fields`, not `report_fields`.
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
 - **Base URL**: `https://api-partner.spotify.com/ads/v3`.
-- **Tracking header**: Every API request must include `-H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` alongside the Authorization header, where `$PLUGIN_VERSION` is the `version` field from `.claude-plugin/plugin.json`.
+- **Tracking header**: Every API request must include the SDK tracking header. Read the `version` from `.claude-plugin/plugin.json` and set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"`, then include `-H "$SDK_HEADER"` on all curl commands.
 - **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
 
@@ -56,7 +56,7 @@ All skills follow the same pattern: read settings file -> construct curl command
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION" \
+  -H "$SDK_HEADER" \
   "$BASE_URL/..."
 ```
 

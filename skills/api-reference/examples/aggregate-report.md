@@ -1,5 +1,7 @@
 # Example: Pulling an Aggregate Report
 
+**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` (version from `.claude-plugin/plugin.json`).
+
 This example shows how to pull aggregated campaign performance metrics.
 
 ## Get Lifetime Ad Set Metrics
@@ -9,6 +11,7 @@ This example shows how to pull aggregated campaign performance metrics.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=AD_SET&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=COMPLETES&\
@@ -58,6 +61,7 @@ When using `HOUR` granularity, the date range must be within the last 2 weeks.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&\
@@ -74,6 +78,7 @@ If `continuation_token` is non-null, there are more results. Pass it as a query 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&\
@@ -99,6 +104,7 @@ For large datasets, use async reports. Note: async reports use **different metri
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "january_2025_report",
@@ -117,5 +123,6 @@ Then check status with the returned report ID:
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
 ```
