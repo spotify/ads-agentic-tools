@@ -1,6 +1,6 @@
 # Example: Pulling an Aggregate Report
 
-**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` (version from `.claude-plugin/plugin.json`).
+**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`, where `SDK_PRODUCT` is `codex-plugin` on Codex and `claude-code-plugin` on Claude.
 
 This example shows how to pull aggregated campaign performance metrics.
 

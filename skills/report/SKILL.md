@@ -7,14 +7,17 @@ allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 
 # Spotify Ads API — Reporting
 
-Pull reporting data from the Spotify Ads API. Read settings from `.claude/spotify-ads-api.local.md`.
+Pull reporting data from the Spotify Ads API. Read settings from the active platform settings file.
 
 ## Setup
 
-1. Read `.claude/spotify-ads-api.local.md` for `access_token`, `ad_account_id`, `auto_execute`.
+1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
+   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`.
+   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`.
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
-3. If settings missing, instruct user to run `/spotify-ads-api:configure` first.
-4. Read `.claude-plugin/plugin.json` to get the plugin `version`. Set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+3. If neither settings file exists, instruct the user to run `/spotify-ads-api:configure` first.
+4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex or `.claude-plugin/plugin.json` on Claude.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex or `claude-code-plugin` on Claude. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
 ## Operations
 

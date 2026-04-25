@@ -1,16 +1,14 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (developers.openai.com/codex) when working with code in this repository.
 
 ## What This Is
 
-A Claude Code plugin for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
-
-Install with: `claude --plugin-dir /path/to/sp-ads-api-plugin`
+A Codex plugin for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
 
 ## Architecture
 
-The plugin follows the Claude Code plugin structure with four component types:
+The plugin follows the Codex plugin structure with four component types:
 
 - **Skills** (`skills/`) — User-invokable slash commands and reference documentation, each in its own directory with a `SKILL.md` file:
   - `skills/configure/` — OAuth 2.0 setup with automated and manual flows, plus helper scripts in `scripts/`
@@ -23,7 +21,7 @@ The plugin follows the Claude Code plugin structure with four component types:
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
-- **Settings** (`.claude/spotify-ads-api.local.md`, with fallback to `.codex/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
+- **Settings** (`.codex/spotify-ads-api.local.md`, with fallback to `.claude/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
 
 ## API Conventions to Know
 
@@ -40,7 +38,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Report field name** is `fields`, not `report_fields`.
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
 - **Base URL**: `https://api-partner.spotify.com/ads/v3`.
-- **Tracking header**: Every API request must include the SDK tracking header. On Claude, read the `version` from `.claude-plugin/plugin.json` and set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"`. On Codex, read `.codex-plugin/plugin.json` and use `codex-plugin/$PLUGIN_VERSION`. Include `-H "$SDK_HEADER"` on all curl commands.
+- **Tracking header**: Every API request must include the SDK tracking header. On Codex, read the `version` from `.codex-plugin/plugin.json` and set `SDK_HEADER="X-Spotify-Ads-Sdk: codex-plugin/$PLUGIN_VERSION"`. On Claude, read `.claude-plugin/plugin.json` and use `claude-code-plugin/$PLUGIN_VERSION`. Include `-H "$SDK_HEADER"` on all curl commands.
 - **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
 

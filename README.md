@@ -1,10 +1,10 @@
 # spotify-ads-api
 
-A Claude Code plugin that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
+A Codex and Claude Code plugin that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
 
 ## Prerequisites
 
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
+- Codex or [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
 - Python 3.8+ (for automated OAuth flow; optional — manual flow available as fallback)
@@ -24,13 +24,18 @@ claude plugin i spotify-ads-api
    git clone https://github.com/spotify/ads-claude-plugin.git
    ```
 
-2. Launch Claude Code with the plugin directory:
+2. Launch Codex or Claude Code with the plugin directory:
+   ```bash
+   codex --plugin-dir /path/to/ads-claude-plugin
+   ```
+
    ```bash
    claude --plugin-dir /path/to/ads-claude-plugin
    ```
 
    The `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
    ```bash
+   alias codex-ads='codex --plugin-dir /path/to/ads-claude-plugin'
    alias claude-ads='claude --plugin-dir /path/to/ads-claude-plugin'
    ```
 
@@ -73,6 +78,7 @@ Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained acce
 | `/spotify-ads-api:configure` | Set up OAuth credentials, ad account, and preferences |
 | `/spotify-ads-api:campaigns` | List, create, get, or update campaigns |
 | `/spotify-ads-api:ads` | Manage ad sets and ads (list, create, get, update) |
+| `/spotify-ads-api:campaign-strategy` | Plan API-ready campaign structure and targeting from a landing page, business brief, or creative assets |
 | `/spotify-ads-api:build-campaign` | Create a full campaign hierarchy from a plain-text description |
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
 | `/spotify-ads-api:assets` | Upload, list, and manage creative assets |
@@ -88,12 +94,14 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Pause the Summer Sale campaign"
 - "Generate a CSV report of daily spend by campaign for January"
 - "Build me a complete audio campaign targeting US listeners aged 25-44"
+- "Plan the best Spotify campaign structure for this product page"
+- "Use these creative assets to recommend targeting and ad sets"
 - "Upload my-audio.mp3 as a creative asset"
 - "How are my campaigns performing?"
 
 ## Configuration Reference
 
-Settings are stored in `.claude/spotify-ads-api.local.md` (gitignored):
+Settings are stored in `.codex/spotify-ads-api.local.md` on Codex and `.claude/spotify-ads-api.local.md` on Claude. Each platform falls back to the other settings file if its preferred file does not exist. Both paths are gitignored.
 
 | Field | Description | Default |
 |-------|-------------|---------|

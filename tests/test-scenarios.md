@@ -9,7 +9,7 @@
 **Variables used in curl examples below:**
 - `$TOKEN` — OAuth access token from settings
 - `$BASE_URL` — `https://api-partner.spotify.com/ads/v3`
-- `$SDK_HEADER` — `X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION` (version from `.claude-plugin/plugin.json`)
+- `$SDK_HEADER` — `X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION`, where `SDK_PRODUCT` is `codex-plugin` on Codex and `claude-code-plugin` on Claude
 
 ---
 
@@ -24,7 +24,7 @@
 2. Runs `oauth-flow.py` to open browser and complete authorization
 3. Parses JSON output with `access_token`, `refresh_token`, `expires_in`
 4. Prompts for `ad_account_id`, `auto_execute`
-5. Writes `.claude/spotify-ads-api.local.md` with all fields
+5. Writes the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude) with all fields
 6. Verifies token with test API call
 
 **Success criteria:**
@@ -318,7 +318,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Quirks tested:** Auto-refresh hook, token update, retry with new token
 
 **Setup:**
-Edit `.claude/spotify-ads-api.local.md` and set `token_expires_at` to `2026-02-01T00:00:00Z` (in the past). Ensure `refresh_token`, `client_id`, and `client_secret` are populated.
+Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude) and set `token_expires_at` to `2026-02-01T00:00:00Z` (in the past). Ensure `refresh_token`, `client_id`, and `client_secret` are populated.
 
 **Expected behavior:**
 1. User runs a command (e.g., "Show me all campaigns")
