@@ -1,6 +1,8 @@
 # spotify-ads-api
 
-A Claude Code plugin that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
+A Claude Code plugin that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English. 
+
+Check out our post on the [Spotify Engineering Blog](https://engineering.atspotify.com/2026/5/spotify-ads-api-claude-plugins).
 
 ## Prerequisites
 
