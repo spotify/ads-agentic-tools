@@ -1,14 +1,14 @@
-# AGENTS.md
+# Repository Instructions
 
-This file provides guidance to Codex (developers.openai.com/codex) when working with code in this repository.
+This is the canonical instruction file for agents working in this repository. Codex reads `AGENTS.md` directly; Claude Code keeps `CLAUDE.md` as a compatibility shim that points back here.
 
 ## What This Is
 
-A Codex plugin for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
+A Codex and Claude Code plugin package for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
 
 ## Architecture
 
-The plugin follows the Codex plugin structure with four component types:
+The plugin follows the agent plugin structure with four component types:
 
 - **Skills** (`skills/`) — User-invokable slash commands and reference documentation, each in its own directory with a `SKILL.md` file:
   - `skills/configure/` — OAuth 2.0 setup with automated and manual flows, plus helper scripts in `scripts/`

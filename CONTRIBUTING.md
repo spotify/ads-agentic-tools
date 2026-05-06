@@ -59,7 +59,7 @@ There is no automated test suite. Before submitting a pull request:
 
 - All source files are markdown (`.md`). Follow the structure and conventions of existing files.
 - Skills live in `skills/<skill-name>/SKILL.md`.
-- Keep curl commands consistent with the execution pattern described in `AGENTS.md` and `CLAUDE.md`.
+- Keep curl commands consistent with the execution pattern described in `AGENTS.md`.
 
 ## Issues
 

@@ -8,4 +8,4 @@
 - [ ] Existing skills still work as expected
 - [ ] SKILL.md frontmatter is valid (name, description, allowed-tools)
 - [ ] README or CHANGELOG updated (if user-facing change)
-- [ ] Curl commands follow API conventions documented in AGENTS.md and CLAUDE.md
+- [ ] Curl commands follow API conventions documented in AGENTS.md
