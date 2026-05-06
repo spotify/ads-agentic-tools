@@ -2,6 +2,8 @@
 
 A Codex and Claude Code plugin package that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
 
+Check out our post on the [Spotify Engineering Blog](https://engineering.atspotify.com/2026/5/spotify-ads-api-claude-plugins).
+
 ## Prerequisites
 
 - Codex or [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
@@ -17,7 +19,7 @@ A Codex and Claude Code plugin package that lets you manage Spotify advertising 
 claude plugin i spotify-ads-api
 ```
 
-### Option B: Install from source (local development / testing)
+### Option B: Install from source (for local development / testing)
 
 1. Clone the repository:
    ```bash
