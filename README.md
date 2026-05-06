@@ -1,6 +1,6 @@
-# spotify-ads-api
+# Spotify Ads Agentic Tools
 
-A Codex and Claude Code plugin that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
+A Codex and Claude Code plugin package that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ A Codex and Claude Code plugin that lets you manage Spotify advertising campaign
 
 ## Quick Start
 
-### Option A: Install from registry
+### Option A: Install from registry (Claude Code)
 
 ```bash
 claude plugin i spotify-ads-api
@@ -21,22 +21,24 @@ claude plugin i spotify-ads-api
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/spotify/ads-claude-plugin.git
+   git clone https://github.com/spotify/ads-agentic-tools.git
    ```
 
-2. Launch Codex or Claude Code with the plugin directory:
+2. For Codex, register the repository as a local marketplace, then restart Codex and install/enable **Spotify Ads API** from the plugin directory:
    ```bash
-   codex --plugin-dir /path/to/ads-claude-plugin
+   codex plugin marketplace add /path/to/ads-agentic-tools
    ```
 
+   The repository includes `.claude-plugin/marketplace.json`, which Codex can read as a Claude-style marketplace.
+
+3. For Claude Code, launch with the plugin directory:
    ```bash
-   claude --plugin-dir /path/to/ads-claude-plugin
+   claude --plugin-dir /path/to/ads-agentic-tools
    ```
 
-   The `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
+   The Claude `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
    ```bash
-   alias codex-ads='codex --plugin-dir /path/to/ads-claude-plugin'
-   alias claude-ads='claude --plugin-dir /path/to/ads-claude-plugin'
+   alias claude-ads='claude --plugin-dir /path/to/ads-agentic-tools'
    ```
 
 ### Configure

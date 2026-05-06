@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
+A Codex and Claude Code plugin package for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
 
-Install with: `claude --plugin-dir /path/to/sp-ads-api-plugin`
+Install with: `claude --plugin-dir /path/to/ads-agentic-tools`
 
 ## Architecture
 

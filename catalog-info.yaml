@@ -1,7 +1,7 @@
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
-  name: ads-claude-plugin
+  name: ads-agentic-tools
 spec:
   type: resource
   owner: ads-api

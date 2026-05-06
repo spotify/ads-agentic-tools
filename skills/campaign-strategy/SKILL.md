@@ -46,7 +46,9 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - Run `POST /estimates/bid` when bid guidance is needed or the user has not supplied a bid cap.
 
 5. Apply execution conventions.
-   - Read settings from `.codex/spotify-ads-api.local.md`, falling back to `.claude/spotify-ads-api.local.md`.
+   - Read settings from the active platform settings file:
+     - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`.
+     - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`.
    - Base URL: `https://api-partner.spotify.com/ads/v3`.
    - Include `Authorization: Bearer $TOKEN` and `X-Spotify-Ads-Sdk: <sdk-product>/<plugin-version>` on API calls.
    - Include `-w "\nHTTP_STATUS:%{http_code}"` on all API curl commands except file uploads.
