@@ -1,20 +1,14 @@
 {
   "name": "spotify-ads-api-local",
-  "interface": {
-    "displayName": "Spotify Ads API (local)",
-    "shortDescription": "Local install source for the Spotify Ads API plugin"
+  "owner": {
+    "name": "Spotify"
   },
+  "description": "Local install source for the Spotify Ads API plugin",
   "plugins": [
     {
       "name": "spotify-ads-api",
-      "source": {
-        "source": "local",
-        "path": "./"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
+      "source": "./",
+      "description": "Manage Spotify ad campaigns with natural language",
       "category": "Productivity"
     }
   ]

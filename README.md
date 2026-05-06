@@ -29,7 +29,7 @@ claude plugin i spotify-ads-api
    codex plugin marketplace add /path/to/ads-agentic-tools
    ```
 
-   The repository includes `.claude-plugin/marketplace.json`, which Codex can read as a Claude-style marketplace.
+   The repository includes a shared `.claude-plugin/marketplace.json` marketplace. Claude Code requires that location, and Codex can read it as a Claude-style marketplace, so the repo does not duplicate marketplace metadata under `.agents/plugins/`.
 
 3. For Claude Code, launch with the plugin directory:
    ```bash

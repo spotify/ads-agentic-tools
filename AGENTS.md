@@ -23,6 +23,12 @@ The plugin follows the agent plugin structure with four component types:
 - **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
 - **Settings** (`.codex/spotify-ads-api.local.md`, with fallback to `.claude/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
 
+## Marketplace Compatibility
+
+Keep `.claude-plugin/marketplace.json` as the shared local marketplace for Claude Code and Codex. Claude Code requires marketplace metadata at that path and requires a top-level `owner`. Codex can also read Claude-style marketplace files from that path. To keep the file portable, use the stricter Claude-valid schema: local plugin sources should use the relative string form (`"source": "./"` for this repo-root plugin), and Codex-only marketplace fields such as top-level `interface` or plugin `policy` should not be added to this shared file.
+
+Do not add a duplicate `.agents/plugins/marketplace.json` unless the user explicitly asks for a Codex-only catalog. If a Codex-only catalog is added later, it must include Codex's `policy.installation`, `policy.authentication`, `category`, and `source.path` metadata and be kept in sync with the shared marketplace.
+
 ## API Conventions to Know
 
 These non-obvious API quirks were discovered through real testing and are critical when modifying any command or agent:
