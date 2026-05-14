@@ -372,7 +372,23 @@ Search for artist targets.
 **Response:** 200 — `ArtistTargetsResponse`
 
 ### GET /targets/genres
-Get available genre targets.
+Get available genre targets. Returns all genres in one response (no pagination).
+
+**Query Parameters:**
+- `ids` (array of string, optional) — Filter by specific genre IDs. Repeated format: `ids=rock&ids=blues`
+- `q` (string, optional) — Free-text search (e.g. `q=rock` returns "Indie Rock" and "Rock")
+
+**No other parameters accepted.** This endpoint rejects `limit`, `offset`, and any parameter not listed above with a 400 error.
+
+**Response:** 200 — `GenreTargetsResponse`
+```json
+{
+  "genres": [
+    { "id": "rock", "name": "Rock" },
+    { "id": "blues", "name": "Blues" }
+  ]
+}
+```
 
 ### GET /targets/geos
 Get available geographic targets. Use this to look up geo IDs for ad set targeting.
@@ -442,7 +458,37 @@ Get available geographic targets. Use this to look up geo IDs for ad set targeti
 ```
 
 ### GET /targets/interests
-Get available interest targets.
+Get available interest targets. Returns all interests in one response (no pagination). Interests are organized into categories with optional subtargets.
+
+**Query Parameters:**
+- `ids` (array of string, optional) — Filter by specific interest IDs. Repeated format: `ids=<uuid>&ids=<uuid>`
+- `q` (string, optional) — Free-text search across both parent interests and subtargets (e.g. `q=gaming` returns "Video Gaming" with its subtargets)
+
+**No other parameters accepted.** This endpoint rejects `limit`, `offset`, and any parameter not listed above with a 400 error.
+
+**Response:** 200 — `InterestTargetsResponse`
+```json
+{
+  "interests": null,
+  "interests_with_subtargets": [
+    {
+      "id": "f08153d9-2dd0-406b-a6b0-f57d6634c221",
+      "name": "Books and Literature",
+      "subtargets": []
+    },
+    {
+      "id": "55500376-9877-4caf-9bb0-b456f214f8ca",
+      "name": "Video Gaming",
+      "subtargets": [
+        { "id": "040d47eb-7ade-46d9-b15e-3bd9982f8f02", "name": "eSports" },
+        { "id": "cdab187f-abb7-4b29-a45f-58b77cbe25d0", "name": "Role-Playing Video Games" }
+      ]
+    }
+  ]
+}
+```
+
+**Note:** The `interests` key is always null. Actual data is in `interests_with_subtargets`. Both parent IDs and subtarget IDs are valid values for `interest_ids` in ad set targets.
 
 ### GET /targets/languages
 Get available language targets.
@@ -487,19 +533,128 @@ Create a new ad account under a business.
 
 ## Estimates
 
-### POST /estimates/audience
-Estimate audience size based on targeting parameters.
+**Important:** These are top-level endpoints — they are NOT nested under `/ad_accounts/{ad_account_id}/`. The `ad_account_id` is passed in the request body instead.
 
-**Request Body:** `AudienceEstimateRequest` — Same targeting structure as ad set targets.
+### POST /estimates/audience
+Estimate audience size, reach, impressions, CPM range, and delivery likelihood based on ad set parameters.
+
+**Request Body:** `AudienceEstimateRequest`
+
+Required fields:
+- `ad_account_id` (uuid, required) — The ad account to estimate for
+- `start_date` (ISO 8601 datetime, required) — Campaign start date
+- `asset_format` (string, required) — AUDIO, VIDEO, or IMAGE
+- `objective` (string, required) — REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, or EVEN_IMPRESSION_DELIVERY
+- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, or UNSET
+- `bid_micro_amount` (int64, required) — Bid cap in micro-units
+- `budget` (object, required) — Requires `micro_amount`, `type` (DAILY or LIFETIME), **and `currency`** (e.g. "USD"). Note: this differs from ad set budget which does not require `currency`.
+- `targets` (object, required) — Same Targets structure as ad set creation
+
+Optional fields:
+- `end_date` (ISO 8601 datetime) — Campaign end date
+- `frequency_caps` (array) — Frequency cap objects
+- `category` (string) — Ad category code
+- `video_delivery_formats` (object) — For VIDEO format
+
+```json
+{
+  "ad_account_id": "ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a",
+  "start_date": "2026-01-15T00:00:00Z",
+  "end_date": "2026-02-15T23:59:59Z",
+  "asset_format": "AUDIO",
+  "objective": "REACH",
+  "bid_strategy": "MAX_BID",
+  "bid_micro_amount": 15000000,
+  "budget": {
+    "micro_amount": 5000000,
+    "type": "DAILY",
+    "currency": "USD"
+  },
+  "frequency_caps": [
+    { "frequency_unit": "WEEK", "frequency_period": 1, "max_impressions": 2 }
+  ],
+  "targets": {
+    "age_ranges": [{ "min": 18, "max": 44 }],
+    "geo_targets": { "country_code": "US" },
+    "platforms": ["ANDROID", "DESKTOP", "IOS"],
+    "placements": ["MUSIC"],
+    "interest_ids": ["f08153d9-2dd0-406b-a6b0-f57d6634c221"]
+  }
+}
+```
 
 **Response:** 200 — `AudienceEstimateResponse`
+```json
+{
+  "audience_forecast": [
+    {
+      "forecast_type": "DAILY",
+      "estimated_reach_min": 300,
+      "estimated_reach_max": 700,
+      "estimated_impressions_min": 300,
+      "estimated_impressions_max": 700,
+      "estimated_frequency_min": 1.0,
+      "estimated_frequency_max": 2.3,
+      "estimated_cpm_min": 6076000,
+      "estimated_cpm_max": 14177000,
+      "projected_unique_users": 493,
+      "raw_unique_users": 421697
+    }
+  ],
+  "bid_suggestion": {
+    "bid_estimate_min": 5878000,
+    "bid_estimate_max": 7053000,
+    "cost_model": "CPM",
+    "currency": "USD"
+  },
+  "likely_to_deliver_budget": true
+}
+```
+
+`audience_forecast` returns up to 3 entries (DAILY, WEEKLY, MONTHLY) for DAILY budgets, or 1 entry (LIFETIME) for LIFETIME budgets. `raw_unique_users` is the exact count from the past 7 days; `projected_unique_users` is adjusted for frequency caps and budget.
 
 ### POST /estimates/bid
 Get recommended bid range based on ad set parameters.
 
 **Request Body:** `BidEstimateRequest`
 
+Required fields:
+- `asset_format` (string, required) — AUDIO, VIDEO, or IMAGE
+- `objective` (string, required) — REACH, CLICKS, etc.
+- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, or UNSET
+- `currency` (string, required) — e.g. "USD"
+- `targets` (object, required) — Same Targets structure as ad set creation
+
+Optional fields:
+- `frequency_caps` (array) — Frequency cap objects
+- `category` (string) — Ad category code
+
+```json
+{
+  "asset_format": "AUDIO",
+  "objective": "REACH",
+  "bid_strategy": "MAX_BID",
+  "currency": "USD",
+  "targets": {
+    "age_ranges": [{ "min": 18, "max": 44 }],
+    "geo_targets": { "country_code": "US" },
+    "platforms": ["ANDROID", "DESKTOP", "IOS"],
+    "placements": ["MUSIC"]
+  }
+}
+```
+
 **Response:** 200 — `BidEstimateResponse`
+```json
+{
+  "bid_estimate_min": 8014566,
+  "bid_estimate_max": 9795581,
+  "cost_model": "CPM",
+  "currency": "USD"
+}
+```
+
+Bid amounts are in micro-units. Divide by 1,000,000 for dollar values (e.g. 8014566 = ~$8.01 CPM).
 
 ---
 

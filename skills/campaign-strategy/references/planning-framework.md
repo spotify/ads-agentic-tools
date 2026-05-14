@@ -28,12 +28,14 @@ Start with the broadest targeting that is still commercially relevant, then narr
 - **Behavioral/contextual targeting:** validate available IDs before using them. Prefer light contextual alignment over narrow behavioral targeting for reach campaigns.
 
 Relevant target endpoints:
-- `GET /targets/geos`
-- `GET /targets/interests`
-- `GET /targets/genres`
-- `GET /targets/artists`
-- `GET /targets/playlists`
-- `GET /targets/languages`
+- `GET /targets/geos` — supports `country_code` (required), `q`, `ids`, `limit`, `offset`
+- `GET /targets/interests` — supports `q` and `ids` only. Returns `interests_with_subtargets` array (the `interests` key is always null). Both parent IDs and subtarget IDs are valid for `interest_ids`.
+- `GET /targets/genres` — supports `q` and `ids` only. Returns `genres` array.
+- `GET /targets/artists` — supports `q` and `artist_ids` only
+- `GET /targets/playlists` — supports `q` only
+- `GET /targets/languages` — no documented parameters
+
+**Only `/targets/geos` accepts `limit` and `offset`.** All other target endpoints reject pagination parameters with a 400 error. They return the full list in one response.
 
 ## Structure Rules
 
@@ -60,6 +62,45 @@ Prefer ad rotation when only the message differs:
 - Run `POST /estimates/audience` for every recommended ad set before presenting the final executable structure when credentials are available.
 - For reach, use `PACING_EVEN` and a frequency cap such as 2 impressions per user per week unless the user needs urgency.
 - If the forecast says the ad set is too small or unlikely to deliver, broaden in this order: geo, age, platforms, placements, then remove optional interest/genre filters.
+
+**Estimate endpoints are top-level** — use `POST /estimates/audience` and `POST /estimates/bid`, NOT `/ad_accounts/{id}/estimates/...`. The `ad_account_id` goes in the request body.
+
+`POST /estimates/audience` required body:
+```json
+{
+  "ad_account_id": "<from settings>",
+  "start_date": "2026-01-15T00:00:00Z",
+  "end_date": "2026-02-15T23:59:59Z",
+  "asset_format": "AUDIO",
+  "objective": "REACH",
+  "bid_strategy": "MAX_BID",
+  "bid_micro_amount": 15000000,
+  "budget": {
+    "micro_amount": 5000000,
+    "type": "DAILY",
+    "currency": "USD"
+  },
+  "frequency_caps": [
+    { "frequency_unit": "WEEK", "frequency_period": 1, "max_impressions": 2 }
+  ],
+  "targets": { "...same Targets as ad set..." }
+}
+```
+
+All 8 fields (`ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget`, `targets`) are required. The `budget` object requires `currency` (e.g. "USD") in addition to `micro_amount` and `type`.
+
+`POST /estimates/bid` required body:
+```json
+{
+  "asset_format": "AUDIO",
+  "objective": "REACH",
+  "bid_strategy": "MAX_BID",
+  "currency": "USD",
+  "targets": { "...same Targets as ad set..." }
+}
+```
+
+All 5 fields (`asset_format`, `objective`, `bid_strategy`, `currency`, `targets`) are required.
 
 ## Creative and Asset Guidance
 

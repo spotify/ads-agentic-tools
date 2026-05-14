@@ -41,9 +41,9 @@ If budget, dates, or market are missing, make a conservative recommendation and 
 4. Validate API targetability.
    - Fetch valid ad categories from `GET /ad_categories`; use the closest exact category code.
    - Look up every requested geo with `GET /targets/geos?country_code=<code>&q=<query>&limit=20`; never fall back to country-only without saying so.
-   - Use only targeting dimensions available in the Ads API. If recommending interests, genres, artists, playlists, or languages, validate them with the matching target endpoint before presenting IDs.
-   - Before recommending final ad sets, run `POST /estimates/audience` for each ad set when credentials are available.
-   - Run `POST /estimates/bid` when bid guidance is needed or the user has not supplied a bid cap.
+   - Use only targeting dimensions available in the Ads API. If recommending interests, genres, artists, playlists, or languages, validate them with the matching target endpoint before presenting IDs. **Only `/targets/geos` accepts `limit`/`offset` parameters.** All other target endpoints (`/targets/genres`, `/targets/interests`, `/targets/artists`, `/targets/playlists`, `/targets/languages`) accept only `q` and/or `ids` — passing `limit` will cause a 400 error.
+   - Before recommending final ad sets, run `POST /estimates/audience` for each ad set when credentials are available. This is a **top-level endpoint** (not under `/ad_accounts/`) and requires 8 fields in the request body: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget` (including `currency`), and `targets`. See `references/planning-framework.md` for the full request schema.
+   - Run `POST /estimates/bid` when bid guidance is needed or the user has not supplied a bid cap. This is also a **top-level endpoint** requiring: `asset_format`, `objective`, `bid_strategy`, `currency`, and `targets`.
 
 5. Apply execution conventions.
    - Read settings from the active platform settings file:
