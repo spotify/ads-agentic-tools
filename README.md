@@ -87,6 +87,10 @@ Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained acce
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
 | `/spotify-ads-api:assets` | Upload, list, and manage creative assets |
 | `/spotify-ads-api:dashboard` | Quick performance overview of active campaigns |
+| `/spotify-ads-api:monitor` | Diagnose pacing, delivery, stalled campaigns, and underdelivery issues |
+| `/spotify-ads-api:export` | Export campaign hierarchy, targeting, budget, and optional metrics to CSV |
+| `/spotify-ads-api:bulk` | Apply batch pause, resume, budget, delivery, archive, and creative-swap workflows |
+| `/spotify-ads-api:clone` | Clone campaigns or ad sets with optional date, budget, name, or targeting changes |
 
 ## Natural Language Examples
 
@@ -100,6 +104,10 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Build me a complete audio campaign targeting US listeners aged 25-44"
 - "Plan the best Spotify campaign structure for this product page"
 - "Use these creative assets to recommend targeting and ad sets"
+- "Clone last quarter's campaign and move the dates to next month"
+- "Export all campaigns with metrics for the last 30 days"
+- "Check which active campaigns are underpacing"
+- "Pause all active ad sets in the Summer Sale campaign"
 - "Upload my-audio.mp3 as a creative asset"
 - "How are my campaigns performing?"
 

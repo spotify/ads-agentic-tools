@@ -18,6 +18,10 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/report/` — Aggregate, insight, and async CSV reporting
   - `skills/assets/` — Upload, list, and manage creative assets (audio, video, images)
   - `skills/dashboard/` — Quick performance overview with pacing for active campaigns
+  - `skills/monitor/` — Campaign health diagnostics for pacing, delivery, stalled entities, and underdelivery
+  - `skills/export/` — Denormalized CSV exports of campaigns, ad sets, ads, targeting, budgets, and optional metrics
+  - `skills/bulk/` — Batch pause, resume, budget, delivery, archive, and creative-swap workflows
+  - `skills/clone/` — Clone campaigns or ad sets by reading the source hierarchy and recreating entities with modifications
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
