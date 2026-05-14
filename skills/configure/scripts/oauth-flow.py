@@ -61,7 +61,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html")
             self.end_headers()
             self.wfile.write(b"<html><body><h2>Authorization successful!</h2>"
-                             b"<p>You can close this tab and return to Claude Code.</p></body></html>")
+                             b"<p>You can close this tab and return to your CLI.</p></body></html>")
         else:
             self.send_response(400)
             self.send_header("Content-Type", "text/html")

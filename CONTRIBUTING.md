@@ -4,22 +4,29 @@ We'd love to get patches from you!
 
 ## Getting Started
 
-Look for issues labeled [`good first issue`](https://github.com/spotify/ads-claude-plugin/labels/good%20first%20issue) — these are scoped problems that are great for first-time contributors.
+Look for issues labeled [`good first issue`](https://github.com/spotify/ads-agentic-tools/labels/good%20first%20issue) — these are scoped problems that are great for first-time contributors.
 
 ## Building the Project
 
-This is a Claude Code plugin made entirely of markdown files. There is no build step, no package manager, and no compiled code.
+This is a Codex and Claude Code plugin package made mostly of markdown files. There is no build step, no package manager, and no compiled code.
 
 To run the plugin locally:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/spotify/ads-claude-plugin.git
+   git clone https://github.com/spotify/ads-agentic-tools.git
    ```
 
-2. Launch Claude Code with the plugin directory:
+2. Register or launch the plugin locally.
+
+   For Codex:
    ```bash
-   claude --plugin-dir /path/to/ads-claude-plugin
+   codex plugin marketplace add /path/to/ads-agentic-tools
+   ```
+
+   For Claude Code:
+   ```bash
+   claude --plugin-dir /path/to/ads-agentic-tools
    ```
 
 3. Configure credentials:
@@ -52,7 +59,7 @@ There is no automated test suite. Before submitting a pull request:
 
 - All source files are markdown (`.md`). Follow the structure and conventions of existing files.
 - Skills live in `skills/<skill-name>/SKILL.md`.
-- Keep curl commands consistent with the execution pattern described in `CLAUDE.md`.
+- Keep curl commands consistent with the execution pattern described in `AGENTS.md`.
 
 ## Issues
 
@@ -125,7 +132,7 @@ authorship metadata will be preserved.
 ## Documentation
 
 We also welcome improvements to the project documentation or to the existing
-docs. Please file an [issue](https://github.com/spotify/ads-claude-plugin/issues/new).
+docs. Please file an [issue](https://github.com/spotify/ads-agentic-tools/issues/new).
 
 # License
 

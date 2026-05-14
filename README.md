@@ -1,19 +1,19 @@
-# spotify-ads-api
+# Spotify Ads Agentic Tools
 
-A Claude Code plugin that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English. 
+A Codex and Claude Code plugin package that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
 
 Check out our post on the [Spotify Engineering Blog](https://engineering.atspotify.com/2026/5/spotify-ads-api-claude-plugins).
 
 ## Prerequisites
 
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
+- Codex or [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
 - Python 3.8+ (for automated OAuth flow; optional — manual flow available as fallback)
 
 ## Quick Start
 
-### Option A: Install from registry (recommended)
+### Option A: Install from registry (Claude Code)
 
 ```bash
 claude plugin i spotify-ads-api
@@ -23,17 +23,24 @@ claude plugin i spotify-ads-api
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/spotify/ads-claude-plugin.git
+   git clone https://github.com/spotify/ads-agentic-tools.git
    ```
 
-2. Launch Claude Code with the plugin directory:
+2. For Codex, register the repository as a local marketplace, then restart Codex and install/enable **Spotify Ads API** from the plugin directory:
    ```bash
-   claude --plugin-dir /path/to/ads-claude-plugin
+   codex plugin marketplace add /path/to/ads-agentic-tools
    ```
 
-   The `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
+   The repository includes a shared `.claude-plugin/marketplace.json` marketplace. Claude Code requires that location, and Codex can read it as a Claude-style marketplace, so the repo does not duplicate marketplace metadata under `.agents/plugins/`.
+
+3. For Claude Code, launch with the plugin directory:
    ```bash
-   alias claude-ads='claude --plugin-dir /path/to/ads-claude-plugin'
+   claude --plugin-dir /path/to/ads-agentic-tools
+   ```
+
+   The Claude `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
+   ```bash
+   alias claude-ads='claude --plugin-dir /path/to/ads-agentic-tools'
    ```
 
 ### Configure
@@ -75,6 +82,7 @@ Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained acce
 | `/spotify-ads-api:configure` | Set up OAuth credentials, ad account, and preferences |
 | `/spotify-ads-api:campaigns` | List, create, get, or update campaigns |
 | `/spotify-ads-api:ads` | Manage ad sets and ads (list, create, get, update) |
+| `/spotify-ads-api:campaign-strategy` | Plan API-ready campaign structure and targeting from a landing page, business brief, or creative assets |
 | `/spotify-ads-api:build-campaign` | Create a full campaign hierarchy from a plain-text description |
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
 | `/spotify-ads-api:assets` | Upload, list, and manage creative assets |
@@ -90,12 +98,14 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Pause the Summer Sale campaign"
 - "Generate a CSV report of daily spend by campaign for January"
 - "Build me a complete audio campaign targeting US listeners aged 25-44"
+- "Plan the best Spotify campaign structure for this product page"
+- "Use these creative assets to recommend targeting and ad sets"
 - "Upload my-audio.mp3 as a creative asset"
 - "How are my campaigns performing?"
 
 ## Configuration Reference
 
-Settings are stored in `.claude/spotify-ads-api.local.md` (gitignored):
+Settings are stored in `.codex/spotify-ads-api.local.md` on Codex and `.claude/spotify-ads-api.local.md` on Claude. Each platform falls back to the other settings file if its preferred file does not exist. Both paths are gitignored.
 
 | Field | Description | Default |
 |-------|-------------|---------|

@@ -5,6 +5,38 @@ set -uo pipefail
 #
 # Auto-refreshes expired OAuth tokens before API calls
 
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+PLUGIN_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+
+if [ -n "${CODEX_PLUGIN_ROOT:-}" ] && [ -d "${CODEX_PLUGIN_ROOT:-}" ]; then
+  PLUGIN_ROOT="$CODEX_PLUGIN_ROOT"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -d "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  PLUGIN_ROOT="$CLAUDE_PLUGIN_ROOT"
+fi
+
+PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
+
+find_settings_file() {
+  local first_path second_path
+
+  if [ -n "${CODEX_PROJECT_DIR:-}" ]; then
+    first_path="$PROJECT_DIR/.codex/spotify-ads-api.local.md"
+    second_path="$PROJECT_DIR/.claude/spotify-ads-api.local.md"
+  elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
+    first_path="$PROJECT_DIR/.claude/spotify-ads-api.local.md"
+    second_path="$PROJECT_DIR/.codex/spotify-ads-api.local.md"
+  else
+    first_path="$PROJECT_DIR/.codex/spotify-ads-api.local.md"
+    second_path="$PROJECT_DIR/.claude/spotify-ads-api.local.md"
+  fi
+
+  if [ -f "$first_path" ]; then
+    printf '%s\n' "$first_path"
+  elif [ -f "$second_path" ]; then
+    printf '%s\n' "$second_path"
+  fi
+}
+
 # Read all stdin (hook input JSON)
 input=$(cat)
 
@@ -19,7 +51,7 @@ if ! command -v jq &>/dev/null; then
 fi
 
 # Extract the bash command from tool input
-command=$(echo "$input" | jq -r '.tool_input.command // ""')
+command=$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // ""')
 if [[ -z "$command" ]] || [[ "$command" != *"api-partner.spotify.com"* ]]; then
   exit 0
 fi
@@ -29,9 +61,9 @@ modified_command="$command"
 system_message=""
 
 # --- Locate settings file and attempt token refresh ---
-SETTINGS_FILE="${CLAUDE_PROJECT_DIR:-.}/.claude/spotify-ads-api.local.md"
+SETTINGS_FILE="$(find_settings_file || true)"
 
-if [ -f "$SETTINGS_FILE" ]; then
+if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
   # Parse a single value from YAML frontmatter
   get_setting() {
     grep "^${1}:" "$SETTINGS_FILE" | head -1 | sed "s/^${1}: *//" | tr -d '"' | tr -d "'"
@@ -62,7 +94,7 @@ if [ -f "$SETTINGS_FILE" ]; then
     if [ -z "$refresh_token" ] || [ -z "$client_id" ] || [ -z "$client_secret" ]; then
       system_message="Spotify API token may be expired but no refresh credentials are configured. Run /spotify-ads-api:configure to set up OAuth."
     else
-      REFRESH_SCRIPT="${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
+      REFRESH_SCRIPT="${PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
       if refresh_result=$(python3 "$REFRESH_SCRIPT" \
         --client-id "$client_id" \
         --client-secret "$client_secret" \
@@ -88,7 +120,9 @@ if [ -f "$SETTINGS_FILE" ]; then
             update_setting "refresh_token" "$new_refresh" "$SETTINGS_FILE"
           fi
 
-          modified_command="${modified_command//$access_token/$new_token}"
+          if [ -n "$access_token" ]; then
+            modified_command="${modified_command//$access_token/$new_token}"
+          fi
           system_message="Spotify API token was expired and has been refreshed automatically."
         fi
       else

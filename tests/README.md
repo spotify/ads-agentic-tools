@@ -7,7 +7,7 @@ Structured test scenarios for validating the Spotify Ads API plugin.
 1. A Spotify Developer app with OAuth credentials (client ID and secret)
 2. A Spotify Ads ad account
 3. Python 3.8+ (for OAuth script tests)
-4. Claude Code CLI with the plugin installed
+4. Codex or Claude Code CLI with the plugin installed
 
 ## Running Tests
 

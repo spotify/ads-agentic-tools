@@ -7,7 +7,7 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 
 # Spotify Ads API Configuration
 
-Set up or update the plugin's local settings file at `.claude/spotify-ads-api.local.md`.
+Set up or update the plugin's local settings file for the active platform.
 
 ## Modes
 
@@ -19,7 +19,10 @@ Full OAuth 2.0 authorization flow with automatic token refresh.
 
 **Prerequisite:** The user must have added `http://127.0.0.1:8080/callback` as a redirect URI in their app settings at [developer.spotify.com](https://developer.spotify.com/). Remind the user of this before starting the flow.
 
-1. Read existing settings from `.claude/spotify-ads-api.local.md` if it exists.
+1. Choose the active settings file:
+   - Codex: write `.codex/spotify-ads-api.local.md`.
+   - Claude: write `.claude/spotify-ads-api.local.md`.
+   Read that file if it exists. If it does not exist, read the other platform's settings file as defaults, but do not overwrite it unless the user asks.
 
 2. Prompt the user for OAuth credentials using AskUserQuestion:
    - **client_id** (required) — Spotify app client ID from the developer dashboard
@@ -36,8 +39,9 @@ security add-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-se
 4. Attempt the automated OAuth flow by running the helper script:
 
 ```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
 client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
+python3 "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
   --client-id "<client_id>" \
   --client-secret "$client_secret"
 ```
@@ -45,8 +49,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
 If `python3` is not available, try `uv run`:
 
 ```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
 client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
-uv run "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
+uv run "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
   --client-id "<client_id>" \
   --client-secret "$client_secret"
 ```
@@ -68,9 +73,9 @@ uv run "${CLAUDE_PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
      4. If the API calls fail or return empty, ask the user to paste their ad account ID manually.
    - **auto_execute** (optional, default: false) — Whether to execute API calls without confirmation
 
-9. Write the settings file (see Settings File Format below).
+9. Write the active platform settings file (see Settings File Format below).
 
-10. Read `.claude-plugin/plugin.json` to get the plugin `version` and set `SDK_HEADER="X-Spotify-Ads-Sdk: claude-code-plugin/$PLUGIN_VERSION"`.
+10. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex or `.claude-plugin/plugin.json` on Claude. Set `SDK_PRODUCT` to `codex-plugin` on Codex or `claude-code-plugin` on Claude, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`.
 
 11. Verify with a test API call:
 ```bash
@@ -139,7 +144,7 @@ Legacy direct token mode for users who already have an access token.
 
 ## Settings File Format
 
-Write `.claude/spotify-ads-api.local.md` in this exact format:
+Write the active platform settings file in this exact format (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude):
 
 ```markdown
 ---
@@ -173,8 +178,8 @@ Report the test API call result:
 
 ## Security Notes
 
-- The settings file is in `.claude/spotify-ads-api.local.md` which is gitignored via `.claude/*.local.md`.
-- If `.claude/` directory doesn't exist, create it.
+- The settings file is gitignored via `.codex/*.local.md` and `.claude/*.local.md`.
+- If the active settings directory (`.codex/` or `.claude/`) doesn't exist, create it.
 - **client_secret is stored in the macOS Keychain**, not in the settings file. Use `security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w` to retrieve it when needed.
 - Never log or display the full access token or client_secret — show only the last 8 characters for confirmation.
 - Never write client_secret to the settings file or any other plaintext file.
