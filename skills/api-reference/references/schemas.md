@@ -365,3 +365,98 @@ Required: `name`, `granularity`, `dimensions`, `metrics`
   }]
 }
 ```
+
+---
+
+## Estimate Schemas
+
+### AudienceEstimateRequest
+Required: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget`, `targets`
+
+**Important:** `budget` here requires a `currency` field (e.g. "USD") in addition to `micro_amount` and `type`. This differs from the ad set budget which does not require `currency`.
+
+```json
+{
+  "ad_account_id": "uuid",
+  "start_date": "ISO 8601",
+  "end_date": "ISO 8601 (optional)",
+  "asset_format": "AUDIO | VIDEO | IMAGE",
+  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY",
+  "bid_strategy": "MAX_BID | COST_PER_RESULT | UNSET",
+  "bid_micro_amount": 15000000,
+  "budget": {
+    "micro_amount": 5000000,
+    "type": "DAILY | LIFETIME",
+    "currency": "USD"
+  },
+  "frequency_caps": [{"frequency_unit": "WEEK", "frequency_period": 1, "max_impressions": 2}],
+  "targets": { "...": "Targets object (same as ad set)" },
+  "category": "ADV_X_Y (optional)"
+}
+```
+
+### AudienceEstimateResponse
+```json
+{
+  "audience_forecast": [
+    {
+      "forecast_type": "DAILY | WEEKLY | MONTHLY | LIFETIME",
+      "estimated_reach_min": 300,
+      "estimated_reach_max": 700,
+      "estimated_impressions_min": 300,
+      "estimated_impressions_max": 700,
+      "estimated_frequency_min": 1.0,
+      "estimated_frequency_max": 2.3,
+      "estimated_cpm_min": 6076000,
+      "estimated_cpm_max": 14177000,
+      "projected_unique_users": 493,
+      "raw_unique_users": 421697,
+      "recommendation_results": {
+        "show_recommendation": true,
+        "billable_events": 740,
+        "unique_users": 739,
+        "budget": { "micro_amount": 7500094, "currency": "USD" }
+      }
+    }
+  ],
+  "bid_suggestion": {
+    "bid_estimate_min": 5878000,
+    "bid_estimate_max": 7053000,
+    "cost_model": "CPM",
+    "currency": "USD"
+  },
+  "likely_to_deliver_budget": true
+}
+```
+
+**Notes:**
+- DAILY budgets return up to 3 forecast entries (DAILY, WEEKLY, MONTHLY). LIFETIME budgets return 1 entry (LIFETIME).
+- `raw_unique_users` is the exact audience count from the past 7 days without adjustments.
+- `projected_unique_users` is adjusted for frequency caps, budget, and schedule.
+- All monetary values are in micro-units. Divide by 1,000,000 for dollars.
+
+### BidEstimateRequest
+Required: `asset_format`, `objective`, `bid_strategy`, `currency`, `targets`
+```json
+{
+  "asset_format": "AUDIO | VIDEO | IMAGE",
+  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY",
+  "bid_strategy": "MAX_BID | COST_PER_RESULT | UNSET",
+  "currency": "USD",
+  "targets": { "...": "Targets object (same as ad set)" },
+  "frequency_caps": [{"frequency_unit": "WEEK", "frequency_period": 1, "max_impressions": 2}],
+  "category": "ADV_X_Y (optional)"
+}
+```
+
+### BidEstimateResponse
+```json
+{
+  "bid_estimate_min": 8014566,
+  "bid_estimate_max": 9795581,
+  "cost_model": "CPM",
+  "currency": "USD"
+}
+```
+
+Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
