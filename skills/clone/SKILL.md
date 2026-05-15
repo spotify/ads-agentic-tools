@@ -113,6 +113,29 @@ If any asset is ARCHIVED or REJECTED, warn the user and ask whether to skip that
 
 If budget type is LIFETIME and the user changed dates, verify that `end_time` is still provided — LIFETIME budgets require an end time.
 
+#### Audience estimate validation
+
+If targeting, dates, objective, bid, or budget changed for any cloned ad set, run a pre-flight audience estimate before creating it:
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ad_account_id": "<AD_ACCOUNT_ID>",
+    "start_date": "<start_time>",
+    "asset_format": "<AUDIO|VIDEO|IMAGE>",
+    "objective": "<campaign_objective>",
+    "bid_strategy": "<MAX_BID|COST_PER_RESULT|UNSET>",
+    "bid_micro_amount": <bid>,
+    "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
+    "targets": { <SAME_OR_MODIFIED_TARGETS> }
+  }' \
+  "$BASE_URL/estimates/audience"
+```
+
+If the API returns a min-audience-threshold error, pause before creating that ad set and suggest broader targeting or a lower-threshold format.
+
 ### Step 5: Present Clone Plan
 
 Show the full plan with changes highlighted:

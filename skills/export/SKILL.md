@@ -82,7 +82,7 @@ For a single campaign: add `&campaign_ids=$CAMPAIGN_ID`. Paginate with `offset` 
 
 ## Step 3: Fetch Metrics (if requested)
 
-When metrics are included, fetch aggregate reports at each entity level.
+When metrics are included, fetch aggregate reports at each entity level. For a single-campaign export, add `entity_ids=$CAMPAIGN_ID&entity_ids_type=CAMPAIGN` to every report request so the export does not rely on the first unfiltered page containing the requested campaign's metrics.
 
 ### Campaign-level metrics
 
@@ -98,6 +98,7 @@ limit=50"
 ```
 
 If a date range is specified, add `&report_start=<start>&report_end=<end>` and use `granularity=LIFETIME` (date range must be within 90 days).
+Paginate with `continuation_token` if present in the response.
 
 ### Ad set-level metrics
 
@@ -113,7 +114,7 @@ include_parent_entity=true&\
 limit=50"
 ```
 
-Paginate with `continuation_token` if present in the response.
+For a single-campaign export, add `&entity_ids=$CAMPAIGN_ID&entity_ids_type=CAMPAIGN`. Paginate with `continuation_token` if present in the response.
 
 ### Ad-level metrics
 
@@ -129,7 +130,7 @@ include_parent_entity=true&\
 limit=50"
 ```
 
-Paginate with `continuation_token` if present.
+For a single-campaign export, add `&entity_ids=$CAMPAIGN_ID&entity_ids_type=CAMPAIGN`. Paginate with `continuation_token` if present.
 
 ---
 

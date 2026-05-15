@@ -22,9 +22,7 @@
     "defaultPrompt": [
       "Configure my Spotify Ads API credentials.",
       "Show me a dashboard of my active Spotify ad campaigns.",
-      "Create a new Spotify ad campaign targeting US listeners.",
-      "Check which active Spotify campaigns are underpacing.",
-      "Export Spotify campaign performance to CSV."
+      "Create a new Spotify ad campaign targeting US listeners."
     ]
   }
 }

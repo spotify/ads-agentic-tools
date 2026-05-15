@@ -304,7 +304,7 @@ Present table showing ad name, current asset, ad set, delivery status.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?asset_statuses=READY&limit=50&sort_direction=DESC"
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?statuses=READY&limit=50&sort_direction=DESC"
 ```
 
 Present table of available assets filtered to READY status.
