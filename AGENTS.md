@@ -28,9 +28,9 @@ The plugin follows the agent plugin structure with four component types:
 Keep both marketplace files intentional and in sync:
 
 - `.agents/plugins/marketplace.json` is the Codex-facing catalog used by `codex plugin marketplace add spotify/ads-agentic-tools`. It must include Codex's `interface.displayName`, `policy.installation`, `policy.authentication`, `category`, and `source.path` metadata. For this repo-root plugin, `source.path` should stay `"./"`.
-- `.claude-plugin/marketplace.json` is the Claude Code-compatible catalog. Claude Code requires marketplace metadata at that path and requires a top-level `owner`. To keep the file portable, use the stricter Claude-valid schema: local plugin sources should use the relative string form (`"source": "./"` for this repo-root plugin), and Codex-only marketplace fields such as top-level `interface` or plugin `policy` should not be added to this file.
+- `.claude-plugin/marketplace.json` is the Claude Code-compatible catalog. Claude Code requires marketplace metadata at that path and requires a top-level `owner`. To keep the file portable, use the stricter Claude-valid schema: local plugin sources should use the relative string form (`"source": "./"` for this repo-root plugin), and Codex-only marketplace fields such as top-level `interface` or plugin `policy` should not be added to this file. The Claude plugin manifest `.claude-plugin/plugin.json` must also avoid Codex-only manifest fields such as `interface`; keep display metadata in `.codex-plugin/plugin.json` and the Codex marketplace.
 
-When updating marketplace metadata, keep the plugin name, source path, category, description, and display name aligned across the Codex marketplace, Claude marketplace, and plugin manifests.
+When updating marketplace metadata, keep the plugin name, source path, category, description, and user-facing display name aligned wherever each schema supports those fields.
 
 ## API Conventions to Know
 
