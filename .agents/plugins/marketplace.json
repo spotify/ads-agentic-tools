@@ -7,8 +7,8 @@
     {
       "name": "spotify-ads-api",
       "source": {
-        "source": "local",
-        "path": "./"
+        "source": "url",
+        "url": "https://github.com/spotify/ads-agentic-tools.git"
       },
       "policy": {
         "installation": "AVAILABLE",
