@@ -27,7 +27,7 @@ Add the Spotify Ads API plugin marketplace:
 codex plugin marketplace add spotify/ads-agentic-tools
 ```
 
-Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the added marketplace and install/enable **Spotify Ads API**.
+Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the added marketplace and install/enable **Spotify Ads API**.
 
 Use `codex plugin marketplace upgrade` later to refresh installed marketplace sources.
 
@@ -46,7 +46,7 @@ Use a source checkout for local development or testing unreleased changes.
    codex plugin marketplace add "$(pwd)"
    ```
 
-   Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the local marketplace and install/enable **Spotify Ads API**.
+   Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the local marketplace and install/enable **Spotify Ads API**.
 
 3. For Claude Code, launch with the plugin directory:
    ```bash
@@ -58,7 +58,7 @@ Use a source checkout for local development or testing unreleased changes.
    alias claude-ads='claude --plugin-dir /path/to/ads-agentic-tools'
    ```
 
-The repository includes a shared `.claude-plugin/marketplace.json` marketplace. Claude Code requires that location, and Codex can read it as a legacy-compatible marketplace, so the repo does not duplicate marketplace metadata under `.agents/plugins/`.
+The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Both point at the repo-root plugin, so keep them in sync when changing plugin metadata.
 
 ## Configure
 
