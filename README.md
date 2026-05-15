@@ -11,31 +11,46 @@ Check out our post on the [Spotify Engineering Blog](https://engineering.atspoti
 - A Spotify Ads ad account ID
 - Python 3.8+ (for automated OAuth flow; optional — manual flow available as fallback)
 
-## Quick Start
+## Install
 
-### Option A: Install from registry (Claude Code)
+### Claude Code
 
 ```bash
 claude plugin i spotify-ads-api
 ```
 
-### Option B: Install from source (for local development / testing)
+### Codex
+
+Add the Spotify Ads API plugin marketplace:
+
+```bash
+codex plugin marketplace add spotify/ads-agentic-tools
+```
+
+Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the added marketplace and install/enable **Spotify Ads API**.
+
+Use `codex plugin marketplace upgrade` later to refresh installed marketplace sources.
+
+## Install from source
+
+Use a source checkout for local development or testing unreleased changes.
 
 1. Clone the repository:
    ```bash
    git clone https://github.com/spotify/ads-agentic-tools.git
+   cd ads-agentic-tools
    ```
 
-2. For Codex, register the repository as a local marketplace, then restart Codex and install/enable **Spotify Ads API** from the plugin directory:
+2. For Codex, register the checkout as a local marketplace:
    ```bash
-   codex plugin marketplace add /path/to/ads-agentic-tools
+   codex plugin marketplace add "$(pwd)"
    ```
 
-   The repository includes a shared `.claude-plugin/marketplace.json` marketplace. Claude Code requires that location, and Codex can read it as a Claude-style marketplace, so the repo does not duplicate marketplace metadata under `.agents/plugins/`.
+   Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the local marketplace and install/enable **Spotify Ads API**.
 
 3. For Claude Code, launch with the plugin directory:
    ```bash
-   claude --plugin-dir /path/to/ads-agentic-tools
+   claude --plugin-dir "$(pwd)"
    ```
 
    The Claude `--plugin-dir` flag loads the plugin for that session only. You can also add it to a shell alias if you use it frequently:
@@ -43,7 +58,9 @@ claude plugin i spotify-ads-api
    alias claude-ads='claude --plugin-dir /path/to/ads-agentic-tools'
    ```
 
-### Configure
+The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Both point at the repo-root plugin, so keep them in sync when changing plugin metadata.
+
+## Configure
 
 1. **Set up the redirect URI in Spotify Developer Dashboard:**
    - Go to [developer.spotify.com](https://developer.spotify.com/) and open your app settings
@@ -57,7 +74,7 @@ claude plugin i spotify-ads-api
    ```
    This opens your browser for Spotify authorization, then saves your tokens locally with automatic refresh.
 
-2. Create your first campaign:
+3. Create your first campaign:
    ```
    /spotify-ads-api:build-campaign Create an audio campaign called Summer Promo targeting US listeners aged 25-44 with $100/day budget
    ```
