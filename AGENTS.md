@@ -18,6 +18,10 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/report/` — Aggregate, insight, and async CSV reporting
   - `skills/assets/` — Upload, list, and manage creative assets (audio, video, images)
   - `skills/dashboard/` — Quick performance overview with pacing for active campaigns
+  - `skills/monitor/` — Campaign health diagnostics for pacing, delivery, stalled entities, and underdelivery
+  - `skills/export/` — Denormalized CSV exports of campaigns, ad sets, ads, targeting, budgets, and optional metrics
+  - `skills/bulk/` — Batch pause, resume, budget, delivery, archive, and creative-swap workflows
+  - `skills/clone/` — Clone campaigns or ad sets by reading the source hierarchy and recreating entities with modifications
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
@@ -27,7 +31,7 @@ The plugin follows the agent plugin structure with four component types:
 
 Keep both marketplace files intentional and in sync:
 
-- `.agents/plugins/marketplace.json` is the Codex-facing catalog used by `codex plugin marketplace add spotify/ads-agentic-tools`. It must include Codex's `interface.displayName`, `policy.installation`, `policy.authentication`, `category`, and `source.path` metadata. For this repo-root plugin, `source.path` should stay `"./"`.
+- `.agents/plugins/marketplace.json` is the Codex-facing catalog used by `codex plugin marketplace add spotify/ads-agentic-tools`. It must include Codex's `interface.displayName`, `policy.installation`, `policy.authentication`, and `category` metadata. Because this plugin lives at the repository root, use a Git-backed root plugin source (`"source": "url"` with the repository URL) instead of a local `source.path` of `"./"`; Codex treats that local root path as empty and skips the plugin.
 - `.claude-plugin/marketplace.json` is the Claude Code-compatible catalog. Claude Code requires marketplace metadata at that path and requires a top-level `owner`. To keep the file portable, use the stricter Claude-valid schema: local plugin sources should use the relative string form (`"source": "./"` for this repo-root plugin), and Codex-only marketplace fields such as top-level `interface` or plugin `policy` should not be added to this file. The Claude plugin manifest `.claude-plugin/plugin.json` must also avoid Codex-only manifest fields such as `interface`; keep display metadata in `.codex-plugin/plugin.json` and the Codex marketplace.
 
 When updating marketplace metadata, keep the plugin name, source path, category, description, and user-facing display name aligned wherever each schema supports those fields.
