@@ -32,7 +32,7 @@ use the defaults noted below. If a required field cannot be inferred, ask the us
 | name | yes | — |
 | objective | yes | REACH |
 
-Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`
+Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`, `PODCAST_STREAMS`, `APP_INSTALLS`, `WEBSITE_VISITS`
 
 ### Ad set-level fields (one or more)
 
@@ -43,10 +43,10 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | end_time | required if LIFETIME | — | ISO 8601 UTC |
 | budget.micro_amount | yes | — | Dollar amount x 1,000,000 |
 | budget.type | yes | DAILY | `DAILY` or `LIFETIME` |
-| asset_format | yes | AUDIO | `AUDIO`, `VIDEO`, or `IMAGE` |
+| asset_format | yes | AUDIO | `AUDIO`, `VIDEO`, `IMAGE`, or `CATALOG` |
 | category | yes | — | Valid `ADV_X_Y` code (fetch from `GET /ad_categories` if needed) |
-| bid_strategy | yes | MAX_BID | Plain string: `MAX_BID`, `COST_PER_RESULT`, or `UNSET` |
-| bid_micro_amount | yes with MAX_BID | 15000000 | Bid cap in micro-units |
+| bid_strategy | yes | MAX_BID | Plain string: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET` |
+| bid_micro_amount | yes with MAX_BID/COST_PER_RESULT | 15000000 | Bid cap in micro-units. Not required with AUTOBID. |
 | pacing | no | PACING_EVEN | `PACING_EVEN` or `PACING_ASAP` |
 | delivery | no | ON | `ON` or `OFF` |
 | targets.age_ranges | yes | [{"min":18,"max":54}] | Array of `{min, max}` objects |
@@ -97,9 +97,9 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
     "start_date": "<start_time>",
-    "asset_format": "<AUDIO|VIDEO|IMAGE>",
+    "asset_format": "<AUDIO|VIDEO|IMAGE|CATALOG>",
     "objective": "<campaign_objective>",
-    "bid_strategy": "<MAX_BID|COST_PER_RESULT|UNSET>",
+    "bid_strategy": "<MAX_BID|COST_PER_RESULT|AUTOBID|UNSET>",
     "bid_micro_amount": <bid>,
     "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
     "targets": { <same targets object as the ad set> }
@@ -250,7 +250,7 @@ After all entities are created, display a final summary table:
 
 These are non-obvious API requirements that MUST be followed:
 
-1. **`bid_strategy`** is a plain STRING enum, NOT an object. Valid: `MAX_BID`, `COST_PER_RESULT`, `UNSET`
+1. **`bid_strategy`** is a plain STRING enum, NOT an object. Valid: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, `UNSET`
 2. **`geo_targets`** is a flat object `{"country_code": "US"}`, NOT an array of objects
 3. **`platforms`** valid values are `ANDROID`, `DESKTOP`, `IOS` — NOT "MOBILE" or "CONNECTED_DEVICE"
 4. **`category`** is required on ad sets — must be a valid `ADV_X_Y` code from `GET /ad_categories`

@@ -6,12 +6,15 @@ Use this reference after `campaign-strategy` triggers. Keep the plan tied to the
 
 | User goal | API objective | Default structure |
 | --- | --- | --- |
-| Awareness, launch, store/location awareness, broad message recall | `REACH` | Broad geo, broad age, audio-first, limited ad set splits |
-| Website traffic, learn more, product detail page visits | `CLICKS` | One or two intent-aligned ad sets, clear CTA, landing-page consistency |
-| Video asset distribution, trailer, product demo, visual storytelling | `VIDEO_VIEWS` | Video ad set if asset exists and audience is broad enough |
-| Lead form or high-intent inquiry | `LEAD_GEN` | Use only if the account and destination flow support lead capture |
+| Awareness, launch, store/location awareness, broad message recall | `REACH` | Broad geo, broad age, audio-first, limited ad set splits. MAX_BID only. |
+| Website traffic, learn more, product detail page visits | `CLICKS` | One or two intent-aligned ad sets, clear CTA, landing-page consistency. MAX_BID or COST_PER_RESULT. |
+| Video asset distribution, trailer, product demo, visual storytelling | `VIDEO_VIEWS` | Video ad set if asset exists and audience is broad enough. VIDEO only, no DESKTOP. MUSIC placement only. MAX_BID only. |
+| Lead form or high-intent inquiry | `LEAD_GEN` | Use only if the account and destination flow support lead capture. AUDIO format. MAX_BID only. |
 | Conversion-optimized traffic | `CONVERSIONS` | Use only when conversion setup, measurement, and event destination are known |
-| Even delivery guarantee is more important than reach optimization | `EVEN_IMPRESSION_DELIVERY` | Use only when the user asks for even impression delivery |
+| Even delivery guarantee is more important than reach optimization | `EVEN_IMPRESSION_DELIVERY` | Use only when the user asks for even impression delivery. MAX_BID only. |
+| Podcast listener growth, podcast streams | `PODCAST_STREAMS` | AUDIO format, PODCAST placement. MAX_BID only. |
+| Mobile app installs | `APP_INSTALLS` | IOS or ANDROID only (not both, no DESKTOP). Requires mobile_app_id on ad set. MAX_BID only. |
+| Website visits, drive traffic | `WEBSITE_VISITS` | AUDIO and VIDEO formats. MAX_BID only. |
 
 For reach, avoid splitting by every product feature or service line. Use multiple ads inside one ad set to test messages while keeping delivery scale.
 
@@ -57,7 +60,7 @@ Prefer ad rotation when only the message differs:
 ## Budgets, Bidding, and Forecasting
 
 - Convert dollars to micro-amounts for budgets and bids.
-- Use `MAX_BID` with `bid_micro_amount` unless the user requests automated bidding or an objective-specific strategy.
+- Use `MAX_BID` with `bid_micro_amount` unless the user requests automated bidding. Use `AUTOBID` when the user wants automatic bid optimization (no `bid_micro_amount` required). Use `COST_PER_RESULT` only with the CLICKS objective.
 - Run `POST /estimates/bid` when recommending a bid cap.
 - Run `POST /estimates/audience` for every recommended ad set before presenting the final executable structure when credentials are available.
 - For reach, use `PACING_EVEN` and a frequency cap such as 2 impressions per user per week unless the user needs urgency.

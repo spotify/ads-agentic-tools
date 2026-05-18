@@ -61,7 +61,7 @@ Every CRUD operation on campaigns, ad sets, ads, assets, and audiences is scoped
 - `POST /ad_accounts/{id}/campaigns` — Create campaign (required: name, objective)
 - `GET /ad_accounts/{id}/campaigns` — List campaigns (filterable by status, name, IDs)
 - `GET /ad_accounts/{id}/campaigns/{campaign_id}` — Get campaign by ID
-- `PATCH /ad_accounts/{id}/campaigns/{campaign_id}` — Update campaign (name, status, restricted_ad_category)
+- `PATCH /ad_accounts/{id}/campaigns/{campaign_id}` — Update campaign (name, status)
 
 ### Ad Sets
 - `POST /ad_accounts/{id}/ad_sets` — Create ad set (required: name, start_time, budget, asset_format, targets, bid_strategy)
