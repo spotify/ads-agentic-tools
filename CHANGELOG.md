@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0] - 2026-05-20
+
+### Added
+- Updated the bundled Spotify Ads API v3 OpenAPI spec and regenerated reference docs from the latest API surface
+- Added documentation for `GET /aggregate_reports/totals` to pull deduplicated reach and frequency across campaign, ad set, or ad IDs
+- Added current campaign objectives: `PODCAST_STREAMS`, `APP_INSTALLS`, and `WEBSITE_VISITS`
+- Added current ad set options including `CATALOG` asset format and `AUTOBID` bid strategy
+- Added async report support for optional `insight_dimension` breakdowns with LIFETIME granularity
+
+### Changed
+- Updated campaign strategy, build, clone, and ad set guidance to reflect the latest objective, bidding, and format compatibility rules
+- Clarified aggregate report `SPEND` handling: returned values are already in account currency and should not be divided by 1,000,000
+- Backfilled changelog entries for prior 1.2.0 and 1.3.0 releases
+- Bumped Codex and Claude plugin manifests to version 1.4.0
+
+### Fixed
+- Fixed insight report guidance so `CITY` and the other current `InsightDimensionType` values are treated as valid breakdowns
+- Fixed insight report examples to omit unsupported fields such as `SPEND` and include the required `entity_ids_type=AD_SET`
+- Removed stale campaign fields from reference docs where the latest API spec no longer supports them
+
 ## [1.3.0] - 2026-05-15
 
 ### Added
