@@ -337,7 +337,7 @@ Get aggregated campaign metrics.
 }
 ```
 
-Note: `field_value` is a **float** (e.g., `15234.0`, `0.0`), not a string. `SPEND` values are in micro-amounts — divide by 1,000,000 for dollar values.
+Note: `field_value` is a **float** (e.g., `15234.0`, `0.0`), not a string. Aggregate-report `SPEND` values are already in account currency; do not divide them by 1,000,000.
 
 ### GET /ad_accounts/{ad_account_id}/insight_reports
 Get audience insight breakdowns.
@@ -345,7 +345,11 @@ Get audience insight breakdowns.
 **Query Parameters:**
 - `insight_dimension` (string) — AGE, GENDER, PLATFORM, COUNTRY, CITY, METRO, REGION, FORMAT, AUDIENCE, GENRE, INTERESTS, PLACEMENT, PODCAST_EPISODE_TOPIC, TONE, ACT_AND_SET
 - `fields` (array) — **Uses `fields`, NOT `report_fields`.** Repeated parameter format.
-- `entity_ids` (array of uuid)
+  Insight reports do not allow `E_CPCL`, `FREQUENCY`, `OFF_SPOTIFY_IMPRESSIONS`, `PAID_LISTENS_FREQUENCY`, `SKIPS`, `SPEND`, `STARTS`, or `UNMUTES`.
+- `entity_ids` (array of uuid, optional) — Insight reports currently support one ID at a time.
+- `entity_ids_type` (string, required when `entity_ids` is set) — Use `AD_SET` for insight reports.
+- `statuses` (array, optional) — Filter by ad set status.
+- `entity_status_type` (string, required when statuses are set) — Use `AD_SET` for insight reports.
 
 **Response:** 200 — `AudienceInsightResponse`
 

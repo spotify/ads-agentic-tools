@@ -81,16 +81,21 @@ Get audience insight breakdowns.
 
 Prompt for:
 - **insight_dimension** — `AGE`, `GENDER`, `PLATFORM`, `COUNTRY`, `CITY`, `METRO`, `REGION`, `FORMAT`, `AUDIENCE`, `GENRE`, `INTERESTS`, `PLACEMENT`, `PODCAST_EPISODE_TOPIC`, `TONE`, `ACT_AND_SET`
-- **fields** — Metrics to include (same `fields` param as aggregate, repeated format)
-- **entity_ids** — Campaign or ad set IDs to analyze
+- **fields** — Metrics to include. Use repeated `fields` params. Insight reports do not allow
+  `E_CPCL`, `FREQUENCY`, `OFF_SPOTIFY_IMPRESSIONS`, `PAID_LISTENS_FREQUENCY`,
+  `SKIPS`, `SPEND`, `STARTS`, or `UNMUTES`.
+- **entity_ids** — One ad set ID to analyze
+- **entity_ids_type** — Required when `entity_ids` is set; use `AD_SET` for insight reports
+- **statuses** + **entity_status_type** (optional; use `AD_SET` for insight reports)
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/insight_reports?\
 insight_dimension=GENDER&\
-fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&\
-entity_ids=$ENTITY_IDS"
+fields=IMPRESSIONS&fields=CLICKS&fields=CTR&\
+entity_ids=$ENTITY_IDS&\
+entity_ids_type=AD_SET"
 ```
 
 Format results showing the breakdown by the selected dimension.

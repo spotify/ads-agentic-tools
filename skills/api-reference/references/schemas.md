@@ -322,7 +322,7 @@ Required: `asset_type`, `name`
 
 **Notes:**
 - `field_value` is a **float**, not a string. Zero values appear as `0.0`.
-- `SPEND` values are in micro-amounts — divide by 1,000,000 for dollars.
+- Aggregate-report `SPEND` values are already in account currency; do not divide them by 1,000,000.
 - Do NOT use async report metric names (`AD_COMPLETES`, `CPM`, `IMPRESSIONS_ON_SPOTIFY`) — use `COMPLETES`, `IMPRESSIONS` instead.
 
 ### CreateAsyncReportRequest
