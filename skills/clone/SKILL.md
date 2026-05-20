@@ -124,9 +124,9 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
     "start_date": "<start_time>",
-    "asset_format": "<AUDIO|VIDEO|IMAGE>",
+    "asset_format": "<AUDIO|VIDEO|IMAGE|CATALOG>",
     "objective": "<campaign_objective>",
-    "bid_strategy": "<MAX_BID|COST_PER_RESULT|UNSET>",
+    "bid_strategy": "<MAX_BID|COST_PER_RESULT|AUTOBID|UNSET>",
     "bid_micro_amount": <bid>,
     "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
     "targets": { <SAME_OR_MODIFIED_TARGETS> }
@@ -316,7 +316,7 @@ Same summary format as campaign clone, but without the campaign row.
 
 | Entity | Fields Copied | Fields Generated/Modified |
 |--------|---------------|---------------------------|
-| Campaign | `objective`, `purchase_order`, `restricted_ad_category` | `name` (appended " (Copy)"), new `id` |
+| Campaign | `objective`, `purchase_order` | `name` (appended " (Copy)"), new `id` |
 | Ad Set | `asset_format`, `category`, `targets`, `bid_strategy`, `bid_micro_amount`, `pacing`, `frequency_caps` | `name`, `campaign_id`, `start_time`, `end_time`, `budget`, new `id` |
 | Ad | `tagline`, `advertiser_name`, `assets`, `call_to_action`, `third_party_tracking` | `name` (kept same), `ad_set_id`, new `id` |
 

@@ -7,9 +7,6 @@
 - `ACTIVE`
 - `PAUSED`
 - `ARCHIVED`
-- `AGENT_CONTROLLED`
-- `ACTIVE_RESTRICTED`
-- `PENDING_ADVERTISER_REVIEW`
 - `UNRECOGNIZED`
 
 ### CampaignDerivedStatus
@@ -18,17 +15,19 @@
 - `READY`
 - `COMPLETED`
 - `PENDING_APPROVAL`
-- `PENDING_ADVERTISER_APPROVAL`
 - `STOPPED`
 - `UNKNOWN`
 
 ### OptimizationPrefs (Campaign Objective)
-- `REACH`
-- `EVEN_IMPRESSION_DELIVERY`
-- `CLICKS`
-- `VIDEO_VIEWS`
-- `CONVERSIONS`
-- `LEAD_GEN`
+- `REACH` — Maximize unique listeners who hear or see the ad. AUDIO and VIDEO formats. MAX_BID only.
+- `EVEN_IMPRESSION_DELIVERY` — Default. Distributes impressions evenly across the flight. All asset formats. MAX_BID only.
+- `CLICKS` — Drive users to a landing page. AUDIO and VIDEO. MAX_BID or COST_PER_RESULT.
+- `VIDEO_VIEWS` — Completed video views. VIDEO only, no DESKTOP. MUSIC placement only. MAX_BID only.
+- `CONVERSIONS` — Conversion-optimized traffic.
+- `LEAD_GEN` — Lead generation. AUDIO format. MAX_BID only.
+- `PODCAST_STREAMS` — Podcast streams. AUDIO format. MAX_BID only.
+- `APP_INSTALLS` — Mobile app installs. IOS or ANDROID only (not both, no DESKTOP). Requires mobile_app_id. MAX_BID only.
+- `WEBSITE_VISITS` — Website visits. AUDIO and VIDEO formats. MAX_BID only.
 
 ---
 
@@ -59,7 +58,8 @@
 **Important:** This is a plain **string enum**, NOT an object. Use as `"bid_strategy": "MAX_BID"`.
 - `MAX_BID` — The `bid_micro_amount` acts as a bid cap (maximum CPM). **This is the typical default.** Always set `bid_micro_amount` when using MAX_BID.
 - `COST_PER_RESULT` — Only compatible with the CLICKS campaign objective. The `bid_micro_amount` acts as a target Cost Per Click.
-- `UNSET` — Let the system handle bidding automatically. Use when bid cap is not needed (e.g., LIFETIME budgets).
+- `AUTOBID` — Bids are automatically set to optimize delivery. `bid_micro_amount` is not required.
+- `UNSET` — Pre-auction ad sets will not have a bid strategy set.
 
 ### BudgetType
 - `DAILY`
@@ -145,7 +145,7 @@ Used with the `fields` query parameter on aggregate and insight report endpoints
 **Important:** These are different from AsyncReportMetric values. Do NOT use async metric names (like `AD_COMPLETES`, `CPM`) in aggregate reports.
 
 - `IMPRESSIONS`
-- `SPEND` — in micro-amounts (divide by 1,000,000 for dollars)
+- `SPEND` — aggregate report values are already in account currency; do not divide by 1,000,000
 - `CLICKS`
 - `REACH`
 - `FREQUENCY`
@@ -215,11 +215,21 @@ Used with the `fields` query parameter on aggregate and insight report endpoints
 - `ARCHIVED`
 
 ### InsightDimensionType
+- `ACT_AND_SET`
+- `AGE`
+- `AUDIENCE`
+- `CITY`
+- `COUNTRY`
+- `FORMAT`
 - `GENDER`
-- `PLATFORM`
-- `LOCATION`
-- `ARTIST`
 - `GENRE`
+- `INTERESTS`
+- `METRO`
+- `PLACEMENT`
+- `PLATFORM`
+- `PODCAST_EPISODE_TOPIC`
+- `REGION`
+- `TONE`
 
 ---
 

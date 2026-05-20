@@ -10,9 +10,8 @@ Create a new campaign.
 
 **Request Body:** `CreateCampaignRequest`
 - `name` (string, 2-200 chars, required)
-- `objective` (string, required) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN
+- `objective` (string, required) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS
 - `purchase_order` (string, optional)
-- `restricted_ad_category` (string, optional)
 - `measurement_partner` (string, optional)
 
 **Response:** 201 — `CampaignResponse`
@@ -59,7 +58,6 @@ Update a campaign. Minimum 1 property required.
 **Request Body:** `UpdateCampaignRequest`
 - `name` (string, 2-200 chars, optional)
 - `status` (string, optional) — ACTIVE, PAUSED, ARCHIVED
-- `restricted_ad_category` (string, optional)
 
 **Response:** 200 — `CampaignResponse`
 
@@ -81,11 +79,11 @@ Create a new ad set within a campaign.
 - `budget` (object, required):
   - `micro_amount` (int64, required) — Budget in micro-units ($1 = 1000000)
   - `type` (string, required) — DAILY or LIFETIME
-- `asset_format` (string, required) — AUDIO, VIDEO, or IMAGE
+- `asset_format` (string, required) — AUDIO, VIDEO, IMAGE, or CATALOG
 - `category` (string, **required**) — Ad category code (e.g. `ADV_1_2`). Fetch valid values from `GET /ad_categories`
 - `targets` (object, required) — See Targeting section. **Note:** `geo_targets` is a flat object `{"country_code":"US"}`, NOT an array. `platforms` valid values are `ANDROID`, `DESKTOP`, `IOS`.
-- `bid_strategy` (string, required) — Plain string enum: `MAX_BID`, `COST_PER_RESULT`, or `UNSET`. **Not an object.**
-- `bid_micro_amount` (int64, required with MAX_BID) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 bid cap = `15000000`
+- `bid_strategy` (string, required) — Plain string enum: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. **Not an object.**
+- `bid_micro_amount` (int64, required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 bid cap = `15000000`
 - `promotion` (object, optional) — Promotion configuration
 - `frequency_caps` (array, optional) — Array of `{frequency_unit, frequency_period, max_impressions}` objects
 - `pacing` (string, optional) — PACING_EVEN or PACING_ACCELERATED
@@ -286,6 +284,19 @@ Delete an audience.
 
 ## Reports
 
+### GET /ad_accounts/{ad_account_id}/aggregate_reports/totals
+Get deduplicated metrics aggregated across a set of campaigns, ad sets, or ads. Reach and frequency are deduplicated across all specified entities.
+
+**Query Parameters:**
+- `entity_type` (string, required) — `CAMPAIGN`, `AD_SET`, or `AD` (AD_ACCOUNT not supported)
+- `entity_ids` (array of uuid, required, max 50) — Entity IDs to aggregate across (repeated format)
+- `granularity` (string, required) — `LIFETIME` or `DAY` (HOUR not supported)
+- `fields` (array, required) — `IMPRESSIONS`, `CLICKS`, `CTR`, `REACH`, `FREQUENCY` (repeated format)
+- `report_start` (ISO 8601, required for DAY, optional for LIFETIME)
+- `report_end` (ISO 8601, required for DAY, optional for LIFETIME)
+
+**Response:** 200 — `AggregatedTotalsResponse`
+
 ### GET /ad_accounts/{ad_account_id}/aggregate_reports
 Get aggregated campaign metrics.
 
@@ -326,15 +337,19 @@ Get aggregated campaign metrics.
 }
 ```
 
-Note: `field_value` is a **float** (e.g., `15234.0`, `0.0`), not a string. `SPEND` values are in micro-amounts — divide by 1,000,000 for dollar values.
+Note: `field_value` is a **float** (e.g., `15234.0`, `0.0`), not a string. Aggregate-report `SPEND` values are already in account currency; do not divide them by 1,000,000.
 
 ### GET /ad_accounts/{ad_account_id}/insight_reports
 Get audience insight breakdowns.
 
 **Query Parameters:**
-- `insight_dimension` (string) — GENDER, PLATFORM, LOCATION, ARTIST, GENRE
+- `insight_dimension` (string) — AGE, GENDER, PLATFORM, COUNTRY, CITY, METRO, REGION, FORMAT, AUDIENCE, GENRE, INTERESTS, PLACEMENT, PODCAST_EPISODE_TOPIC, TONE, ACT_AND_SET
 - `fields` (array) — **Uses `fields`, NOT `report_fields`.** Repeated parameter format.
-- `entity_ids` (array of uuid)
+  Insight reports do not allow `E_CPCL`, `FREQUENCY`, `OFF_SPOTIFY_IMPRESSIONS`, `PAID_LISTENS_FREQUENCY`, `SKIPS`, `SPEND`, `STARTS`, or `UNMUTES`.
+- `entity_ids` (array of uuid, optional) — Insight reports currently support one ID at a time.
+- `entity_ids_type` (string, required when `entity_ids` is set) — Use `AD_SET` for insight reports.
+- `statuses` (array, optional) — Filter by ad set status.
+- `entity_status_type` (string, required when statuses are set) — Use `AD_SET` for insight reports.
 
 **Response:** 200 — `AudienceInsightResponse`
 
@@ -350,6 +365,7 @@ Create an asynchronous CSV report.
 - `campaign_ids` (array of uuid, optional)
 - `report_start` (ISO 8601, required if granularity=DAY)
 - `report_end` (ISO 8601, optional)
+- `insight_dimension` (string, optional) — Break down by delivery insight: AGE, GENDER, COUNTRY, CITY, METRO, REGION, FORMAT, AUDIENCE, GENRE, INTERESTS, PLACEMENT, PODCAST_EPISODE_TOPIC, TONE, ACT_AND_SET. Only supported with LIFETIME granularity.
 
 **Response:** 201 — `AsyncReportResponse`
 
@@ -543,10 +559,10 @@ Estimate audience size, reach, impressions, CPM range, and delivery likelihood b
 Required fields:
 - `ad_account_id` (uuid, required) — The ad account to estimate for
 - `start_date` (ISO 8601 datetime, required) — Campaign start date
-- `asset_format` (string, required) — AUDIO, VIDEO, or IMAGE
-- `objective` (string, required) — REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, or EVEN_IMPRESSION_DELIVERY
-- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, or UNSET
-- `bid_micro_amount` (int64, required) — Bid cap in micro-units
+- `asset_format` (string, required) — AUDIO, VIDEO, IMAGE, or CATALOG
+- `objective` (string, required) — REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, or WEBSITE_VISITS
+- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, AUTOBID, or UNSET
+- `bid_micro_amount` (int64, required with MAX_BID/COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units
 - `budget` (object, required) — Requires `micro_amount`, `type` (DAILY or LIFETIME), **and `currency`** (e.g. "USD"). Note: this differs from ad set budget which does not require `currency`.
 - `targets` (object, required) — Same Targets structure as ad set creation
 
@@ -619,9 +635,9 @@ Get recommended bid range based on ad set parameters.
 **Request Body:** `BidEstimateRequest`
 
 Required fields:
-- `asset_format` (string, required) — AUDIO, VIDEO, or IMAGE
-- `objective` (string, required) — REACH, CLICKS, etc.
-- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, or UNSET
+- `asset_format` (string, required) — AUDIO, VIDEO, IMAGE, or CATALOG
+- `objective` (string, required) — REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, or WEBSITE_VISITS
+- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, AUTOBID, or UNSET
 - `currency` (string, required) — e.g. "USD"
 - `targets` (object, required) — Same Targets structure as ad set creation
 
