@@ -32,7 +32,7 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - For restricted categories such as healthcare, finance, alcohol, gambling, politics, or medicine, add a policy note and keep targeting/copy conservative.
 
 3. Build the campaign strategy.
-   - Choose the campaign objective from API enums: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, or `EVEN_IMPRESSION_DELIVERY`.
+   - Choose the campaign objective from API enums: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`, `PODCAST_STREAMS`, `APP_INSTALLS`, or `WEBSITE_VISITS`.
    - For reach or local awareness, prefer one broad ad set over many narrow splits. Add a second ad set only when it controls a meaningful geo, format, budget, or message difference.
    - Put creative/message variations inside ads, not separate ad sets, unless targeting or format differs.
    - Choose asset format from available assets and the goal. Use AUDIO as the default reach format when no strong video asset exists. Add VIDEO only when video assets are available and the budget can support a separate format test.

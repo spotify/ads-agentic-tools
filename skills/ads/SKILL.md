@@ -43,7 +43,7 @@ Prompt for required fields:
 - **start_time** (ISO 8601 datetime)
 - **end_time** (ISO 8601 — **required if budget type is LIFETIME**)
 - **budget** — ask for dollar amount and type (DAILY/LIFETIME), convert to micro_amount
-- **asset_format** (AUDIO, VIDEO, IMAGE)
+- **asset_format** (AUDIO, VIDEO, IMAGE, CATALOG)
 - **category** (required — valid `ADV_X_Y` code, fetch from `GET /ad_categories` if needed)
 - **targets** — ask for targeting preferences:
   - Age range (e.g., 18-34) → `"age_ranges": [{"min": 18, "max": 34}]`
@@ -51,8 +51,8 @@ Prompt for required fields:
   - Genders (optional) → `"genders": ["MALE", "FEMALE", "NON_BINARY"]`
   - Platforms (optional) → `"platforms": ["ANDROID", "DESKTOP", "IOS"]` (**NOT "MOBILE" or "CONNECTED_DEVICE"**)
   - Placements (required) → `"placements": ["MUSIC"]`
-- **bid_strategy** — plain string: `MAX_BID`, `COST_PER_RESULT`, or `UNSET`. Default to `MAX_BID`.
-- **bid_micro_amount** (required with MAX_BID) — ask for the bid cap in dollars, convert to micro-amount. This is the maximum CPM the user is willing to pay. Example: "$15 bid cap" = `15000000`
+- **bid_strategy** — plain string: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. Default to `MAX_BID`.
+- **bid_micro_amount** (required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — ask for the bid cap in dollars, convert to micro-amount. This is the maximum CPM the user is willing to pay. Example: "$15 bid cap" = `15000000`
 
 Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
 
@@ -160,9 +160,9 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
     "start_date": "<start_time>",
-    "asset_format": "<AUDIO|VIDEO|IMAGE>",
+    "asset_format": "<AUDIO|VIDEO|IMAGE|CATALOG>",
     "objective": "<campaign_objective>",
-    "bid_strategy": "<MAX_BID|COST_PER_RESULT|UNSET>",
+    "bid_strategy": "<MAX_BID|COST_PER_RESULT|AUTOBID|UNSET>",
     "bid_micro_amount": <bid>,
     "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
     "targets": { <same targets as above> }

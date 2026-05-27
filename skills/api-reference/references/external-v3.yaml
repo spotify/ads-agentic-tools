@@ -3,7 +3,7 @@ info:
   contact:
     name: Ads API Team
     url: https://developer.spotify.com/documentation/ads-api
-    email: fossboard@spotify.com
+    email: adstudio@spotify.com
   description: The Spotify Ads API.
   title: Ads API
   version: 3.0.0
@@ -35,12 +35,12 @@ tags:
     description: Operations to manage audit logs.
   - name: billing
     description: Operations to manage billing.
+  - name: billing-settings
+    description: Operations to manage billing settings.
   - name: businesses
     description: Operations to manage businesses.
   - name: campaigns
     description: Operations to manage campaigns.
-  - name: client-accounts
-    description: Client Accounts internal endpoints.
   - name: deals
     description: Operations to manage deals.
   - name: drafts
@@ -57,6 +57,8 @@ tags:
     description: Operations to manage Conversion API measurement.
   - name: measurement-datasets
     description: Operations to manage measurement datasets.
+  - name: conversion-lift-study
+    description: Operations to manage conversion lift studies.
   - name: offers
     description: Operations to manage offers.
   - name: partnerships
@@ -69,22 +71,26 @@ tags:
     description: Operations to manage prepay transactions
   - name: pricing
     description: Operations to manage pricing.
+  - name: category-policies
+    description: Operations to query category policies from Policy Manager.
   - name: reports
     description: Operations to manage reporting.
+  - name: tax
+    description: Operations related to tax.
   - name: vat
-    description: Operations to manage vat.
+    description: '[DEPRECATED] VASE-backed VAT validation. Returns a stub (is_valid=false, EX_VAT_SERVICE_UNAVAILABLE); will be removed in v4.'
   - name: promo-codes
     description: Operations to manage promo codes.
   - name: reservations
     description: Operations to manage reservations.
-  - name: salesforce
-    description: Operations to manage Salesforce.
   - name: targets
     description: Operations to manage targeting.
   - name: tests
     description: Operations to manage test data.
   - name: users
     description: Operations to manage users.
+  - name: recommendations
+    description: Operations to manage recommendations.
 paths:
   /ad_accounts/{ad_account_id}:
     get:
@@ -157,6 +163,156 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       summary: Update Ad Account
+      tags:
+        - ad-accounts
+  /ad_accounts/{ad_account_id}/members:
+    post:
+      description: Add a member to an ad account.
+      operationId: addMemberToAdAccount
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberToAdAccountRequest'
+      responses:
+        '200':
+          description: Metadata of user's permission to an ad account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdAccountMemberResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Add a member to an ad account that belongs to a business.
+      tags:
+        - ad-accounts
+    get:
+      description: Get all members in an ad account.
+      operationId: getAdAccountMembers
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      responses:
+        '200':
+          description: A list of AdAccountMemberResponse objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAdAccountMembersResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get all members in an ad account.
+      tags:
+        - ad-accounts
+  /ad_accounts/{ad_account_id}/members/{member_id}:
+    patch:
+      description: Update a member's role within an ad account.
+      operationId: updateAdAccountMemberRole
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/member_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAdAccountMemberRoleRequest'
+      responses:
+        '200':
+          description: Metadata of a business member.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdAccountMemberResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Update an ad account member's role
+      tags:
+        - ad-accounts
+    delete:
+      description: Remove a member from an ad account.
+      operationId: removeAdAccountMember
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/member_id'
+      responses:
+        '204':
+          description: The user has been removed from the ad account.
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Remove a member from an ad account.
       tags:
         - ad-accounts
   /ad_categories:
@@ -506,7 +662,17 @@ paths:
         step: 2
         previous: createCampaign
         next: createAd
-        description: Create an ad set under the campaign. Requires campaign_id from step 1. Pass the returned ad set ID to createAd.
+        description: Second step in the campaign creation flow. Requires a campaign_id from step 1 (createCampaign). Defines targeting, budget, bid strategy, and asset format. Returns an ad_set_id needed for step 3 (createAd).
+      x-spotify-related-endpoints:
+        - operationId: getAdCategories
+          relationship: lookup
+          description: Retrieve valid category codes (ADV_X_Y) for the "category" field. Use GET /ad_categories or GET /ad_categories?q={search} to find the right category by name.
+        - operationId: estimateAudience
+          relationship: validation
+          description: Validate targeting will reach a viable audience before creating the ad set. POST /estimates/audience (not scoped under /ad_accounts/).
+        - operationId: getAssetsByAdAccount
+          relationship: lookup
+          description: List available assets to determine valid asset_format options for the ad account before choosing AUDIO, VIDEO, or IMAGE.
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
       requestBody:
@@ -662,20 +828,17 @@ paths:
           links:
             CreateAdForAdSet:
               operationId: createAd
-              description: |
-                Create an ad under this ad set. Pass the returned ad set ID as ad_set_id in the ad creation request body.
-            GetCreatedAdSet:
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+              requestBody:
+                ad_set_id: $response.body#/id
+              description: Use the ad set id from this response as ad_set_id when creating an ad (step 3 of campaign-creation flow).
+            GetAdSetById:
               operationId: getAdSetById
               parameters:
                 ad_account_id: $request.path.ad_account_id
                 ad_set_id: $response.body#/id
-              description: Retrieve the newly created ad set.
-            UpdateCreatedAdSet:
-              operationId: updateAdSet
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                ad_set_id: $response.body#/id
-              description: Update the ad set.
+              description: Retrieve the newly created ad set by its ID.
         '400':
           description: Bad request.
           content:
@@ -906,7 +1069,7 @@ paths:
         flow: campaign-creation
         step: 3
         previous: createAdSet
-        description: Create an ad under the ad set. Requires ad_set_id from step 2. For AUDIO format, also requires asset IDs from prior uploads.
+        description: Final step in the campaign creation flow. Requires an ad_set_id from step 2 (createAdSet). Attaches creative assets, call-to-action, and advertiser details to the ad set.
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
       requestBody:
@@ -923,14 +1086,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdResponse'
           links:
-            GetCreatedAd:
+            GetAdById:
               operationId: getAd
               parameters:
                 ad_account_id: $request.path.ad_account_id
                 ad_id: $response.body#/id
-              description: Retrieve the newly created ad.
+              description: Retrieve the newly created ad by its ID.
             GetAdSetForAd:
-              $ref: '#/components/links/GetAdSetForAd'
+              operationId: getAdSetById
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                ad_set_id: $response.body#/ad_set_id
+              description: Retrieve the parent ad set for this ad.
         '400':
           description: Bad request.
           content:
@@ -1100,9 +1267,7 @@ paths:
       tags:
         - ads
     patch:
-      description: |
-        Updates the given existing ad. There is no DELETE endpoint for ads.
-        To archive an ad, set status to "ARCHIVED".
+      description: Updates the given existing ad.
       operationId: updateAd
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
@@ -1890,6 +2055,396 @@ paths:
       summary: Update Business
       tags:
         - businesses
+  /businesses/{business_id}/members:
+    post:
+      description: Accept a user invitation to join a business. This will create a new business user profile and add them to the specified business
+      operationId: acceptBusinessInvitation
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+      responses:
+        '200':
+          description: Metadata of user's permission to a business.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessMemberResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Accept a user invitation to join a business.
+      tags:
+        - businesses
+    get:
+      description: |
+        Returns all members and their roles (including invited users) within a given business. Users with expired or cancelled invitations are not returned.
+        By convention, the first member in the response is always the calling user.
+      operationId: getBusinessMembers
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+      responses:
+        '200':
+          description: List of all user permissions for a business.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBusinessMembersResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get business members by business id based on the requesting user's permission
+      tags:
+        - businesses
+  /businesses/{business_id}/members/{member_id}:
+    get:
+      description: Returns a specific member of a business.
+      operationId: getBusinessMember
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+        - $ref: '#/components/parameters/parameters-member_id'
+      responses:
+        '200':
+          description: A member of a business.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessMemberResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get a member of a business
+      tags:
+        - businesses
+    patch:
+      description: Update a member's business user profile.
+      operationId: updateBusinessMember
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+        - $ref: '#/components/parameters/parameters-member_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBusinessMemberRequest'
+      responses:
+        '200':
+          description: Metadata of user's permission to a business.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessMemberResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Update a member's business user profile
+      tags:
+        - businesses
+    delete:
+      description: Remove a member from a business.
+      operationId: removeBusinessMember
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+        - $ref: '#/components/parameters/parameters-member_id'
+      responses:
+        '204':
+          description: The user has been removed from the business and all assets under the business.
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Remove a member from a business
+      tags:
+        - businesses
+  /businesses/{business_id}/members/{member_id}/role:
+    patch:
+      summary: Update a business member's role
+      tags:
+        - businesses
+      description: Update a business member's role
+      operationId: updateBusinessMemberRole
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+        - $ref: '#/components/parameters/parameters-member_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBusinessMemberRoleRequest'
+      responses:
+        '200':
+          description: The business member whose role was updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessMemberResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /businesses/{business_id}/members/{member_id}/ad_accounts:
+    get:
+      summary: Get Ad Accounts for a Business Member
+      description: |
+        Returns ad accounts within a business that a specific member belongs to.
+      operationId: getAdAccountsForBusinessMember
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ad accounts for the given business member.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdAccountsResponse'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Member not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - ad-accounts
+  /businesses/{business_id}/invitations:
+    get:
+      summary: Get pending business invitations
+      description: |
+        Retrieves all pending invitations for a given business. Only users with ADS_BUSINESS_MEMBER_VIEW_ALL permission can access this endpoint.
+      operationId: getPendingInvitations
+      tags:
+        - businesses
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+      responses:
+        '200':
+          description: List of all pending business invitations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPendingBusinessInvitationsResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      description: Invite a user to join a business.
+      operationId: createBusinessInvitation
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBusinessInvitationRequest'
+      responses:
+        '200':
+          description: Metadata of user's invitation to a business.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBusinessInvitationResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Invite a user to a business.
+      tags:
+        - businesses
+  /businesses/{business_id}/invitations/{invitation_id}:
+    delete:
+      description: Cancel a user's invitation to a business.
+      operationId: cancelBusinessInvitation
+      parameters:
+        - $ref: '#/components/parameters/business_id'
+        - $ref: '#/components/parameters/invitation_id'
+      responses:
+        '204':
+          description: The user's invitation to the business has been cancelled.
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Cancel a user's invitation to a business.
+      tags:
+        - businesses
   /businesses/{business_id}/ad_accounts:
     post:
       description: Create Ad Account.
@@ -1929,13 +2484,19 @@ paths:
       operationId: getAdAccountsInBusiness
       parameters:
         - $ref: '#/components/parameters/business_id'
+        - name: type
+          in: query
+          required: false
+          description: Filter ad accounts by type.
+          schema:
+            $ref: '#/components/schemas/Type'
       responses:
         '200':
           description: A list of BusinessPermissionToAdAccount objects
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdAccountsResponse'
+                $ref: '#/components/schemas/BusinessAdAccountsResponse'
         '400':
           description: Bad request.
           content:
@@ -1979,11 +2540,6 @@ paths:
               parameters:
                 ad_account_id: $request.path.ad_account_id
                 campaign_ids: $response.body#/campaign.id
-            GetSalesforceOpportunityForCampaign:
-              operationId: getOpportunitiesByAdAccountId
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                search_key: $response.body#/campaign.salesforceOpportunity
         '400':
           description: Bad request.
           content:
@@ -2006,7 +2562,7 @@ paths:
         flow: campaign-creation
         step: 1
         next: createAdSet
-        description: Create a campaign first. Pass the returned campaign ID to createAdSet.
+        description: First step in the campaign creation flow. Create a campaign to get a campaign_id, which is required when creating ad sets in step 2.
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
       requestBody:
@@ -2025,20 +2581,17 @@ paths:
           links:
             CreateAdSetForCampaign:
               operationId: createAdSet
-              description: |
-                Create an ad set under this campaign. Pass the returned campaign ID as campaign_id in the ad set creation request body.
-            GetCreatedCampaign:
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+              requestBody:
+                campaign_id: $response.body#/id
+              description: Use the campaign id from this response as campaign_id when creating an ad set (step 2 of campaign-creation flow).
+            GetCampaignById:
               operationId: getCampaign
               parameters:
                 ad_account_id: $request.path.ad_account_id
                 campaign_id: $response.body#/id
-              description: Retrieve the newly created campaign.
-            UpdateCreatedCampaign:
-              operationId: updateCampaign
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                campaign_id: $response.body#/id
-              description: Update the campaign (e.g. change status to PAUSED or ARCHIVED).
+              description: Retrieve the newly created campaign by its ID.
         '400':
           description: Bad request.
           content:
@@ -2075,11 +2628,6 @@ paths:
               parameters:
                 ad_account_id: $request.path.ad_account_id
                 campaign_ids: $response.body#/campaigns.id
-            GetSalesforceOpportunityForCampaign:
-              operationId: getOpportunitiesByAdAccountId
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                search_key: $response.body#/campaigns.salesforceOpportunity
         '400':
           description: Bad request.
           content:
@@ -2096,9 +2644,7 @@ paths:
       tags:
         - campaigns
     patch:
-      description: |
-        Updates the given existing campaign. There is no DELETE endpoint for campaigns.
-        To archive a campaign, set status to "ARCHIVED". To pause, set status to "PAUSED".
+      description: Updates the given existing campaign.
       operationId: updateCampaign
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
@@ -2195,38 +2741,6 @@ paths:
       summary: Estimate bid
       tags:
         - estimates
-  /ad_accounts/{ad_account_id}/experiments/{experiment_id}/questions/{survey_question_id}:
-    patch:
-      description: Update a survey question
-      operationId: updateSurveyQuestion
-      parameters:
-        - $ref: '#/components/parameters/ad_account_id'
-        - $ref: '#/components/parameters/experiment_id'
-        - $ref: '#/components/parameters/survey_question_id'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateSurveyQuestionRequest'
-      responses:
-        '204':
-          description: Successfully updated the survey question.
-        '400':
-          description: Bad request.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      summary: Update survey question.
-      tags:
-        - experiments
   /businesses/{business_id}/mobile_apps:
     get:
       description: Get all mobile apps for the business.
@@ -2671,6 +3185,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict.
           content:
             application/json:
               schema:
@@ -3290,6 +3810,98 @@ paths:
       summary: Get Podcast Shows
       tags:
         - podcast-shows
+  /ad_accounts/{ad_account_id}/aggregate_reports/totals:
+    get:
+      operationId: getAggregatedTotals
+      summary: Get Aggregated Totals by Ad Account ID
+      description: |
+        Returns deduplicated metrics aggregated across a set of campaigns, ad sets, or ads.
+        Reach and frequency are deduplicated across all specified entities.
+      tags:
+        - reports
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - name: entity_type
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/EntityDimensionType'
+          description: |
+            The entity level to aggregate across. Supported values are CAMPAIGN, AD_SET, and AD.
+            AD_ACCOUNT is not supported; use the getAggregateReport endpoint for account-level totals.
+          example: AD_SET
+        - name: entity_ids
+          in: query
+          required: true
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 50
+            items:
+              type: string
+              format: uuid
+          description: Entity IDs to aggregate across. Maximum 50 per request.
+          example:
+            - 9a7b6c5d-4e3f-4b21-8c99-bf1c2a3d4e5f
+        - name: granularity
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/TimeDimensionType'
+          description: |
+            Time breakdown granularity. Supported values are LIFETIME and DAY.
+            HOUR is not supported for aggregated totals.
+            report_start and report_end are required when granularity is DAY,
+            and optional when granularity is LIFETIME. When provided on LIFETIME,
+            the returned row reflects the deduplicated total over that date range
+            (max 90 days). When omitted on LIFETIME, the row reflects the full
+            lifetime of the specified entities.
+          example: DAY
+        - $ref: '#/components/parameters/report_start'
+        - $ref: '#/components/parameters/report_end'
+        - name: fields
+          in: query
+          required: true
+          schema:
+            type: array
+            minItems: 1
+            items:
+              $ref: '#/components/schemas/ReportFieldType'
+          description: |
+            Metrics to include in the response. Currently supported values: IMPRESSIONS, CLICKS,
+            CTR, REACH, FREQUENCY. Refer to the Metrics Glossary for definitions:
+            https://developer.spotify.com/documentation/ads-api/guides#metrics-glossary
+          example:
+            - IMPRESSIONS
+            - CLICKS
+            - REACH
+            - FREQUENCY
+            - CTR
+      responses:
+        '200':
+          description: Aggregated totals for the specified entities and time range.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregatedTotalsResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /ad_accounts/{ad_account_id}/aggregate_reports:
     get:
       description: Returns aggregated ad campaign metrics based on requested fields and dimensions.
@@ -3839,6 +4451,10 @@ components:
           $ref: '#/components/schemas/AddressRegion'
         postal_code:
           $ref: '#/components/schemas/AddressPostalCode'
+        region_geo_id:
+          type: string
+          description: GeoNames ID of the billing address region. Optional. When provided, used for stable tax region derivation instead of region name matching.
+          example: '292224'
         tax_region:
           type: string
           description: Geo in ISO alpha-2 country code format for taxable country.
@@ -3852,9 +4468,6 @@ components:
       enum:
         - ACTIVE
         - INACTIVE
-        - GREY_LISTED
-        - SUSPEND_LISTED
-        - BLACKLISTED
       description: The status of the ad account.
     AdAccountRole:
       type: string
@@ -3986,18 +4599,8 @@ components:
             - PAN
             - TAN
             - NZBN
+            - IRD
           description: The tax ID type
-    AdAccountInternalRequestEntity:
-      type: object
-      properties:
-        bill_to_address:
-          $ref: '#/components/schemas/BillingAddress'
-        tax_ids:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdAccountTaxObject'
-        currency_code:
-          $ref: '#/components/schemas/AdAccountCurrency'
     UpdateAdAccountRequest:
       type: object
       properties:
@@ -4009,14 +4612,79 @@ components:
           $ref: '#/components/schemas/BillingAddress'
         tax_id:
           $ref: '#/components/schemas/AdAccountTaxId'
+        tax_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccountTaxObject'
         legal_entity_name:
           $ref: '#/components/schemas/LegalEntityName'
         website:
           $ref: '#/components/schemas/AdAccountWebsite'
-        restricted_ad_category:
-          type: string
-        internal:
-          $ref: '#/components/schemas/AdAccountInternalRequestEntity'
+    Paging:
+      type: object
+      properties:
+        page_size:
+          type: integer
+          format: int32
+        total_results:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        current_page:
+          type: integer
+          format: int32
+    MemberId:
+      type: string
+      description: A unique identifier for a business member.
+      example: 125335bb419b494dbedd31105d56a49a
+    EmailAddress:
+      type: string
+      description: The email address of a user in or invited to a business.
+      example: discovery@gmail.com
+      maxLength: 319
+    AdAccountMemberResponse:
+      type: object
+      properties:
+        member_id:
+          $ref: '#/components/schemas/MemberId'
+        role:
+          $ref: '#/components/schemas/AdAccountRole'
+        name:
+          $ref: '#/components/schemas/Name'
+        email_address:
+          $ref: '#/components/schemas/EmailAddress'
+        created_at:
+          $ref: '#/components/schemas/CreatedAt'
+        updated_at:
+          $ref: '#/components/schemas/UpdatedAt'
+        ad_account_id:
+          $ref: '#/components/schemas/Uuid'
+    GetAdAccountMembersResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        ad_account_members:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccountMemberResponse'
+    AddMemberToAdAccountRequest:
+      type: object
+      required:
+        - member_id
+        - role
+      properties:
+        member_id:
+          $ref: '#/components/schemas/MemberId'
+        role:
+          $ref: '#/components/schemas/AdAccountRole'
+    UpdateAdAccountMemberRoleRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/AdAccountRole'
     AdCategory:
       type: object
       properties:
@@ -4109,11 +4777,24 @@ components:
       type: integer
       format: int64
       description: |
-        Bid amount per 1,000 impressions in micro-units. 1 USD = 1,000,000 micro-units (10^6).
-        Required when bid_strategy is "MAX_BID" (acts as bid cap) or "COST_PER_RESULT"
-        (acts as target cost-per-click). Examples: $10 bid = 10000000, $20 bid = 20000000.
-        Uses the same micro-unit scale as budget.micro_amount.
+        The amount of your bid per 1000 impressions, multiplied by x10 to the 6th power.
+        Behavior of this field depends on the bid_strategy specified. Ex: In order to set a
+        bid of $20, you would specify a bid_micro_amount of 20000000.
       example: 1000000
+      x-spotify-requires:
+        - condition: bid_strategy is MAX_BID
+          required: true
+          description: bid_micro_amount is required when bid_strategy is MAX_BID. Must be greater than 0.
+        - condition: bid_strategy is COST_PER_RESULT
+          required: true
+          description: bid_micro_amount is required when bid_strategy is COST_PER_RESULT. Acts as target cost per click.
+        - condition: bid_strategy is AUTOBID
+          required: false
+          description: bid_micro_amount is not required when bid_strategy is AUTOBID. Bids are set automatically.
+      x-spotify-common-mistakes:
+        - field: bid_micro_amount
+          mistake: Passing the dollar amount directly (e.g., 20 instead of 20000000)
+          correct: Multiply the dollar amount by 1,000,000. For example, $20 = 20000000, $15 = 15000000.
     CostModifier:
       type: object
       description: Cost modifier object containing rate adjustment information.
@@ -4167,10 +4848,13 @@ components:
           $ref: '#/components/schemas/EventTime'
         end_time:
           $ref: '#/components/schemas/EventTime'
+          x-spotify-requires:
+            - condition: budget.type is LIFETIME
+              required: true
+              description: end_time is required when budget type is LIFETIME.
         frequency_caps:
           $ref: '#/components/schemas/AdSetFrequencyCaps'
         bid_micro_amount:
-          x-spotify-requires: Required when bid_strategy is MAX_BID or COST_PER_RESULT
           $ref: '#/components/schemas/BidMicroAmount'
         base_rate_micro_amount:
           type: integer
@@ -4195,11 +4879,59 @@ components:
           $ref: '#/components/schemas/VideoDeliveryFormats'
     AdSetCategory:
       type: string
-      x-spotify-requires: Required on creation. Obtain valid codes from GET /ad_categories
-      description: |
-        Category ID of the ad set. Required when creating an ad set. Must be a valid
-        ADV_X_Y code obtained from GET /ad_categories. Example: "ADV_1_1".
+      description: Category ID of the ad set.
       example: ADV_1_1
+      x-spotify-enum-descriptions:
+        format: Category codes follow the pattern ADV_{parent}_{sub} where parent is a number 1-34 identifying the industry vertical and sub is the subcategory. There are 297 subcategories across 34 parent categories. Use GET /ad_categories to retrieve the full list with human-readable names, or GET /ad_categories?q={search} to search by name.
+        parent_categories:
+          '1': Automotive
+          '2': Beauty and Grooming
+          '3': Beauty Services
+          '4': Business to Business
+          '5': Careers and Employment
+          '6': Clothing and Fashion
+          '7': Collectibles and Antiques
+          '8': Education and Training
+          '9': Energy, Oil, and Gas
+          '10': Events and Attractions
+          '11': Family and Parenting
+          '12': Finance and Insurance
+          '13': Fitness and Recreation
+          '14': Food and Beverage Services
+          '15': Food and Drink
+          '16': Gambling
+          '17': Government and Non-Profit
+          '18': Home and Garden Products
+          '19': Home and Garden Services
+          '20': Legal Services
+          '21': Media and Entertainment
+          '22': Medicine and Pharmaceuticals
+          '23': Other
+          '24': Pets
+          '25': Politics and Elections
+          '26': Real Estate
+          '27': Relationships and Life Events
+          '28': Religion and Spirituality
+          '29': Retailers
+          '30': Sensitive Other
+          '31': Shipping and Storage
+          '32': Technology
+          '33': Telecommunications
+          '34': Travel
+        common_examples:
+          ADV_32_266: Technology > Apps
+          ADV_21_182: Media and Entertainment > Books and Literature
+          ADV_15_140: Food and Drink > Food
+          ADV_6_44: Clothing and Fashion > Clothing
+          ADV_34_276: Travel > Adventure Travel
+          ADV_1_6: Automotive > Car Manufacturers
+          ADV_29_244: Retailers > Apparel
+          ADV_12_101: Finance and Insurance > Banking
+        restrictions:
+          ADV_15_139: Alcoholic Beverages — requires minimum age targeting of 18+
+          ADV_16_144: Casinos and Gambling — restricted in many countries
+          ADV_16_145: Lotteries and Scratchcards — restricted in many countries
+          ADV_16_147: Sports Betting — restricted in many countries
     CostModel:
       type: string
       description: |
@@ -4218,21 +4950,25 @@ components:
         - AUDIO
         - VIDEO
         - IMAGE
+        - CATALOG
     BudgetRequest:
       x-parent: true
       type: object
-      x-spotify-common-mistakes:
-        - Values are in micro-units, not dollars — multiply dollar amounts by 1,000,000
       description: Users should specify one budget when creating an ad set.
+      x-spotify-common-mistakes:
+        - field: micro_amount
+          mistake: Passing the dollar amount directly (e.g., 250 instead of 250000000)
+          correct: Multiply the dollar amount by 1,000,000. For example, $250 = 250000000, $15 = 15000000.
+        - field: type
+          mistake: Using LIFETIME budget without setting end_time on the ad set
+          correct: LIFETIME budgets require end_time to be set on the parent ad set.
       properties:
         micro_amount:
           type: integer
           format: int64
           description: |
-            Budget amount in micro-units. 1 USD = 1,000,000 micro-units (10^6).
-            To convert dollars to micro-units, multiply the dollar amount by 1,000,000.
-            Examples: $15 = 15000000, $250 = 250000000, $1000 = 1000000000.
-            Uses the same micro-unit scale as bid_micro_amount.
+            Total budget for the ad set multiplied by x10 to the 6th power. Ex: In order to set a
+            budget of $250, you would specify a budget_micro_amount of 250000000.
           example: 15000000
         type:
           type: string
@@ -4322,11 +5058,13 @@ components:
         Strategy for how bids will be applied in the auction. Allowed values:
          - "MAX_BID": The bid_micro_amount will act as a bid cap, meaning the maximum amount paid per 1,000 impressions
          - "COST_PER_RESULT: Currently only comptabile with the CLICKS campaign objective. When used with the CLICKS campaign objective, the bid_micro_amount will act as a target Cost Per Click.
+         - "AUTOBID": Bids are automatically set to optimize delivery.
          - "UNSET": Ad sets that were pre-auction will not have a bid strategy set.
       example: MAX_BID
       enum:
         - COST_PER_RESULT
         - MAX_BID
+        - AUTOBID
     RejectReason:
       type: string
       description: The reason why the ad set was rejected.
@@ -4362,7 +5100,6 @@ components:
       example: ACTIVE
       enum:
         - ACTIVE
-        - ACTIVE_RESTRICTED
         - APPROVED
         - ARCHIVED
         - COMPLETED
@@ -4389,21 +5126,18 @@ components:
           example: 65
     GeoTargets:
       type: object
+      description: Geographical areas to target.
       x-spotify-common-mistakes:
-        - Do not wrap geo_targets in an array — it is a flat object
-        - country_code is a single string, not an array
-      description: |
-        Geographical areas to target. This is a single flat object, not an array.
-        The country_code field is a single string value (e.g. "US"), not an array.
-        One country per ad set. Optionally refine with city_ids, dma_ids, postal_code_ids,
-        or region_ids arrays.
-        Example: {"country_code": "US", "dma_ids": ["500", "503"]}
+        - field: geo_targets
+          mistake: Wrapping geo_targets in an array or nesting country_code inside an extra object
+          correct: 'geo_targets is a flat object, not an array. Use {"geo_targets": {"country_code": "US"}} not [{"country_code": "US"}] and not {"geo_targets": [{"country_code": "US"}]}.'
+        - field: country_code
+          mistake: Using full country name or three-letter code (e.g., "USA" or "United States")
+          correct: Use two-letter ISO 3166-1 alpha-2 codes (e.g., "US", "GB", "DE").
       properties:
         country_code:
           type: string
-          description: |
-            Two-letter ISO country code to target. Single string value, not an array.
-            Only one country can be targeted per ad set.
+          description: Two-letter ISO code of the country to target.
           example: US
         city_ids:
           type: array
@@ -4445,10 +5179,6 @@ components:
         - NON_BINARY
     Platform:
       type: string
-      description: |
-        Device platform to target. Valid values are ANDROID, DESKTOP, and IOS.
-        Note: "MOBILE" and "CONNECTED_DEVICE" are not valid values.
-        If omitted, all platforms are targeted by default.
       enum:
         - ANDROID
         - DESKTOP
@@ -4612,6 +5342,10 @@ components:
         placements:
           type: array
           description: This field is REQUIRED. Indicates surfaces in the client where the ad(s) will be served.
+          x-spotify-requires:
+            - condition: always
+              required: true
+              description: placements is required inside targets when creating an ad set. Must contain at least one of MUSIC or PODCAST.
           items:
             $ref: '#/components/schemas/Placement'
           uniqueItems: true
@@ -4667,6 +5401,10 @@ components:
         - PRE_ROLL
         - MID_ROLL
         - POST_ROLL
+    SKAdEnabled:
+      type: boolean
+      description: Toggle to enable/disable SKAd network tracking for an iOS app id.
+      example: true
     AdSetResponse:
       description: |
         An ad set is the core component of your Ad Studio advertising campaign.
@@ -4674,6 +5412,12 @@ components:
         example, an ad set contains: Information about how, when, and where your campaign runs (e
         .g., start and end dates, budgets, targeting, etc). A single ad set can’t be used across
         multiple campaigns. A single ad set is associated with only one campaign.
+      x-spotify-flow-output:
+        flow: campaign-creation
+        step: 2
+        chaining_field: id
+        pass_to: createAd.ad_set_id
+        description: Extract the "id" field from this response and pass it as "ad_set_id" in the createAd request body (step 3).
       allOf:
         - $ref: '#/components/schemas/AdSetBase'
         - type: object
@@ -4743,15 +5487,44 @@ components:
                 Values: PRE_ROLL, MID_ROLL, POST_ROLL.
               items:
                 $ref: '#/components/schemas/SlotPosition'
+            skad_enabled:
+              $ref: '#/components/schemas/SKAdEnabled'
     AdSetRequestBase:
       description: Represents the base schema that the create and patch request schemas extend.
       type: object
+      x-spotify-defaults:
+        pacing:
+          value: PACING_EVEN
+          description: Defaults to even pacing when omitted.
+        delivery:
+          value: 'ON'
+          description: Defaults to ON (delivering) when omitted.
+        targets.platforms:
+          value:
+            - ANDROID
+            - DESKTOP
+            - IOS
+          description: Defaults to all three platforms when omitted. For APP_INSTALLS objective, only IOS or ANDROID is allowed (one at a time, no DESKTOP).
+        frequency_caps:
+          value:
+            - frequency_unit: DAY
+              frequency_period: 1
+              max_impressions: 5
+            - frequency_unit: WEEK
+              frequency_period: 1
+              max_impressions: 35
+            - frequency_unit: MONTH
+              frequency_period: 1
+              max_impressions: 50
+          description: Default frequency caps when omitted. Limits to 5/day, 35/week, 50/month impressions per user.
+        cost_model:
+          value: CPM
+          description: Defaults to CPM (Cost Per Mille) for standard ad products. The server determines the cost model based on ad product type — most external API users will get CPM.
       allOf:
         - $ref: '#/components/schemas/AdSetBase'
         - type: object
           properties:
             category:
-              deprecated: true
               $ref: '#/components/schemas/AdSetCategory'
             budget:
               $ref: '#/components/schemas/BudgetRequest'
@@ -4793,21 +5566,6 @@ components:
         - END_DATE_TIME
       default: CREATED_AT
       example: CREATED_AT
-    Paging:
-      type: object
-      properties:
-        page_size:
-          type: integer
-          format: int32
-        total_results:
-          type: integer
-          format: int32
-        offset:
-          type: integer
-          format: int32
-        current_page:
-          type: integer
-          format: int32
     AdSetsResponse:
       type: object
       properties:
@@ -4819,23 +5577,28 @@ components:
             $ref: '#/components/schemas/AdSetResponse'
     BidStrategyRequest:
       type: string
-      x-spotify-common-mistakes:
-        - 'Do not wrap in an object like {type: MAX_BID} — pass the string directly'
-        - bid_micro_amount is required when bid_strategy is MAX_BID
       description: |
-        Strategy for how bids will be applied in the auction. This is a plain string
-        enum value, not an object.
-        - "MAX_BID": bid_micro_amount is required and acts as a bid cap (max paid per 1,000 impressions).
-        - "COST_PER_RESULT": Only compatible with CLICKS objective. bid_micro_amount acts as target CPC.
-        - "UNSET": Pre-auction ad sets will not have a bid strategy set.
+        Strategy for how bids will be applied in the auction.
+         - "MAX_BID": the bid_micro_amount will act as a bid cap, meaning the maximum amount paid
+        per 1000 impressions.
+         - "AUTOBID": bids are automatically set to optimize delivery.
       example: MAX_BID
+      x-spotify-common-mistakes:
+        - field: bid_strategy
+          mistake: 'Passing bid_strategy as a nested object (e.g., {"type": "MAX_BID"}) instead of a plain string'
+          correct: 'bid_strategy is a plain string value, not an object. Use "bid_strategy": "MAX_BID" not "bid_strategy": {"type": "MAX_BID"}.'
       enum:
         - COST_PER_RESULT
         - MAX_BID
+        - AUTOBID
         - UNSET
     AdSetCreateRequest:
       description: Represents a create request.
       type: object
+      x-spotify-common-mistakes:
+        - field: campaign_id
+          mistake: Omitting campaign_id or using a non-existent campaign ID
+          correct: campaign_id is required and must reference a campaign created in step 1 of the campaign-creation flow (createCampaign). Use the id field from the createCampaign response.
       allOf:
         - $ref: '#/components/schemas/AdSetRequestBase'
         - type: object
@@ -4948,6 +5711,7 @@ components:
         - CREATED_AT
         - DELIVERY
         - END_TIME
+        - EXTERNAL_ID
         - ID
         - NAME
         - REJECT_REASON
@@ -5025,11 +5789,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/Uuid'
         companion_asset_id:
-          description: |
-            Unique identifier for an IMAGE asset used as the companion display.
-            Required when the ad set's asset_format is AUDIO. Upload the image
-            via POST /ad_accounts/{ad_account_id}/assets first, then reference
-            the returned asset_id here.
+          description: A unique identifier for an IMAGE asset.
           example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
           allOf:
             - $ref: '#/components/schemas/Uuid'
@@ -5070,8 +5830,106 @@ components:
           type: string
           description: Third-party tracking URL.
           example: https://www.example.com/your-landing-page/?utm_campaign=test-campaign&utm_source=email
+    AssetType:
+      type: string
+      enum:
+        - AUDIO
+        - IMAGE
+        - VIDEO
+      description: The type of asset.
+      example: IMAGE
+    AssetMetadata:
+      type: object
+      description: Metadata associated with attached asset_id. Only present in response.
+      properties:
+        asset_type:
+          $ref: '#/components/schemas/AssetType'
+        asset_name:
+          type: string
+          description: Name of attached assetId.
+          example: File name
+        asset_url:
+          type: string
+          format: uri
+          description: URL associated with attached asset_id.
+          example: https://example.com/asset_id
+    Currency:
+      type: string
+      description: Currency should be in ISO 4217 format.
+      example: USD
+      minLength: 3
+      maxLength: 3
+    Price:
+      type: object
+      properties:
+        micro:
+          type: integer
+          format: int64
+          description: |
+            Price multiplied by x10 to the 6th power. Ex: cost of $250, would be a cost_micro of 250000000.
+          example: 250000000
+        currency_code:
+          $ref: '#/components/schemas/Currency'
+    CatalogItem:
+      type: object
+      description: Item within a catalog
+      required:
+        - position
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        asset_id:
+          $ref: '#/components/schemas/Uuid'
+        asset:
+          $ref: '#/components/schemas/AssetMetadata'
+        sku:
+          type: string
+          description: Client defined product ID. Must be unique to a catalog.
+          example: SKU-7415695
+        position:
+          type: integer
+          description: Preferred ordering to display the catalog items in ads.
+          example: 3
+        clickthrough_url:
+          type: string
+          format: uri
+          description: The link to the ads desired landing page.
+          example: https://www.spotify.com
+        price:
+          $ref: '#/components/schemas/Price'
+        display_price:
+          type: string
+          description: Displayable localized price. Only present in response.
+          example: $19.99 USD
+        sale_price:
+          $ref: '#/components/schemas/Price'
+        display_sale_price:
+          type: string
+          description: Displayable localized sale price. Only present in response.
+          example: $14.99 USD
+        tagline:
+          $ref: '#/components/schemas/AdTagline'
+    Catalog:
+      type: object
+      description: Catalog of things to be placed in a carousel type ad. Ad Set asset_format must be set to CATALOG.
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          description: Name given to identify your catalog.
+          example: Holiday Deals
+        catalog_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogItem'
     AdResponse:
       type: object
+      x-spotify-flow-output:
+        flow: campaign-creation
+        step: 3
+        chaining_field: id
+        description: Final step in the campaign creation flow. The "id" field is the ad ID for future reference (updates, status checks, reporting).
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -5119,6 +5977,8 @@ components:
           maxItems: 11
           items:
             $ref: '#/components/schemas/AdThirdPartyTracking'
+        catalog:
+          $ref: '#/components/schemas/Catalog'
     AdsListResponse:
       type: object
       properties:
@@ -5130,10 +5990,11 @@ components:
             $ref: '#/components/schemas/AdResponse'
     AdAssets:
       type: object
-      x-spotify-common-mistakes:
-        - companion_asset_id is required for AUDIO format ads
-        - companion_asset_id must reference an IMAGE asset, not an AUDIO asset
       description: Assets for the ad.
+      x-spotify-common-mistakes:
+        - field: companion_asset_id
+          mistake: Omitting companion_asset_id when the ad set's asset_format is AUDIO
+          correct: companion_asset_id is required for AUDIO format ads. It must be a UUID referencing an IMAGE asset that serves as the companion display image shown alongside the audio ad.
       properties:
         asset_id:
           description: A unique identifier for an AUDIO, VIDEO or IMAGE asset.
@@ -5141,13 +6002,12 @@ components:
           allOf:
             - $ref: '#/components/schemas/Uuid'
         companion_asset_id:
-          x-spotify-requires: Required when asset_format is AUDIO
-          description: |
-            Unique identifier for an IMAGE asset used as the companion display.
-            Required when the ad set's asset_format is AUDIO. Upload the image
-            via POST /ad_accounts/{ad_account_id}/assets first, then reference
-            the returned asset_id here.
+          description: A unique identifier for an IMAGE asset.
           example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
+          x-spotify-requires:
+            - condition: ad set asset_format is AUDIO
+              required: true
+              description: companion_asset_id is required when the parent ad set's asset_format is AUDIO. Must reference an uploaded IMAGE asset.
           allOf:
             - $ref: '#/components/schemas/Uuid'
         logo_asset_id:
@@ -5195,6 +6055,8 @@ components:
             $ref: '#/components/schemas/AdThirdPartyTracking'
         dv_client_code:
           $ref: '#/components/schemas/DVClientCode'
+        catalog:
+          $ref: '#/components/schemas/Catalog'
     AdCallToActionType:
       type: string
       enum:
@@ -5268,6 +6130,13 @@ components:
       example: ENGLISH
     AdCallToActionRequest:
       type: object
+      x-spotify-common-mistakes:
+        - field: key
+          mistake: Using a field named "text" or "type" instead of "key" for the CTA button identifier
+          correct: 'The field is named "key", not "text" or "type". Use "call_to_action": {"key": "SHOP_NOW", "clickthrough_url": "https://example.com"}.'
+        - field: key
+          mistake: Using lowercase or free-form text values (e.g., "shop now", "Learn More")
+          correct: 'The key must be an uppercase enum value: APPLY_NOW, BOOK_NOW, BUY_NOW, BUY_TICKETS, CLICK_NOW, DOWNLOAD, FIND_STORES, GET_COUPON, GET_INFO, LEARN_MORE, LISTEN_NOW, MORE_INFO, ORDER_NOW, PRE_SAVE, SAVE_NOW, SHARE, SHOP_NOW, SIGN_UP, VISIT_PROFILE, VISIT_SITE, WATCH_NOW.'
       properties:
         key:
           $ref: '#/components/schemas/AdCallToActionType'
@@ -5277,17 +6146,24 @@ components:
           type: string
           description: The link to the ads desired landing page.
           example: https://www.spotify.com
-      x-spotify-common-mistakes:
-        - The field is named 'key', not 'type'
-        - The URL field is named 'clickthrough_url', not 'url'
-      description: |
-        Call-to-action button configuration. Important: the button type field is
-        named "key" (not "type"), and the URL field is named "clickthrough_url"
-        (not "url").
-        Example: {"key": "LEARN_MORE", "language": "ENGLISH", "clickthrough_url": "https://example.com"}
+      description: The metadata for the behavior of the call-to-action button.
     CreateAdRequest:
       description: Represents a create request.
       type: object
+      x-spotify-common-mistakes:
+        - field: ad_set_id
+          mistake: Omitting ad_set_id or using a non-existent ad set ID
+          correct: ad_set_id is required and must reference an ad set created in step 2 of the campaign-creation flow (createAdSet). Use the id field from the createAdSet response.
+      x-spotify-defaults:
+        delivery:
+          value: 'ON'
+          description: Defaults to ON (delivering) when omitted.
+        call_to_action.language:
+          value: ENGLISH
+          description: Defaults to ENGLISH when omitted.
+        call_to_action.key:
+          value: LEARN_MORE
+          description: Defaults to LEARN_MORE when omitted.
       allOf:
         - $ref: '#/components/schemas/BaseRequestAdEntity'
         - type: object
@@ -5336,14 +6212,6 @@ components:
             delivery:
               $ref: '#/components/schemas/Delivery'
           minProperties: 1
-    AssetType:
-      type: string
-      enum:
-        - AUDIO
-        - IMAGE
-        - VIDEO
-      description: The type of asset.
-      example: IMAGE
     GeneralAudioType:
       type: string
       example: AUDIO_AD
@@ -5821,9 +6689,9 @@ components:
                 example: PURCHASE
             lookback_days:
               type: integer
-              description: Lookback window for events.
+              description: Lookback window in days for events. Allowed values are 30, 60, 90, or 180.
               minimum: 30
-              maximum: 30
+              maximum: 180
             campaign_ids:
               type: array
               description: Campaign IDs for ad engagement audiences.
@@ -5970,11 +6838,6 @@ components:
       type: string
       description: The display name of a user in or invited to a business. It will be defined for active users, and null for pending users.
       example: John Doe
-    EmailAddress:
-      type: string
-      description: The email address of a user in or invited to a business.
-      example: discovery@gmail.com
-      maxLength: 319
     HasMarketingOptIn:
       type: boolean
       description: Indicates if user has opted into marketing.
@@ -5982,7 +6845,7 @@ components:
       type: object
       required:
         - name
-        - business_type
+        - type
       properties:
         name:
           $ref: '#/components/schemas/BusinessName'
@@ -6001,6 +6864,101 @@ components:
       properties:
         name:
           $ref: '#/components/schemas/BusinessName'
+    BusinessRole:
+      type: string
+      enum:
+        - BUSINESS_ADMIN
+        - BUSINESS_MEMBER
+      description: The role of the user in a business.
+    BusinessInvitationStatus:
+      type: string
+      enum:
+        - ACCEPTED
+        - PENDING
+        - CANCELLED
+      description: Status of a user's permission to a business
+    AdAccountInvitation:
+      type: object
+      required:
+        - ad_account_id
+        - role
+      properties:
+        ad_account_id:
+          $ref: '#/components/schemas/Uuid'
+        role:
+          $ref: '#/components/schemas/AdAccountRole'
+      description: An invitation to join an ad account with a specific role.
+    BusinessMemberResponse:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        role:
+          $ref: '#/components/schemas/BusinessRole'
+        name:
+          $ref: '#/components/schemas/UserFullName'
+        email_address:
+          $ref: '#/components/schemas/EmailAddress'
+        member_id:
+          $ref: '#/components/schemas/MemberId'
+        permission_status:
+          $ref: '#/components/schemas/BusinessInvitationStatus'
+        created_at:
+          $ref: '#/components/schemas/CreatedAt'
+        updated_at:
+          $ref: '#/components/schemas/UpdatedAt'
+        business_id:
+          $ref: '#/components/schemas/Uuid'
+        has_marketing_opt_in:
+          $ref: '#/components/schemas/HasMarketingOptIn'
+        ad_account_invitations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccountInvitation'
+          description: List of ad account invitations included with the business invitation. Empty if no ad account invitations were provided.
+        assigned_ad_accounts:
+          type: integer
+          minimum: 0
+          description: Number of ad accounts a pending member has been invited to or an active member is assigned to. 0 if not assigned to any.
+    GetBusinessMembersResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessMemberResponse'
+    AcceptInvitationRequest:
+      type: object
+      required:
+        - name
+        - email_address
+        - has_marketing_opt_in
+        - invitation_id
+      properties:
+        name:
+          $ref: '#/components/schemas/UserFullName'
+        email_address:
+          $ref: '#/components/schemas/EmailAddress'
+        has_marketing_opt_in:
+          $ref: '#/components/schemas/HasMarketingOptIn'
+        invitation_id:
+          $ref: '#/components/schemas/Uuid'
+    UpdateBusinessMemberRequest:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/UserFullName'
+        email_address:
+          $ref: '#/components/schemas/EmailAddress'
+        has_marketing_opt_in:
+          $ref: '#/components/schemas/HasMarketingOptIn'
+    UpdateBusinessMemberRoleRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/BusinessRole'
     AdAccountsResponse:
       type: object
       properties:
@@ -6010,6 +6968,62 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdAccountResponse'
+    PendingBusinessInvitation:
+      type: object
+      properties:
+        business_invitation_id:
+          type: string
+          format: uuid
+        email_address:
+          $ref: '#/components/schemas/EmailAddress'
+        role:
+          $ref: '#/components/schemas/BusinessRole'
+        ad_account_invitations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccountInvitation'
+    GetPendingBusinessInvitationsResponse:
+      type: object
+      properties:
+        business_invitations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendingBusinessInvitation'
+    CreateBusinessInvitationRequest:
+      type: object
+      required:
+        - email_address
+        - business_role
+      properties:
+        email_address:
+          $ref: '#/components/schemas/EmailAddress'
+        business_role:
+          $ref: '#/components/schemas/BusinessRole'
+        ad_account_invitations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccountInvitation'
+          description: Optional list of ad account invitations to include with the business invitation. If not provided, the user will only have business-level access.
+    CreateBusinessInvitationResponse:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        role:
+          $ref: '#/components/schemas/BusinessRole'
+        email_address:
+          $ref: '#/components/schemas/EmailAddress'
+        invitation_status:
+          $ref: '#/components/schemas/BusinessInvitationStatus'
+        created_at:
+          $ref: '#/components/schemas/CreatedAt'
+        updated_at:
+          $ref: '#/components/schemas/UpdatedAt'
+        ad_account_invitations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccountInvitation'
+          description: List of ad account invitations included with the business invitation. Empty if no ad account invitations were provided.
     Type:
       type: string
       enum:
@@ -6020,9 +7034,15 @@ components:
         - ARTIST
         - MANAGER
         - PUBLISHER
+    BusinessAdAccountsResponse:
+      type: object
+      properties:
+        ad_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdAccountResponse'
     CreateAdAccountRequest:
       allOf:
-        - $ref: '#/components/schemas/AdAccountInternalRequestEntity'
         - type: object
           properties:
             name:
@@ -6050,9 +7070,6 @@ components:
         - ACTIVE
         - PAUSED
         - ARCHIVED
-        - AGENT_CONTROLLED
-        - ACTIVE_RESTRICTED
-        - PENDING_ADVERTISER_REVIEW
         - UNRECOGNIZED
       example: ACTIVE
       description: Current state of campaign.
@@ -6107,6 +7124,16 @@ components:
       default: EVEN_IMPRESSION_DELIVERY
       example: EVEN_IMPRESSION_DELIVERY
       description: 'Deprecated: Use delivery_goal_group and delivery_goal on ad sets instead. Objective for a campaign. UNSET should not be used.'
+      x-spotify-enum-descriptions:
+        REACH: 'Optimize for audience reach — maximize the number of unique listeners who hear or see the ad. Compatible with AUDIO and VIDEO asset formats. Bid strategy: MAX_BID only.'
+        EVEN_IMPRESSION_DELIVERY: 'Default objective. Distributes impressions evenly across the flight. Best for brand awareness campaigns. Compatible with all asset formats. Bid strategy: MAX_BID only.'
+        CLICKS: 'Optimize for clicks — drive users to a landing page. Enables leave-behind ad slots for higher click-through. Compatible with AUDIO and VIDEO. VIDEO must use IN_STREAM delivery format. Bid strategy: MAX_BID or COST_PER_RESULT (COST_PER_RESULT requires LIFETIME budget and PACING_EVEN).'
+        VIDEO_VIEWS: 'Optimize for completed video views. VIDEO asset format only, uses OPT_IN delivery format (embedded in music player). Desktop platform not supported. Placements must be MUSIC only. Bid strategy: MAX_BID only.'
+        PODCAST_STREAMS: 'Optimize for podcast streams. Enables leave-behind ad slots. Compatible with AUDIO format. Bid strategy: MAX_BID only.'
+        APP_INSTALLS: 'Optimize for mobile app installations. Platforms restricted to IOS or ANDROID (not both, and no DESKTOP). Requires mobile_app_id on the ad set. Bid strategy: MAX_BID only.'
+        WEBSITE_VISITS: 'Optimize for website visits. Enables leave-behind ad slots. Compatible with AUDIO and VIDEO formats. Bid strategy: MAX_BID only.'
+        LEAD_GEN: 'Optimize for lead generation. Enables leave-behind ad slots. Compatible with AUDIO format. Bid strategy: MAX_BID only.'
+        UNSET: Should not be used when creating campaigns. Reserved for internal use.
     DeliveryGoalGroup:
       type: string
       enum:
@@ -6119,6 +7146,12 @@ components:
       description: deliveryGoal group grouping selection for a campaign.
     CampaignResponse:
       type: object
+      x-spotify-flow-output:
+        flow: campaign-creation
+        step: 1
+        chaining_field: id
+        pass_to: createAdSet.campaign_id
+        description: Extract the "id" field from this response and pass it as "campaign_id" in the createAdSet request body (step 2).
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -6176,12 +7209,6 @@ components:
         Must be greater than 0 unless use_recommended_bid is true.
       example: 15000000
       minimum: 0
-    Currency:
-      type: string
-      description: Currency should be in ISO 4217 format.
-      example: USD
-      minLength: 3
-      maxLength: 3
     EstimateBudget:
       type: object
       description: Budget used for estimation.
@@ -6195,6 +7222,10 @@ components:
         - currency
         - micro_amount
         - type
+    EstimateTargets:
+      allOf:
+        - $ref: '#/components/schemas/Targets'
+        - type: object
     AudienceEstimateRequest:
       type: object
       properties:
@@ -6217,7 +7248,7 @@ components:
         frequency_caps:
           $ref: '#/components/schemas/AdSetFrequencyCaps'
         targets:
-          $ref: '#/components/schemas/Targets'
+          $ref: '#/components/schemas/EstimateTargets'
         video_delivery_formats:
           $ref: '#/components/schemas/VideoDeliveryFormats'
         category:
@@ -6579,16 +7610,6 @@ components:
         bid_estimate_max: 21000000
         cost_model: CPM
         currency: USD
-    SurveyQuestionText:
-      type: string
-      description: The survey question text.
-      example: Which of the following...
-    UpdateSurveyQuestionRequest:
-      type: object
-      description: Request model for updating a survey question.
-      properties:
-        question_text:
-          $ref: '#/components/schemas/SurveyQuestionText'
     PlatformAppId:
       type: string
       description: The unique identifier of the app, provided by the app platform.
@@ -6636,6 +7657,7 @@ components:
         - KOCHAVA
         - APPS_FLYER
         - ADJUST
+        - BRANCH
     DatasetId:
       type: string
       format: uuid
@@ -6834,6 +7856,42 @@ components:
         - EMAIL
         - PHONE
         - FIRST_NAME
+    SignalEventType:
+      type: string
+      description: Type of signal event.
+      enum:
+        - VIEW
+        - PRODUCT
+        - CHECKOUT
+        - ADDTOCART
+        - PURCHASE
+        - LEAD
+        - ALIAS
+        - SIGNUP
+        - CLICK
+        - CUSTOM_EVENT_1
+        - CUSTOM_EVENT_2
+        - CUSTOM_EVENT_3
+        - CUSTOM_EVENT_4
+        - CUSTOM_EVENT_5
+    FirstEventTime:
+      type: string
+      format: date-time
+      readOnly: true
+      description: |
+        Time when event type was first received. Time should be in ISO 8601 format using Coordinated Universal Time (UTC) with a zero offset: YYYY-MM-DDTHH:MM:SSZ
+        example: "2026-01-23T04:56:07Z"
+    FirstEventTimeEntry:
+      type: object
+      properties:
+        event_type:
+          $ref: '#/components/schemas/SignalEventType'
+        first_event_time:
+          $ref: '#/components/schemas/FirstEventTime'
+    CookieOptIn:
+      type: boolean
+      description: Whether 1p cookie tracking is enabled for this pixel. When false, no first-party cookies will be used for tracking.
+      example: true
     Pixel:
       type: object
       properties:
@@ -6869,6 +7927,13 @@ components:
           $ref: '#/components/schemas/AamOptIn'
         aam_fields:
           $ref: '#/components/schemas/AamFields'
+        events_received:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/FirstEventTimeEntry'
+        cookie_opt_in:
+          $ref: '#/components/schemas/CookieOptIn'
     PixelsResponse:
       type: object
       properties:
@@ -6955,6 +8020,11 @@ components:
           $ref: '#/components/schemas/components-schemas-Name'
         dataset_id:
           $ref: '#/components/schemas/DatasetId'
+        events_received:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/FirstEventTimeEntry'
     UpdateCapiIntegrationRequest:
       type: object
       properties:
@@ -7187,6 +8257,19 @@ components:
         report will be based off of. Both Aggregate and Insight Reports require an
         EntityDimensionType.
       example: AD_SET
+    TimeDimensionType:
+      type: string
+      enum:
+        - DAY
+        - HOUR
+        - LIFETIME
+      description: |
+        TimeDimensionType describes the granularity of the data reported. For example, if DAY
+        is selected, a report will be generated that contains daily aggregated metrics between
+        report_start and report_end dates that are provided in the request. Please note that report_start
+        and report_end dates are not permitted when requesting LIFETIME granularity.
+      default: LIFETIME
+      example: LIFETIME
     ReportFieldType:
       type: string
       x-deprecated-enums:
@@ -7262,19 +8345,66 @@ components:
         - SPEND
         - STARTS
         - UNMUTES
-    TimeDimensionType:
-      type: string
-      enum:
-        - DAY
-        - HOUR
-        - LIFETIME
+    ReportField:
+      type: object
+      description: A report field type and its value.
+      properties:
+        field_type:
+          description: Type of the field that is being requested, i.e., CLICKS, CTR, IMPRESSIONS, etc.
+          allOf:
+            - $ref: '#/components/schemas/ReportFieldType'
+          example: CLICKS
+        field_value:
+          type: number
+          description: |
+            The value for the specified field. This value can be an integer (CLICKS)
+            or float (CTR). To protect user privacy, we present conversion counts as -5 whenever the actual number of conversions is less than 5 and greater than 0.
+          example: 500
+    AggregatedTotalsRow:
+      type: object
       description: |
-        TimeDimensionType describes the granularity of the data reported. For example, if DAY
-        is selected, a report will be generated that contains daily aggregated metrics between
-        report_start and report_end dates that are provided in the request. Please note that report_start
-        and report_end dates are not permitted when requesting LIFETIME granularity.
-      default: LIFETIME
-      example: LIFETIME
+        A single row of aggregated totals collapsed across all specified entities.
+        For LIFETIME: one row. For DAY: one row per day.
+      required:
+        - stats
+      properties:
+        start_time:
+          type: string
+          format: date-time
+          nullable: true
+          description: Start of the time period. Present for DAY granularity only.
+          example: '2025-08-01T00:00:00Z'
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+          description: End of the time period. Present for DAY granularity only.
+          example: '2025-08-02T00:00:00Z'
+        stats:
+          type: array
+          description: Requested metrics aggregated across all entities for this time period.
+          items:
+            $ref: '#/components/schemas/ReportField'
+    AggregatedTotalsResponse:
+      type: object
+      description: |
+        Aggregated totals collapsed across all specified entities.
+        Note: per-day reach values will not sum to LIFETIME reach because
+        reach is deduplicated within each day but not across days.
+      required:
+        - granularity
+        - rows
+      properties:
+        granularity:
+          allOf:
+            - $ref: '#/components/schemas/TimeDimensionType'
+          example: DAY
+        rows:
+          type: array
+          description: |
+            One row for LIFETIME granularity. One row per day for DAY granularity, sorted ascending.
+          items:
+            $ref: '#/components/schemas/AggregatedTotalsRow'
     AdAccountSourceType:
       type: string
       enum:
@@ -7299,11 +8429,9 @@ components:
       description: |
         Ad, Ad Set, and Campaign statuses that are used in report requests as well as responses. Not
         every status is valid for each entity type. The valid statuses for each entity are the following:
-        Ad: APPROVED, ARCHIVED, PENDING, PENDING_APPROVAL, PENDING_ADVERTISER_APPROVAL, REJECTED
-        Ad Set: ACTIVE, APPROVED, ARCHIVED, COMPLETED, PENDING_APPROVAL, PENDING_ADVERTISER_APPROVAL, READY, REJECTED
+        Ad: APPROVED, ARCHIVED, PENDING, PENDING_APPROVAL, REJECTED
+        Ad Set: ACTIVE, APPROVED, ARCHIVED, COMPLETED, PENDING_APPROVAL, READY, REJECTED
         Campaign: ACTIVE, ARCHIVED, PAUSED
-
-        Note: The PENDING_ADVERTISER_APPROVAL status is only available for managed service campaigns.
       type: string
       enum:
         - ACTIVE
@@ -7311,7 +8439,6 @@ components:
         - ARCHIVED
         - PENDING_APPROVAL
         - REJECTED
-        - PENDING_ADVERTISER_APPROVAL
         - PAUSED
         - COMPLETED
         - READY
@@ -7335,21 +8462,6 @@ components:
           type: string
           description: Status of the parent entity.
           example: ACTIVE
-    ReportField:
-      type: object
-      description: A report field type and its value.
-      properties:
-        field_type:
-          description: Type of the field that is being requested, i.e., CLICKS, CTR, IMPRESSIONS, etc.
-          allOf:
-            - $ref: '#/components/schemas/ReportFieldType'
-          example: CLICKS
-        field_value:
-          type: number
-          description: |
-            The value for the specified field. This value can be an integer (CLICKS)
-            or float (CTR). To protect user privacy, we present conversion counts as -5 whenever the actual number of conversions is less than 5 and greater than 0.
-          example: 500
     AggregateReportRow:
       type: object
       description: |
@@ -7550,12 +8662,17 @@ components:
         - ACT_AND_SET
         - AGE
         - AUDIENCE
+        - CITY
         - COUNTRY
         - FORMAT
         - GENDER
         - GENRE
         - INTERESTS
+        - METRO
+        - PLACEMENT
         - PLATFORM
+        - PODCAST_EPISODE_TOPIC
+        - REGION
         - TONE
       description: |
         InsightDimensionType describes the "second-level" insight that a particular report request
@@ -7767,11 +8884,14 @@ components:
           description: |
             Users can define a set of statuses that will be used to filter the primary entity displayed in the report.
             Not every status is valid for each entity type. The valid statuses for each entity are the following:
-            Ad: APPROVED, ARCHIVED, PENDING, PENDING_APPROVAL, REJECTED
-            Ad Set: ACTIVE, APPROVED, ARCHIVED, COMPLETED, PENDING_APPROVAL, READY, REJECTED
-            Campaign: ACTIVE, APPROVED, ARCHIVED, COMPLETED, PENDING_APPROVAL, READY, REJECTED, PAUSED
 
-            Note: The status for the Campaign entity type is not its direct status but is derived from its Ad Sets' statuses.
+            Ad: ACTIVE, PENDING_APPROVAL, REJECTED
+            Ad Set: ACTIVE, COMPLETED, PENDING_APPROVAL, REJECTED
+            Campaign: ACTIVE, COMPLETED, PAUSED, PENDING_APPROVAL, REJECTED, STOPPED
+
+            Note: For the Campaign entity type, most statuses (ACTIVE, COMPLETED, PENDING_APPROVAL, REJECTED, STOPPED)
+            filter by the campaign's derived status, which is derived from its Ad Sets' statuses. PAUSED filters
+            by the campaign's direct status.
           items:
             $ref: '#/components/schemas/AsyncReportEntityStatus'
           example:
@@ -7833,6 +8953,13 @@ components:
                 For example, if the end date is 2021-01-23T00:00:00Z,
                 the report will include the data for the entire day of 2021-01-23 (UTC).
           example: '2024-02-23T00:00:00Z'
+        insight_dimension:
+          $ref: '#/components/schemas/InsightDimensionType'
+          description: |
+            An optional delivery insight dimension to break down the report by. When specified,
+            the report will include a row for each unique value of the insight dimension (e.g., AGE,
+            GENDER, COUNTRY) within the primary entity. Delivery insights are only supported with
+            LIFETIME granularity.
     CreateAsyncReportResponse:
       type: object
       properties:
@@ -8023,6 +9150,12 @@ components:
         $ref: '#/components/schemas/Uuid'
       description: A unique identifier for an Ad Account.
       example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
+    member_id:
+      name: member_id
+      in: path
+      required: true
+      schema:
+        type: string
     q:
       name: q
       in: query
@@ -8118,6 +9251,7 @@ components:
           - UPDATED_AT
           - DV_CLIENT_CODE
           - DELIVERY
+          - EXTERNAL_ID
           - ID
           - METADATAS
           - NAME
@@ -8282,6 +9416,18 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/Uuid'
+    parameters-member_id:
+      name: member_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/MemberId'
+    invitation_id:
+      name: invitation_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
     campaignIds:
       name: campaign_ids
       in: query
@@ -8336,7 +9482,6 @@ components:
           - MEASUREMENT_METADATA
           - DELIVERY_GOAL_GROUP
           - DERIVED_STATUS
-          - RESTRICTED_AD_CATEGORY
       description: Subset of campaign fields to be returned.
       example:
         - NAME
@@ -8353,20 +9498,6 @@ components:
       schema:
         $ref: '#/components/schemas/Uuid'
       required: true
-    experiment_id:
-      name: experiment_id
-      in: path
-      schema:
-        $ref: '#/components/schemas/Uuid'
-      required: true
-    survey_question_id:
-      name: survey_question_id
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/Uuid'
-      description: The unique identifier for the survey question.
-      example: f47ac10b-58cc-4372-a567-0e02b2c3d479
     mobile_app_id:
       name: mobile_app_id
       in: path
@@ -8488,36 +9619,6 @@ components:
         minLength: 2
       description: An ISO 3166-1 alpha-2 country code. Only content that is available in that market will be returned.
       example: US
-    entity_type:
-      name: entity_type
-      in: query
-      required: false
-      x-spotify-include-in-example: true
-      schema:
-        $ref: '#/components/schemas/EntityDimensionType'
-      description: |
-        A reporting dimension for entity-level breakdowns. This field is required if
-        continuation_token is not set.
-      example: AD_SET
-    report_fields:
-      name: fields
-      in: query
-      x-spotify-include-in-example: true
-      required: false
-      schema:
-        type: array
-        default: []
-        items:
-          $ref: '#/components/schemas/ReportFieldType'
-      description: |
-        A list of fields requested in the report. This field is required if continuation_token
-        is not set. Refer to the Metrics Glossary for definitions:
-        https://developer.spotify.com/documentation/ads-api/guides#metrics-glossary
-      example:
-        - IMPRESSIONS
-        - STREAMED_IMPRESSIONS
-        - CLICKS
-        - SPEND
     report_start:
       name: report_start
       in: query
@@ -8570,6 +9671,36 @@ components:
               the report will include the data for the entire day of 2021-01-23 (UTC).
           - HOUR: The report range must be within the last 2 weeks.
         example: '2025-08-02T00:00:00Z'
+    entity_type:
+      name: entity_type
+      in: query
+      required: false
+      x-spotify-include-in-example: true
+      schema:
+        $ref: '#/components/schemas/EntityDimensionType'
+      description: |
+        A reporting dimension for entity-level breakdowns. This field is required if
+        continuation_token is not set.
+      example: AD_SET
+    report_fields:
+      name: fields
+      in: query
+      x-spotify-include-in-example: true
+      required: false
+      schema:
+        type: array
+        default: []
+        items:
+          $ref: '#/components/schemas/ReportFieldType'
+      description: |
+        A list of fields requested in the report. This field is required if continuation_token
+        is not set. Refer to the Metrics Glossary for definitions:
+        https://developer.spotify.com/documentation/ads-api/guides#metrics-glossary
+      example:
+        - IMPRESSIONS
+        - STREAMED_IMPRESSIONS
+        - CLICKS
+        - SPEND
     granularity:
       name: granularity
       in: query
@@ -8776,8 +9907,7 @@ components:
         maximum: 1000
         default: 50
       description: |
-        Limit or page size for a given response. The maximum limit is 50,
-        except for when bulk uploading zip codes, where the maximum limit is 1000.
+        Limit or page size for a given response. The maximum limit is 1000.
       example: 50
     language:
       name: language

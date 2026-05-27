@@ -64,6 +64,28 @@ limit=50"
 
 Format the response as a readable table with stats broken out per entity. Filter out rows with zero impressions for cleaner output.
 
+### `totals`
+Get deduplicated metrics aggregated across multiple campaigns, ad sets, or ads. Reach and frequency are deduplicated across all specified entities.
+
+Prompt for:
+- **entity_type** (required) — `CAMPAIGN`, `AD_SET`, or `AD` (AD_ACCOUNT not supported here; use `aggregate` instead)
+- **entity_ids** (required) — Up to 50 entity IDs to aggregate across
+- **granularity** (required) — `LIFETIME` or `DAY` (HOUR not supported for totals)
+- **fields** (required) — Metrics: `IMPRESSIONS`, `CLICKS`, `CTR`, `REACH`, `FREQUENCY`
+- **report_start** / **report_end** (required for DAY, optional for LIFETIME)
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports/totals?\
+entity_type=AD_SET&\
+entity_ids=$ID1&entity_ids=$ID2&\
+granularity=LIFETIME&\
+fields=IMPRESSIONS&fields=REACH&fields=FREQUENCY"
+```
+
+Format the response showing aggregated stats per time period (one row for LIFETIME, one row per day for DAY).
+
 ### `insights`
 Get audience insight breakdowns.
 
@@ -116,9 +138,10 @@ Prompt for:
 - **report_end** (optional)
 - **campaign_ids** (optional — filter to specific campaigns)
 - **statuses** (optional, default: [ACTIVE])
+- **insight_dimension** (optional) — Break down the report by a delivery insight dimension: `ACT_AND_SET`, `AGE`, `AUDIENCE`, `CITY`, `COUNTRY`, `FORMAT`, `GENDER`, `GENRE`, `INTERESTS`, `METRO`, `PLACEMENT`, `PLATFORM`, `PODCAST_EPISODE_TOPIC`, `REGION`, or `TONE`. Only supported with LIFETIME granularity.
 
 **Async report guardrails:**
-- Async report `dimensions` are entity metadata columns only. Do not use `CITY`, `COUNTRY`, `REGION`, `DMA`, `POSTAL_CODE`, `LOCATION`, `AGE`, `GENDER`, `PLATFORM`, `DEVICE`, or `OS` here; use `insight_reports` for those breakdowns.
+- Async report `dimensions` are entity metadata columns only. Do not put `CITY`, `COUNTRY`, `REGION`, `DMA`, `POSTAL_CODE`, `LOCATION`, `AGE`, `GENDER`, `PLATFORM`, `DEVICE`, or `OS` in `dimensions`; use `insight_dimension` with `granularity=LIFETIME` for async CSV delivery insight breakdowns, or `insight_reports` for direct JSON insight results.
 - Use request fields `dimensions` and `metrics`, not `groupBy`, `fields`, `dateRange`, or `entityType`.
 - If `granularity=DAY`, include `report_start`; use UTC midnight timestamps for date boundaries.
 

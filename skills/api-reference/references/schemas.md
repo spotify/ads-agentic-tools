@@ -44,7 +44,6 @@
   "derived_status": "CampaignDerivedStatus enum",
   "objective": "OptimizationPrefs enum",
   "purchase_order": "string",
-  "restricted_ad_category": "string",
   "measurement_partner": "string",
   "created_at": "ISO 8601",
   "updated_at": "ISO 8601",
@@ -58,9 +57,8 @@ Required: `name`, `objective`
 ```json
 {
   "name": "string (2-200 chars)",
-  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY",
+  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY | PODCAST_STREAMS | APP_INSTALLS | WEBSITE_VISITS",
   "purchase_order": "string (optional)",
-  "restricted_ad_category": "string (optional)",
   "measurement_partner": "string (optional)"
 }
 ```
@@ -70,8 +68,7 @@ Minimum 1 property required.
 ```json
 {
   "name": "string (2-200 chars, optional)",
-  "status": "ACTIVE | PAUSED | ARCHIVED (optional)",
-  "restricted_ad_category": "string (optional)"
+  "status": "ACTIVE | PAUSED | ARCHIVED (optional)"
 }
 ```
 
@@ -93,7 +90,7 @@ Minimum 1 property required.
     "micro_amount": 50000000,
     "type": "DAILY | LIFETIME"
   },
-  "bid_strategy": "MAX_BID | COST_PER_RESULT",
+  "bid_strategy": "MAX_BID | COST_PER_RESULT | AUTOBID",
   "bid_micro_amount": 15000000,
   "targets": { "...": "Targets object" },
   "promotion": { "...": "Promotion object" },
@@ -121,7 +118,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
     "micro_amount": 50000000,
     "type": "DAILY"
   },
-  "asset_format": "AUDIO | VIDEO | IMAGE",
+  "asset_format": "AUDIO | VIDEO | IMAGE | CATALOG",
   "category": "string (required, e.g. ADV_1_2 — fetch valid values from GET /ad_categories)",
   "targets": {
     "age_ranges": [{"min": 18, "max": 34}],
@@ -143,7 +140,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 ```
 
 **Important schema notes:**
-- `bid_strategy` is a **plain string enum** (`MAX_BID`, `COST_PER_RESULT`, `UNSET`), NOT an object.
+- `bid_strategy` is a **plain string enum** (`MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, `UNSET`), NOT an object.
 - `geo_targets` is a **flat object** with a `country_code` string property, NOT an array of objects.
 - `platforms` valid values are `ANDROID`, `DESKTOP`, `IOS` — NOT "MOBILE" or "CONNECTED_DEVICE".
 - `category` is **required** — use a valid `ADV_X_Y` code from the `GET /ad_categories` endpoint.
@@ -287,7 +284,7 @@ Required: `asset_type`, `name`
   "sources": [{ "...": "AudienceSource" }],
   "seed_audience_id": "uuid (for lookalike)",
   "lookalike_audience_ids": ["uuid"],
-  "lookback_days": 30,
+  "lookback_days": 180,
   "campaign_ids": ["uuid"],
   "ad_set_ids": ["uuid"]
 }
@@ -347,11 +344,12 @@ Required: `name`, `granularity`, `dimensions`, `metrics`
   "statuses": ["ACTIVE"],
   "campaign_ids": ["uuid (optional)"],
   "report_start": "ISO 8601 (required if DAY)",
-  "report_end": "ISO 8601 (optional)"
+  "report_end": "ISO 8601 (optional)",
+  "insight_dimension": "ACT_AND_SET | AGE | AUDIENCE | CITY | COUNTRY | FORMAT | GENDER | GENRE | INTERESTS | METRO | PLACEMENT | PLATFORM | PODCAST_EPISODE_TOPIC | REGION | TONE (optional, LIFETIME only)"
 }
 ```
 
-Async report dimensions are entity metadata columns only. Do not use geo, demographic, platform, or audience dimensions such as `CITY`, `COUNTRY`, `REGION`, `GENDER`, `AGE`, `PLATFORM`, or `DEVICE`; those belong to `insight_reports`.
+Async report dimensions are entity metadata columns only. Do not put geo, demographic, platform, or audience dimensions such as `CITY`, `COUNTRY`, `REGION`, `GENDER`, `AGE`, `PLATFORM`, or `DEVICE` in `dimensions`. For async CSV delivery insight breakdowns, set `insight_dimension` with `granularity=LIFETIME`; for direct JSON insight results, use `GET /insight_reports`.
 
 ### AudienceInsightResponse
 ```json
@@ -383,9 +381,9 @@ Required: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strat
   "ad_account_id": "uuid",
   "start_date": "ISO 8601",
   "end_date": "ISO 8601 (optional)",
-  "asset_format": "AUDIO | VIDEO | IMAGE",
-  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY",
-  "bid_strategy": "MAX_BID | COST_PER_RESULT | UNSET",
+  "asset_format": "AUDIO | VIDEO | IMAGE | CATALOG",
+  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY | PODCAST_STREAMS | APP_INSTALLS | WEBSITE_VISITS",
+  "bid_strategy": "MAX_BID | COST_PER_RESULT | AUTOBID | UNSET",
   "bid_micro_amount": 15000000,
   "budget": {
     "micro_amount": 5000000,
@@ -442,9 +440,9 @@ Required: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strat
 Required: `asset_format`, `objective`, `bid_strategy`, `currency`, `targets`
 ```json
 {
-  "asset_format": "AUDIO | VIDEO | IMAGE",
-  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY",
-  "bid_strategy": "MAX_BID | COST_PER_RESULT | UNSET",
+  "asset_format": "AUDIO | VIDEO | IMAGE | CATALOG",
+  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY | PODCAST_STREAMS | APP_INSTALLS | WEBSITE_VISITS",
+  "bid_strategy": "MAX_BID | COST_PER_RESULT | AUTOBID | UNSET",
   "currency": "USD",
   "targets": { "...": "Targets object (same as ad set)" },
   "frequency_caps": [{"frequency_unit": "WEEK", "frequency_period": 1, "max_impressions": 2}],
