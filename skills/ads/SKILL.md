@@ -56,6 +56,16 @@ Prompt for required fields:
 
 Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
 
+**Ad set validation guardrails before any POST:**
+- Never send zero or negative `budget.micro_amount`; ask for a positive budget and convert it to micro-units.
+- Never send `bid_micro_amount: 0` with `MAX_BID` or `COST_PER_RESULT`; ask for a positive bid cap.
+- Do not send `bid_micro_amount` with `bid_strategy=UNSET` unless the API response or user-provided source explicitly requires it.
+- Keep `budget` to `micro_amount` and `type`; do not include `currency` on ad set create payloads.
+- Valid `targets.platforms` values are only `ANDROID`, `DESKTOP`, and `IOS`; never send `WEB`, `MOBILE`, `CONNECTED_DEVICE`, or `ad_platforms`.
+- Do not send `cost_model`, `skippable`, `is_skippable`, or `ad_platforms` in ad set create payloads.
+- Use age ranges with `min >= 18` unless the user has explicitly confirmed a market/category that allows minors.
+- If using `city_ids`, `dma_ids`, `postal_code_ids`, or `region_ids`, include the parent `country_code` in the same `geo_targets` object.
+
 #### Geo-Targeting
 
 **Structure:** `geo_targets` is a **flat object** (NOT an array) with a required `country_code` and optional refinement arrays.

@@ -292,11 +292,12 @@ Get aggregated campaign metrics.
 **Query Parameters:**
 - `entity_type` (string, required) — Entity to report on: `CAMPAIGN`, `AD_SET`, `AD`, or `AD_ACCOUNT`
 - `fields` (array, required) — Metrics to include. **Parameter name is `fields`, NOT `report_fields`.** Must use **repeated parameter format** (`fields=IMPRESSIONS&fields=SPEND`), NOT comma-separated.
-  Valid values: `IMPRESSIONS`, `SPEND`, `CLICKS`, `REACH`, `FREQUENCY`, `LISTENERS`, `NEW_LISTENERS`, `STREAMS`, `COMPLETES`, `COMPLETION_RATE`, `STARTS`, `FIRST_QUARTILES`, `MIDPOINTS`, `THIRD_QUARTILES`, `VIDEO_VIEWS`, `CTR`, `OFF_SPOTIFY_IMPRESSIONS`
-  Note: `CTR` and `CPM` from async reports are NOT valid here. Use `COMPLETES` (not `AD_COMPLETES`).
+  Valid common values: `IMPRESSIONS`, `SPEND`, `CLICKS`, `REACH`, `FREQUENCY`, `LISTENERS`, `NEW_LISTENERS`, `STREAMS`, `COMPLETES`, `COMPLETION_RATE`, `STARTS`, `FIRST_QUARTILES`, `MIDPOINTS`, `THIRD_QUARTILES`, `VIDEO_VIEWS`, `CTR`, `OFF_SPOTIFY_IMPRESSIONS`
+  Conversion-style values include `PAGE_VIEWS`, `LEADS`, `ADD_TO_CART`, `PURCHASES`, `REVENUE`, `RETURN_ON_AD_SPEND`, `AVERAGE_ORDER_VALUE`, `START_CHECKOUT`, and `SIGN_UPS`. Do not invent singular/plural variants.
+  Note: `CPM` from async reports is NOT valid here. Use `COMPLETES` (not `AD_COMPLETES`).
 - `granularity` (string) — `HOUR`, `DAY`, or `LIFETIME` (default: `LIFETIME`)
-- `report_start` (ISO 8601 datetime, optional for LIFETIME)
-- `report_end` (ISO 8601 datetime, optional for LIFETIME)
+- `report_start` (ISO 8601 datetime, required for DAY/HOUR; do not send with LIFETIME)
+- `report_end` (ISO 8601 datetime, required for DAY/HOUR; do not send with LIFETIME)
 - `entity_ids` (array of uuid) — Filter to specific entities (repeated format)
 - `entity_ids_type` (string) — Type of IDs in entity_ids: `CAMPAIGN`, `AD_SET`, `AD`
 - `entity_status_type` (string) — Filter by status
@@ -306,6 +307,8 @@ Get aggregated campaign metrics.
 
 **Granularity constraints:**
 - `LIFETIME` / `DAY`: date range must be within 90 days
+- `LIFETIME`: do not pass `report_start` or `report_end`
+- `DAY`: use UTC midnight timestamps for both `report_start` and `report_end`
 - `HOUR`: date range must be within the last 2 weeks
 
 **Response:** 200 — `AggregateReportResponse`
@@ -326,15 +329,19 @@ Get aggregated campaign metrics.
 }
 ```
 
-Note: `field_value` is a **float** (e.g., `15234.0`, `0.0`), not a string. `SPEND` values are in micro-amounts — divide by 1,000,000 for dollar values.
+Note: `field_value` is a **float** (e.g., `15234.0`, `0.0`), not a string. Aggregate-report `SPEND` values are already in account currency; do not divide them by 1,000,000.
 
 ### GET /ad_accounts/{ad_account_id}/insight_reports
 Get audience insight breakdowns.
 
 **Query Parameters:**
-- `insight_dimension` (string) — GENDER, PLATFORM, LOCATION, ARTIST, GENRE
-- `fields` (array) — **Uses `fields`, NOT `report_fields`.** Repeated parameter format.
-- `entity_ids` (array of uuid)
+- `insight_dimension` (string) — ACT_AND_SET, AGE, AUDIENCE, CITY, COUNTRY, FORMAT, GENDER, GENRE, INTERESTS, METRO, PLACEMENT, PLATFORM, PODCAST_EPISODE_TOPIC, REGION, TONE
+- `fields` (array) — **Uses `fields`, NOT `report_fields`.** Repeated parameter format. Do not use `SPEND` on insight reports.
+- `entity_ids` (array of uuid, optional) — Insight reports currently support one ID at a time.
+- `entity_ids_type` (string, required when `entity_ids` is set) — Use `AD_SET` for insight reports.
+- `entity_status_type` (string, required when statuses are set) — Use `AD_SET` for insight reports.
+
+Do not send `entity_type`, `report_start`, `report_end`, `granularity`, or `limit` on insight reports. `entity_type=AD_SET` does not substitute for `entity_ids_type=AD_SET`. Do not use dimensions such as `LOCATION`, `GEO`, `DMA`, `STATE`, `ZIP`, `POSTAL_CODE`, `MARKET`, `DEVICE`, `OS`, `ARTIST`, `AGE_RANGE`, or `CITY_NAME`.
 
 **Response:** 200 — `AudienceInsightResponse`
 
@@ -350,6 +357,8 @@ Create an asynchronous CSV report.
 - `campaign_ids` (array of uuid, optional)
 - `report_start` (ISO 8601, required if granularity=DAY)
 - `report_end` (ISO 8601, optional)
+
+Async report `dimensions` are entity metadata columns only. Do not use geo, demographic, platform, or audience breakdown dimensions such as `CITY`, `COUNTRY`, `REGION`, `GENDER`, `AGE`, or `PLATFORM`; use `GET /insight_reports` for those.
 
 **Response:** 201 — `AsyncReportResponse`
 

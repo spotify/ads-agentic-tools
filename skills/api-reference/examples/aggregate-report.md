@@ -50,12 +50,12 @@ limit=50"
 
 **Key notes on field values:**
 - `field_value` is a **float** (e.g., `15234.0`, `0.0`), NOT a string.
-- `SPEND` is in micro-amounts. Divide by 1,000,000 for dollar values (4500000.0 = $4.50).
+- `SPEND` from `aggregate_reports` is already in account currency. Do not divide by 1,000,000.
 - Rows with zero impressions are common — filter them out for cleaner output.
 
 ## Get Daily Campaign Metrics with Date Range
 
-When using `DAY` or `LIFETIME` granularity, the date range must be within 90 days.
+When using `DAY` granularity, the date range must be within 90 days and both dates must use UTC midnight timestamps. Do not send date ranges with `LIFETIME`.
 When using `HOUR` granularity, the date range must be within the last 2 weeks.
 
 ```bash
@@ -66,7 +66,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&\
 report_start=2025-01-01T00:00:00Z&\
-report_end=2025-01-31T23:59:59Z&\
+report_end=2025-01-31T00:00:00Z&\
 granularity=DAY&\
 limit=50"
 ```
@@ -112,7 +112,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
     "dimensions": ["CAMPAIGN_NAME", "AD_SET_NAME", "AD_NAME"],
     "metrics": ["IMPRESSIONS_ON_SPOTIFY", "SPEND", "CLICKS", "REACH", "FREQUENCY"],
     "report_start": "2025-01-01T00:00:00Z",
-    "report_end": "2025-01-31T23:59:59Z",
+    "report_end": "2025-01-31T00:00:00Z",
     "statuses": ["ACTIVE", "COMPLETED"]
   }' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/async_reports"

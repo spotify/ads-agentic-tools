@@ -59,7 +59,7 @@ entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=REACH&fields=CLICKS&fields=CTR&fields=FREQUENCY&\
 granularity=DAY&\
 report_start=$(date -u +%Y-%m-%dT00:00:00Z)&\
-report_end=$(date -u +%Y-%m-%dT23:59:59Z)&\
+report_end=$(date -u +%Y-%m-%dT00:00:00Z)&\
 entity_status_type=CAMPAIGN&\
 statuses=ACTIVE&\
 limit=50"
@@ -190,7 +190,7 @@ entity_type=AD_SET&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=CTR&fields=FREQUENCY&fields=COMPLETES&\
 granularity=DAY&\
 report_start=$(date -u +%Y-%m-%dT00:00:00Z)&\
-report_end=$(date -u +%Y-%m-%dT23:59:59Z)&\
+report_end=$(date -u +%Y-%m-%dT00:00:00Z)&\
 ${AD_SET_IDS_QUERY}&\
 entity_ids_type=AD_SET&\
 entity_status_type=AD_SET&\

@@ -145,7 +145,7 @@ Used with the `fields` query parameter on aggregate and insight report endpoints
 **Important:** These are different from AsyncReportMetric values. Do NOT use async metric names (like `AD_COMPLETES`, `CPM`) in aggregate reports.
 
 - `IMPRESSIONS`
-- `SPEND` — in micro-amounts (divide by 1,000,000 for dollars)
+- `SPEND` — aggregate report values are already in account currency; do not divide by 1,000,000
 - `CLICKS`
 - `REACH`
 - `FREQUENCY`
@@ -215,11 +215,21 @@ Used with the `fields` query parameter on aggregate and insight report endpoints
 - `ARCHIVED`
 
 ### InsightDimensionType
+- `ACT_AND_SET`
+- `AGE`
+- `AUDIENCE`
+- `CITY`
+- `COUNTRY`
+- `FORMAT`
 - `GENDER`
-- `PLATFORM`
-- `LOCATION`
-- `ARTIST`
 - `GENRE`
+- `INTERESTS`
+- `METRO`
+- `PLACEMENT`
+- `PLATFORM`
+- `PODCAST_EPISODE_TOPIC`
+- `REGION`
+- `TONE`
 
 ---
 

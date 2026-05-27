@@ -32,11 +32,20 @@ Prompt for:
   STREAMS, COMPLETES, COMPLETION_RATE, STARTS, FIRST_QUARTILES, MIDPOINTS, THIRD_QUARTILES,
   VIDEO_VIEWS, CTR, OFF_SPOTIFY_IMPRESSIONS
 - **granularity** (HOUR, DAY, LIFETIME — default LIFETIME)
-- **report_start** / **report_end** (ISO 8601, optional for LIFETIME)
+- **report_start** / **report_end** (ISO 8601; required for DAY/HOUR, do not send for LIFETIME)
 - **entity_ids** + **entity_ids_type** (optional — filter to specific IDs)
 - **include_parent_entity** (optional, boolean — include parent info for AD_SET/AD)
 
 **Important:** Array query parameters must use **repeated parameter names**, NOT comma-separated.
+**Validation guardrails:**
+- `limit` must be 1-50.
+- `entity_type` must be exactly `CAMPAIGN`, `AD_SET`, `AD`, or `AD_ACCOUNT`.
+- If `entity_ids` is present, always include `entity_ids_type`.
+- If `statuses` is present, always include `entity_status_type`; it must match the status owner.
+- Do not use `segments`, `dimensions`, `groupBy`, or async-report `metrics` names on aggregate reports.
+- Do not include `report_start` or `report_end` when `granularity=LIFETIME`; use `DAY` for date-ranged reporting.
+- For `DAY`, use UTC midnight timestamps for both start and end, e.g. `2026-05-01T00:00:00Z`.
+- Do not guess conversion metric names. Valid aggregate conversion-style fields include `PAGE_VIEWS`, `LEADS`, `ADD_TO_CART`, `PURCHASES`, `REVENUE`, `RETURN_ON_AD_SPEND`, `AVERAGE_ORDER_VALUE`, `START_CHECKOUT`, and `SIGN_UPS`.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
@@ -49,7 +58,8 @@ limit=50"
 ```
 
 **Granularity constraints:**
-- `LIFETIME` / `DAY`: date range must be within 90 days
+- `LIFETIME`: do not send `report_start` or `report_end`
+- `DAY`: date range must be within 90 days and both timestamps must be UTC midnight
 - `HOUR`: date range must be within the last 2 weeks
 
 Format the response as a readable table with stats broken out per entity. Filter out rows with zero impressions for cleaner output.
@@ -58,17 +68,32 @@ Format the response as a readable table with stats broken out per entity. Filter
 Get audience insight breakdowns.
 
 Prompt for:
-- **insight_dimension** (GENDER, PLATFORM, LOCATION, ARTIST, GENRE)
-- **fields** — Metrics to include (same `fields` param as aggregate, repeated format)
-- **entity_ids** — Campaign or ad set IDs to analyze
+- **insight_dimension** — `ACT_AND_SET`, `AGE`, `AUDIENCE`, `CITY`, `COUNTRY`, `FORMAT`,
+  `GENDER`, `GENRE`, `INTERESTS`, `METRO`, `PLACEMENT`, `PLATFORM`,
+  `PODCAST_EPISODE_TOPIC`, `REGION`, or `TONE`
+- **fields** — Metrics to include. Use repeated `fields` params. Insight reports do not allow
+  `E_CPCL`, `FREQUENCY`, `OFF_SPOTIFY_IMPRESSIONS`, `PAID_LISTENS_FREQUENCY`,
+  `SKIPS`, `SPEND`, `STARTS`, or `UNMUTES`.
+- **entity_ids** — One ad set ID to analyze
+- **entity_ids_type** — Required when `entity_ids` is set; use `AD_SET` for insight reports
+- **statuses** + **entity_status_type** (optional; use `AD_SET` for insight reports)
+
+**Insight report guardrails:**
+- Insight reports support one `entity_ids` value at a time, and it must be an ad set ID.
+- Always send `entity_ids_type=AD_SET` when `entity_ids` is present. Do not use `CAMPAIGN`.
+- Do not send `entity_type` on insight reports; `entity_type=AD_SET` does not substitute for `entity_ids_type=AD_SET`.
+- Do not send `report_start`, `report_end`, `granularity`, or `limit`; insight reports are LIFETIME only.
+- Use only the listed `insight_dimension` values. Do not use `LOCATION`, `GEO`, `DMA`, `STATE`, `ZIP`, `POSTAL`, `POSTAL_CODE`, `MARKET`, `DEVICE`, `OS`, `ARTIST`, `AGE_RANGE`, or `CITY_NAME`.
+- For geo breakdowns, map user language to valid dimensions: country -> `COUNTRY`, region/state -> `REGION`, metro/DMA -> `METRO`, city -> `CITY`.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/insight_reports?\
 insight_dimension=GENDER&\
-fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&\
-entity_ids=$ENTITY_IDS"
+fields=IMPRESSIONS&fields=CLICKS&fields=CTR&\
+entity_ids=$ENTITY_IDS&\
+entity_ids_type=AD_SET"
 ```
 
 Format results showing the breakdown by the selected dimension.
@@ -92,6 +117,11 @@ Prompt for:
 - **campaign_ids** (optional — filter to specific campaigns)
 - **statuses** (optional, default: [ACTIVE])
 
+**Async report guardrails:**
+- Async report `dimensions` are entity metadata columns only. Do not use `CITY`, `COUNTRY`, `REGION`, `DMA`, `POSTAL_CODE`, `LOCATION`, `AGE`, `GENDER`, `PLATFORM`, `DEVICE`, or `OS` here; use `insight_reports` for those breakdowns.
+- Use request fields `dimensions` and `metrics`, not `groupBy`, `fields`, `dateRange`, or `entityType`.
+- If `granularity=DAY`, include `report_start`; use UTC midnight timestamps for date boundaries.
+
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
@@ -102,7 +132,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
     "dimensions": ["CAMPAIGN_NAME", "AD_SET_NAME"],
     "metrics": ["IMPRESSIONS_ON_SPOTIFY", "SPEND", "CLICKS"],
     "report_start": "2025-01-01T00:00:00Z",
-    "report_end": "2025-01-31T23:59:59Z"
+    "report_end": "2025-01-31T00:00:00Z"
   }' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/async_reports"
 ```
