@@ -296,7 +296,7 @@ Required: `asset_type`, `name`
 
 ### AggregateReportResponse
 
-**Query parameter notes:** The metrics parameter is called `fields` (NOT `report_fields`). Array values must use repeated parameter format (`fields=IMPRESSIONS&fields=SPEND`), NOT comma-separated. Valid field values: `IMPRESSIONS`, `SPEND`, `CLICKS`, `REACH`, `FREQUENCY`, `LISTENERS`, `NEW_LISTENERS`, `STREAMS`, `COMPLETES`, `COMPLETION_RATE`, `STARTS`, `FIRST_QUARTILES`, `MIDPOINTS`, `THIRD_QUARTILES`, `VIDEO_VIEWS`, `CTR`, `OFF_SPOTIFY_IMPRESSIONS`.
+**Query parameter notes:** The metrics parameter is called `fields` (NOT `report_fields`). Array values must use repeated parameter format (`fields=IMPRESSIONS&fields=SPEND`), NOT comma-separated. Valid common field values: `IMPRESSIONS`, `SPEND`, `CLICKS`, `REACH`, `FREQUENCY`, `LISTENERS`, `NEW_LISTENERS`, `STREAMS`, `COMPLETES`, `COMPLETION_RATE`, `STARTS`, `FIRST_QUARTILES`, `MIDPOINTS`, `THIRD_QUARTILES`, `VIDEO_VIEWS`, `CTR`, `OFF_SPOTIFY_IMPRESSIONS`. Conversion-style values include `PAGE_VIEWS`, `LEADS`, `ADD_TO_CART`, `PURCHASES`, `REVENUE`, `RETURN_ON_AD_SPEND`, `AVERAGE_ORDER_VALUE`, `START_CHECKOUT`, and `SIGN_UPS`.
 
 ```json
 {
@@ -324,6 +324,7 @@ Required: `asset_type`, `name`
 - `field_value` is a **float**, not a string. Zero values appear as `0.0`.
 - Aggregate-report `SPEND` values are already in account currency; do not divide them by 1,000,000.
 - Do NOT use async report metric names (`AD_COMPLETES`, `CPM`, `IMPRESSIONS_ON_SPOTIFY`) — use `COMPLETES`, `IMPRESSIONS` instead.
+- Do not send `report_start` or `report_end` with `granularity=LIFETIME`. For `DAY`, use UTC midnight timestamps such as `2026-05-01T00:00:00Z`.
 
 ### CreateAsyncReportRequest
 Required: `name`, `granularity`, `dimensions`, `metrics`
@@ -343,16 +344,19 @@ Required: `name`, `granularity`, `dimensions`, `metrics`
   "statuses": ["ACTIVE"],
   "campaign_ids": ["uuid (optional)"],
   "report_start": "ISO 8601 (required if DAY)",
-  "report_end": "ISO 8601 (optional)"
+  "report_end": "ISO 8601 (optional)",
+  "insight_dimension": "ACT_AND_SET | AGE | AUDIENCE | CITY | COUNTRY | FORMAT | GENDER | GENRE | INTERESTS | METRO | PLACEMENT | PLATFORM | PODCAST_EPISODE_TOPIC | REGION | TONE (optional, LIFETIME only)"
 }
 ```
+
+Async report dimensions are entity metadata columns only. Do not put geo, demographic, platform, or audience dimensions such as `CITY`, `COUNTRY`, `REGION`, `GENDER`, `AGE`, `PLATFORM`, or `DEVICE` in `dimensions`. For async CSV delivery insight breakdowns, set `insight_dimension` with `granularity=LIFETIME`; for direct JSON insight results, use `GET /insight_reports`.
 
 ### AudienceInsightResponse
 ```json
 {
   "granularity": "LIFETIME",
   "entity": "CAMPAIGN | AD_SET",
-  "insight": "AGE | GENDER | PLATFORM | COUNTRY | CITY | METRO | REGION | FORMAT | AUDIENCE | GENRE | INTERESTS | PLACEMENT | PODCAST_EPISODE_TOPIC | TONE | ACT_AND_SET",
+  "insight": "ACT_AND_SET | AGE | AUDIENCE | CITY | COUNTRY | FORMAT | GENDER | GENRE | INTERESTS | METRO | PLACEMENT | PLATFORM | PODCAST_EPISODE_TOPIC | REGION | TONE",
   "rows": [{
     "id": "uuid",
     "name": "string",

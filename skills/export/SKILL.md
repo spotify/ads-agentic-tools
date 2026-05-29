@@ -97,7 +97,8 @@ entity_status_type=CAMPAIGN&\
 limit=50"
 ```
 
-If a date range is specified, add `&report_start=<start>&report_end=<end>` and use `granularity=LIFETIME` (date range must be within 90 days).
+If a date range is specified, switch to `granularity=DAY` and add `&report_start=<start>&report_end=<end>`.
+Use UTC midnight timestamps such as `2026-05-01T00:00:00Z`. Do not send `report_start` or `report_end` with `granularity=LIFETIME`.
 Paginate with `continuation_token` if present in the response.
 
 ### Ad set-level metrics

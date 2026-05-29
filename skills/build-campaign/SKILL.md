@@ -55,6 +55,15 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | targets.placements | yes | ["MUSIC"] | `MUSIC` or `PODCAST` |
 | targets.genders | no | [] | `MALE`, `FEMALE`, `NON_BINARY` |
 
+**Ad set validation guardrails:**
+- Reject or ask to correct zero/negative budgets and zero bids. `budget.micro_amount` and `bid_micro_amount` must be positive when present.
+- Do not include `currency` in ad set `budget`; currency is only required in `/estimates/audience` budget payloads.
+- Do not send `cost_model`, `skippable`, `is_skippable`, or `ad_platforms` in ad set create payloads.
+- Only use `ANDROID`, `DESKTOP`, and `IOS` in `targets.platforms`; never use `WEB`, `MOBILE`, or `CONNECTED_DEVICE`.
+- Use `min >= 18` for age ranges unless the user explicitly confirms a market/category that allows minors.
+- When geo refinements are present (`city_ids`, `dma_ids`, `postal_code_ids`, `region_ids`), include `country_code` in the same `geo_targets` object.
+- If `bid_strategy=UNSET`, omit `bid_micro_amount` unless the API response or user-provided source explicitly requires it.
+
 ### Ad-level fields (one or more per ad set)
 
 | Field | Required | Notes |
