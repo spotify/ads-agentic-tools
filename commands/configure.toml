@@ -1,0 +1,8 @@
+description = "Configure Spotify Ads API credentials (OAuth 2.0, manual, or direct token)"
+prompt = """
+Activate the spotify-ads-api `configure` Agent Skill and follow its instructions
+exactly. If skill activation is unavailable, read and follow skills/configure/SKILL.md
+from this extension's directory.
+
+User arguments (mode selection: oauth | manual | token <access_token>): {{args}}
+"""

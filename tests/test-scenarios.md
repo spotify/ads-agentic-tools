@@ -9,13 +9,13 @@
 **Variables used in curl examples below:**
 - `$TOKEN` — OAuth access token from settings
 - `$BASE_URL` — `https://api-partner.spotify.com/ads/v3`
-- `$SDK_HEADER` — `X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION`, where `SDK_PRODUCT` is `codex-plugin` on Codex and `claude-code-plugin` on Claude
+- `$SDK_HEADER` — `X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION`, where `SDK_PRODUCT` is `codex-plugin` on Codex, `claude-code-plugin` on Claude, and `gemini-cli-extension` on Gemini
 
 ---
 
 ## Scenario 1: Configure OAuth
 
-**Prompt:** `/spotify-ads-api:configure`
+**Prompt:** `/spotify-ads-api:configure` (`/configure` on Gemini)
 
 **Quirks tested:** OAuth flow, settings file creation, token validation
 
@@ -24,7 +24,7 @@
 2. Runs `oauth-flow.py` to open browser and complete authorization
 3. Parses JSON output with `access_token`, `refresh_token`, `expires_in`
 4. Prompts for `ad_account_id`, `auto_execute`
-5. Writes the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude) with all fields
+5. Writes the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.gemini/spotify-ads-api.local.md` on Gemini) with all fields
 6. Verifies token with test API call
 
 **Success criteria:**

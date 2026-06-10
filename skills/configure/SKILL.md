@@ -22,7 +22,8 @@ Full OAuth 2.0 authorization flow with automatic token refresh.
 1. Choose the active settings file:
    - Codex: write `.codex/spotify-ads-api.local.md`.
    - Claude: write `.claude/spotify-ads-api.local.md`.
-   Read that file if it exists. If it does not exist, read the other platform's settings file as defaults, but do not overwrite it unless the user asks.
+   - Gemini: write `.gemini/spotify-ads-api.local.md`.
+   Read that file if it exists. If it does not exist, read another platform's settings file as defaults, but do not overwrite it unless the user asks.
 
 2. Prompt the user for OAuth credentials using AskUserQuestion:
    - **client_id** (required) — Spotify app client ID from the developer dashboard
@@ -36,7 +37,7 @@ security add-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-se
 
    **Do NOT write client_secret to the settings file.** It must only be stored in the keychain.
 
-4. Attempt the automated OAuth flow by running the helper script:
+4. Attempt the automated OAuth flow by running the helper script. On Gemini, no plugin-root env var is set — this skill's files live at `<extension root>/skills/configure/`, so set `PLUGIN_ROOT` to the extension root (two directories up from this skill's directory) instead of using the snippet below.
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
@@ -75,7 +76,7 @@ uv run "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
 
 9. Write the active platform settings file (see Settings File Format below).
 
-10. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex or `.claude-plugin/plugin.json` on Claude. Set `SDK_PRODUCT` to `codex-plugin` on Codex or `claude-code-plugin` on Claude, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`.
+10. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`.
 
 11. Verify with a test API call:
 ```bash
@@ -132,7 +133,7 @@ Legacy direct token mode for users who already have an access token.
 
 1. Accept the access token from the argument.
 
-2. Warn the user: "Direct token mode — this token will expire in ~1 hour with no automatic refresh. For auto-refresh, re-run with `/spotify-ads-api:configure oauth` using your client credentials."
+2. Warn the user: "Direct token mode — this token will expire in ~1 hour with no automatic refresh. For auto-refresh, re-run the configure skill in oauth mode (`/spotify-ads-api:configure oauth` on Claude/Codex, `/configure oauth` on Gemini) using your client credentials."
 
 3. Read existing settings or prompt for:
    - **ad_account_id** (required) — Use the same businesses → ad accounts discovery flow as the oauth mode (`GET /businesses` then `GET /businesses/{business_id}/ad_accounts`), or ask the user to paste it.
@@ -144,7 +145,7 @@ Legacy direct token mode for users who already have an access token.
 
 ## Settings File Format
 
-Write the active platform settings file in this exact format (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude):
+Write the active platform settings file in this exact format (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.gemini/spotify-ads-api.local.md` on Gemini):
 
 ```markdown
 ---
@@ -178,8 +179,8 @@ Report the test API call result:
 
 ## Security Notes
 
-- The settings file is gitignored via `.codex/*.local.md` and `.claude/*.local.md`.
-- If the active settings directory (`.codex/` or `.claude/`) doesn't exist, create it.
+- The settings file is gitignored via `.codex/*.local.md`, `.claude/*.local.md`, and `.gemini/*.local.md`.
+- If the active settings directory (`.codex/`, `.claude/`, or `.gemini/`) doesn't exist, create it.
 - **client_secret is stored in the macOS Keychain**, not in the settings file. Use `security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w` to retrieve it when needed.
 - Never log or display the full access token or client_secret — show only the last 8 characters for confirmation.
 - Never write client_secret to the settings file or any other plaintext file.

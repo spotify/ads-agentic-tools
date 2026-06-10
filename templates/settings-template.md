@@ -11,8 +11,8 @@ auto_execute: false
 # Spotify Ads API Settings
 
 Local configuration for the spotify-ads-api plugin. Store this file at
-`.codex/spotify-ads-api.local.md` on Codex or `.claude/spotify-ads-api.local.md`
-on Claude.
+`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md`
+on Claude, or `.gemini/spotify-ads-api.local.md` on Gemini.
 Do not commit this file to version control.
 Client secret is stored in the macOS Keychain, not in this file.
 

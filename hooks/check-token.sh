@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-# Spotify Ads API PreToolUse hook
+# Spotify Ads API pre-tool hook (PreToolUse on Claude/Codex, BeforeTool on Gemini)
 #
 # Auto-refreshes expired OAuth tokens before API calls
 
@@ -13,29 +13,6 @@ if [ -n "${CODEX_PLUGIN_ROOT:-}" ] && [ -d "${CODEX_PLUGIN_ROOT:-}" ]; then
 elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -d "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   PLUGIN_ROOT="$CLAUDE_PLUGIN_ROOT"
 fi
-
-PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
-
-find_settings_file() {
-  local first_path second_path
-
-  if [ -n "${CODEX_PROJECT_DIR:-}" ]; then
-    first_path="$PROJECT_DIR/.codex/spotify-ads-api.local.md"
-    second_path="$PROJECT_DIR/.claude/spotify-ads-api.local.md"
-  elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
-    first_path="$PROJECT_DIR/.claude/spotify-ads-api.local.md"
-    second_path="$PROJECT_DIR/.codex/spotify-ads-api.local.md"
-  else
-    first_path="$PROJECT_DIR/.codex/spotify-ads-api.local.md"
-    second_path="$PROJECT_DIR/.claude/spotify-ads-api.local.md"
-  fi
-
-  if [ -f "$first_path" ]; then
-    printf '%s\n' "$first_path"
-  elif [ -f "$second_path" ]; then
-    printf '%s\n' "$second_path"
-  fi
-}
 
 # Read all stdin (hook input JSON)
 input=$(cat)
@@ -49,6 +26,45 @@ fi
 if ! command -v jq &>/dev/null; then
   exit 0
 fi
+
+# Detect platform: Gemini fires this as a BeforeTool hook (and sets no
+# *_PROJECT_DIR env vars); Claude/Codex fire it as PreToolUse
+hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // ""')
+if [ "$hook_event" = "BeforeTool" ]; then
+  PLATFORM="gemini"
+elif [ -n "${CODEX_PROJECT_DIR:-}" ]; then
+  PLATFORM="codex"
+elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
+  PLATFORM="claude"
+else
+  PLATFORM="codex"
+fi
+
+PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
+if [ "$PLATFORM" = "gemini" ]; then
+  stdin_cwd=$(printf '%s' "$input" | jq -r '.cwd // ""')
+  if [ -n "$stdin_cwd" ]; then
+    PROJECT_DIR="$stdin_cwd"
+  fi
+fi
+
+find_settings_file() {
+  local order dir candidate
+
+  case "$PLATFORM" in
+    gemini) order=".gemini .claude .codex" ;;
+    claude) order=".claude .codex .gemini" ;;
+    *)      order=".codex .claude .gemini" ;;
+  esac
+
+  for dir in $order; do
+    candidate="$PROJECT_DIR/$dir/spotify-ads-api.local.md"
+    if [ -f "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
+}
 
 # Extract the bash command from tool input
 command=$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // ""')
@@ -92,7 +108,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
 
   if [ "$needs_refresh" = true ]; then
     if [ -z "$refresh_token" ] || [ -z "$client_id" ] || [ -z "$client_secret" ]; then
-      system_message="Spotify API token may be expired but no refresh credentials are configured. Run /spotify-ads-api:configure to set up OAuth."
+      system_message="Spotify API token may be expired but no refresh credentials are configured. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Gemini) to set up OAuth."
     else
       REFRESH_SCRIPT="${PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
       if refresh_result=$(python3 "$REFRESH_SCRIPT" \
@@ -126,15 +142,32 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           system_message="Spotify API token was expired and has been refreshed automatically."
         fi
       else
-        system_message="Failed to refresh Spotify API token. Run /spotify-ads-api:configure to re-authenticate."
+        system_message="Failed to refresh Spotify API token. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Gemini) to re-authenticate."
       fi
     fi
   fi
 fi
 
 # --- Emit output ---
+# Gemini merges hookSpecificOutput.tool_input into the model's tool args;
+# Claude/Codex expect permissionDecision/updatedInput instead.
 if [[ "$modified_command" != "$command" ]]; then
-  if [ -n "$system_message" ]; then
+  if [ "$PLATFORM" = "gemini" ]; then
+    if [ -n "$system_message" ]; then
+      jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
+        "hookSpecificOutput": {
+          "tool_input": {"command": $cmd}
+        },
+        "systemMessage": $msg
+      }' 2>/dev/null
+    else
+      jq -n --arg cmd "$modified_command" '{
+        "hookSpecificOutput": {
+          "tool_input": {"command": $cmd}
+        }
+      }' 2>/dev/null
+    fi
+  elif [ -n "$system_message" ]; then
     jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
       "hookSpecificOutput": {
         "permissionDecision": "allow",
