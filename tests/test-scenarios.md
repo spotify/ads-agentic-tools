@@ -318,11 +318,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Quirks tested:** Auto-refresh hook, token update, retry with new token
 
 **Setup:**
-Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude) and set `token_expires_at` to `2026-02-01T00:00:00Z` (in the past). Ensure `refresh_token`, `client_id`, and `client_secret` are populated.
+Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.gemini/spotify-ads-api.local.md` on Gemini) and set `token_expires_at` to `2026-02-01T00:00:00Z` (in the past). Ensure `refresh_token`, `client_id`, and `client_secret` are populated.
 
 **Expected behavior:**
 1. User runs a command (e.g., "Show me all campaigns")
-2. PreToolUse hook detects the curl targets `api-partner.spotify.com`
+2. The pre-tool hook (`PreToolUse` on Claude/Codex, `BeforeTool` on Gemini) detects the curl targets `api-partner.spotify.com`
 3. Hook reads settings, sees `token_expires_at` is in the past
 4. Hook runs `refresh-token.py` with stored credentials
 5. Hook updates settings file with new `access_token` and `token_expires_at`
