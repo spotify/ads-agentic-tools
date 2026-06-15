@@ -1,6 +1,6 @@
 {
   "name": "spotify-ads-api",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Manage Spotify ad campaigns with natural language. Create campaigns, ad sets, ads, pull reports, and handle OAuth — all through conversation.",
   "author": {
     "name": "Alex Murphy"
@@ -9,5 +9,6 @@
   "repository": "https://github.com/spotify/ads-agentic-tools",
   "license": "Apache-2.0",
   "keywords": ["spotify", "ads", "api", "campaigns", "advertising", "oauth", "reporting"],
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "hooks": "./hooks/claude-hooks.json"
 }

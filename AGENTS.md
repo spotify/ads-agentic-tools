@@ -4,7 +4,7 @@ This is the canonical instruction file for agents working in this repository. Co
 
 ## What This Is
 
-A Codex and Claude Code plugin package for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
+A Codex, Claude Code, and Gemini CLI plugin package for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
 
 ## Architecture
 
@@ -24,8 +24,9 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/clone/` — Clone campaigns or ad sets by reading the source hierarchy and recreating entities with modifications
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
-- **Hooks** (`hooks/hooks.json`) — A `PreToolUse` hook that automatically refreshes expired OAuth tokens before Spotify API calls.
-- **Settings** (`.codex/spotify-ads-api.local.md`, with fallback to `.claude/spotify-ads-api.local.md`) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
+- **Hooks** (`hooks/`) — Two per-platform hook configs invoking the same `hooks/check-token.sh` to automatically refresh expired OAuth tokens before Spotify API calls: `hooks/hooks.json` is Gemini-only (`BeforeTool` — Gemini auto-discovers this fixed path and warns on unknown event names, so it must not contain `PreToolUse`), and `hooks/claude-hooks.json` is for Claude/Codex (`PreToolUse`), declared explicitly via the `hooks` field in both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`. The script detects the platform from the `hook_event_name` in the hook payload. Note the timeout units differ: seconds for `PreToolUse`, milliseconds for `BeforeTool`.
+- **Commands** (`commands/configure.toml`) — A Gemini CLI custom command exposing `/configure` as an explicit entry point to the configure skill. Other skills auto-activate on Gemini via its native Agent Skills support.
+- **Settings** (`.codex/spotify-ads-api.local.md`, `.claude/spotify-ads-api.local.md`, or `.gemini/spotify-ads-api.local.md`, with each platform preferring its own file and falling back to the other two) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
 
 ## Marketplace Compatibility
 
@@ -34,7 +35,9 @@ Keep both marketplace files intentional and in sync:
 - `.agents/plugins/marketplace.json` is the Codex-facing catalog used by `codex plugin marketplace add spotify/ads-agentic-tools`. It must include Codex's `interface.displayName`, `policy.installation`, `policy.authentication`, and `category` metadata. Because this plugin lives at the repository root, use a Git-backed root plugin source (`"source": "url"` with the repository URL) instead of a local `source.path` of `"./"`; Codex treats that local root path as empty and skips the plugin.
 - `.claude-plugin/marketplace.json` is the Claude Code-compatible catalog. Claude Code requires marketplace metadata at that path and requires a top-level `owner`. To keep the file portable, use the stricter Claude-valid schema: local plugin sources should use the relative string form (`"source": "./"` for this repo-root plugin), and Codex-only marketplace fields such as top-level `interface` or plugin `policy` should not be added to this file. The Claude plugin manifest `.claude-plugin/plugin.json` must also avoid Codex-only manifest fields such as `interface`; keep display metadata in `.codex-plugin/plugin.json` and the Codex marketplace.
 
-When updating marketplace metadata, keep the plugin name, source path, category, description, and user-facing display name aligned wherever each schema supports those fields.
+- Gemini CLI has no marketplace file. The root `gemini-extension.json` is the Gemini manifest; `gemini extensions install <repo-url>` reads it directly, and Gemini auto-discovers the `skills/`, `commands/`, and `hooks/` directories at the extension root. Keep its `name`, `version`, and `description` in sync with the other two manifests, and do not add Gemini-only fields (such as `contextFileName`) to the Claude or Codex manifests.
+
+When updating marketplace metadata, keep the plugin name, source path, category, description, and user-facing display name aligned wherever each schema supports those fields. The plugin `version` must be bumped in all three manifests together: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and `gemini-extension.json`.
 
 ## API Conventions to Know
 
@@ -51,7 +54,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Report field name** is `fields`, not `report_fields`.
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
 - **Base URL**: `https://api-partner.spotify.com/ads/v3`.
-- **Tracking header**: Every API request must include the SDK tracking header. On Codex, read the `version` from `.codex-plugin/plugin.json` and set `SDK_HEADER="X-Spotify-Ads-Sdk: codex-plugin/$PLUGIN_VERSION"`. On Claude, read `.claude-plugin/plugin.json` and use `claude-code-plugin/$PLUGIN_VERSION`. Include `-H "$SDK_HEADER"` on all curl commands.
+- **Tracking header**: Every API request must include the SDK tracking header. On Codex, read the `version` from `.codex-plugin/plugin.json` and set `SDK_HEADER="X-Spotify-Ads-Sdk: codex-plugin/$PLUGIN_VERSION"`. On Claude, read `.claude-plugin/plugin.json` and use `claude-code-plugin/$PLUGIN_VERSION`. On Gemini, read `gemini-extension.json` (extension root) and use `gemini-cli-extension/$PLUGIN_VERSION`. Include `-H "$SDK_HEADER"` on all curl commands.
 - **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
 

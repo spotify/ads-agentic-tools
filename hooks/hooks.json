@@ -1,14 +1,15 @@
 {
-  "description": "Auto-refresh expired Spotify OAuth tokens before API calls",
+  "description": "Auto-refresh expired Spotify OAuth tokens before API calls (Gemini CLI; Claude Code and Codex use hooks/claude-hooks.json)",
   "hooks": {
-    "PreToolUse": [
+    "BeforeTool": [
       {
-        "matcher": "Bash",
+        "matcher": "run_shell_command",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}/hooks/check-token.sh\"",
-            "timeout": 30
+            "name": "spotify-ads-token-refresh",
+            "command": "bash \"${extensionPath}${/}hooks${/}check-token.sh\"",
+            "timeout": 30000
           }
         ]
       }
