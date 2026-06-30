@@ -503,7 +503,7 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
   "cost_model": "CPM | CPCL",
   "delivery_goal": "string",
   "status": "AdSetStatus enum",
-  "draft_hierarchy_version": 1,
+  "draft_hierarchy_version": null,
   "created_at": "ISO 8601",
   "updated_at": "ISO 8601"
 }
@@ -523,7 +523,7 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
   "third_party_tracking": [{ "measurement_partner": "string", "url": "string" }],
   "weight": 10,
   "status": "AdStatus enum",
-  "draft_hierarchy_version": 1,
+  "draft_hierarchy_version": null,
   "created_at": "ISO 8601",
   "updated_at": "ISO 8601"
 }
@@ -543,6 +543,13 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
 ```json
 {
   "campaign": { "...": "CampaignResponse (present on successful PUBLISH; may be absent for VALIDATE)" },
+  "validation_errors": null
+}
+```
+
+On validation failure, the API returns HTTP 400 with:
+```json
+{
   "validation_errors": [
     {
       "validation_entity_type": "CAMPAIGN | AD_SET | AD",
@@ -554,6 +561,6 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
 ```
 
 **Notes:**
-- `draft_hierarchy_version` is read-only and increments whenever any entity in the draft hierarchy is edited. Always fetch the draft campaign immediately before publishing or validating, and do not reuse a version captured before child draft entities or edits.
-- `validation_errors` is empty on success; populated with per-entity errors on failure.
+- `draft_hierarchy_version` is read-only and is populated on draft campaign responses. Draft ad set and draft ad responses return `null`. The campaign version increments whenever any entity in the draft hierarchy is edited. Always fetch the draft campaign immediately before publishing or validating, and do not reuse a version captured before child draft entities or edits.
+- `validation_errors` is `null` on success; populated with per-entity errors on HTTP 400 validation failure.
 - The same schema pitfalls apply to drafts: `bid_strategy` is a plain string, `geo_targets` is a flat object, `category` is required on ad sets, etc.

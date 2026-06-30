@@ -457,7 +457,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID/drafts"
 ```
 
-The draft-from-published response reuses the **same ID** as the live entity (not a new UUID). The status becomes `ACTIVE_RESTRICTED`. Display the created draft and suggest next steps:
+The draft-from-published response reuses the **same ID** as the live entity (not a new UUID). The status becomes `ACTIVE_RESTRICTED`.
+
+For a campaign draft, the returned entity is the draft campaign used for validate/publish. For an ad set draft, use its `campaign_id` as the draft campaign ID for validate/publish. For an ad draft, fetch the draft ad set referenced by its `ad_set_id`, then use that draft ad set's `campaign_id` as the draft campaign ID.
+
+Display the created draft and suggest next steps:
 - Edit: `/spotify-ads-api:drafts edit <campaign|ad-set|ad> <draft_id>`
 - Validate: `/spotify-ads-api:drafts validate <draft_campaign_id>`
 - Publish: `/spotify-ads-api:drafts publish <draft_campaign_id>`

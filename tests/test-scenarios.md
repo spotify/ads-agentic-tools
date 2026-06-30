@@ -698,9 +698,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 
 ## Scenario 19: Delete a Draft
 
-**Prompt:** "Delete the draft campaign <draft_campaign_id>"
+**Prompt:** "Delete the draft campaign <unpublished_draft_campaign_id>"
 
 **Quirks tested:** DELETE on draft endpoint (unlike live entities which use status changes), 204 response, cascade behavior
+
+**Setup:** Use a separate unpublished throwaway draft campaign. Do not reuse a draft campaign that was already published in Scenario 18.
 
 **Expected behavior:**
 1. Agent identifies draft type and ID
@@ -712,43 +714,62 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X DELETE -H "Authorization: Bearer <token>" \
   -H "$SDK_HEADER" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns/<draft_campaign_id>"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns/<unpublished_draft_campaign_id>"
 ```
 
 **Success criteria:**
 - Uses DELETE method (drafts support DELETE, unlike live entities)
 - Endpoint is `/drafts/campaigns/<id>`, NOT `/campaigns/<id>`
 - Does NOT attempt status change (ARCHIVED/PAUSED) — those are for live entities
+- Uses an unpublished draft fixture, not the draft published in Scenario 18
 - Returns 204 No Content
 - For draft campaigns: warns that associated draft ad sets and ads are also deleted
 - DELETE is safe to retry (idempotent)
 
 ---
 
-## Scenario 20: Create Draft from Published Campaign
+## Scenario 20: Create Draft from Published Entity
 
 **Prompt:** "Create a draft from campaign <campaign_id> so I can make changes"
 
-**Quirks tested:** `draft-from` endpoint path (entity ID in URL, not body), creates editable draft copy of live entity
+**Quirks tested:** `draft-from` endpoint path (entity ID in URL, not body), creates editable draft copy of live entity, parent draft campaign resolution for child drafts
 
 **Expected behavior:**
-1. Agent constructs POST to `/campaigns/<live_campaign_id>/drafts`
-2. Response includes a draft campaign with the **same ID** as the live campaign (not a new UUID), status `ACTIVE_RESTRICTED`
-3. Agent displays draft details and suggests next steps (edit, validate, publish)
+1. Agent constructs POST to the appropriate create-from-published endpoint for campaign, ad set, or ad
+2. Response includes a draft entity with the **same ID** as the live entity (not a new UUID), status `ACTIVE_RESTRICTED`
+3. For campaign drafts, the returned ID is the draft campaign ID
+4. For ad set drafts, agent uses the returned `campaign_id` as the draft campaign ID for validate/publish
+5. For ad drafts, agent fetches the draft ad set referenced by `ad_set_id`, then uses that ad set's `campaign_id` as the draft campaign ID for validate/publish
+6. Agent displays draft details and suggests next steps (edit, validate, publish)
 
-**Expected curl:**
+**Expected curl (campaign):**
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
   -H "$SDK_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns/<campaign_id>/drafts"
 ```
 
+**Expected curl (ad set):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ad_sets/<ad_set_id>/drafts"
+```
+
+**Expected curl (ad):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ads/<ad_id>/drafts"
+```
+
 **Success criteria:**
-- Endpoint is `/campaigns/<live_id>/drafts` (POST with live entity ID in path)
-- Does NOT use `/drafts/campaigns` (that's for creating new drafts)
-- Response includes a draft campaign with the **same `id`** as the live campaign (not a new UUID)
+- Endpoint is `/campaigns/<live_id>/drafts`, `/ad_sets/<live_id>/drafts`, or `/ads/<live_id>/drafts` with live entity ID in path
+- Does NOT use `/drafts/campaigns`, `/drafts/ad_sets`, or `/drafts/ads` (those are for creating new drafts)
+- Response includes a draft entity with the **same `id`** as the live entity (not a new UUID)
 - Status becomes `ACTIVE_RESTRICTED`
-- `draft_hierarchy_version` may be `null` initially (no child draft edits yet)
+- For child drafts, agent resolves the parent draft campaign ID before suggesting validate/publish commands
+- `draft_hierarchy_version` may be `null` initially (no draft hierarchy edits yet)
 - Agent suggests edit/validate/publish as next steps
 - No request body required
 

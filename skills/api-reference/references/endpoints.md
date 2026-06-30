@@ -244,9 +244,11 @@ Publish or validate a draft campaign hierarchy.
 - `action` (string, required) — `PUBLISH` or `VALIDATE` (default: VALIDATE)
 - `draft_hierarchy_version` (integer, required) — Must match the current version from the draft campaign
 
-**Response:** 200 — `PublishCampaignResult`
-- `campaign` — Published `CampaignResponse` (present on successful `PUBLISH`; may be absent for `VALIDATE`)
-- `validation_errors` — Array of `HierarchyValidationError`:
+**Success Response:** 200 — `PublishCampaignResult`
+- `campaign` — Published `CampaignResponse` (present on successful `PUBLISH`; may be absent for successful `VALIDATE`)
+- `validation_errors` — `null`
+
+**Validation Failure Response:** 400 — `PublishCampaignResult` with `validation_errors` array:
   - `validation_entity_type` — `CAMPAIGN`, `AD_SET`, or `AD`
   - `validation_entity_id` — UUID of the entity with the error
   - `message` — Human-readable error description

@@ -287,11 +287,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
 **Success (200, no errors; no live entities are created):**
 ```json
 {
-  "validation_errors": []
+  "validation_errors": null
 }
 ```
 
-**Validation errors (200, with errors):**
+**Validation errors (400, with errors):**
 ```json
 {
   "validation_errors": [
@@ -342,7 +342,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
     "status": "ACTIVE",
     "objective": "REACH"
   },
-  "validation_errors": []
+  "validation_errors": null
 }
 ```
 
@@ -350,6 +350,6 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
 
 All the same schema pitfalls from the direct flow apply to drafts (bid_strategy is a string, geo_targets is flat, etc.). Additional draft-specific notes:
 
-- **`draft_hierarchy_version`** is read-only — returned on every draft entity. Must be passed when publishing or validating. It increments whenever any entity in the hierarchy is edited, so always fetch the draft campaign immediately before validate/publish.
+- **`draft_hierarchy_version`** is read-only — populated on draft campaign responses. Draft ad set and draft ad responses return `null` for this field. Must be passed when publishing or validating. It increments whenever any entity in the hierarchy is edited, so always fetch the draft campaign immediately before validate/publish.
 - **Draft entities can be truly deleted** (DELETE returns 204) — unlike live entities which can only be archived.
 - **Draft `campaign_id` and `ad_set_id`** must reference other draft entity IDs, not published entity IDs.
