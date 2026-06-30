@@ -218,9 +218,9 @@ Create a draft campaign.
 List draft campaigns.
 
 **Query Parameters:**
-- `campaignIds` (array) — Filter by campaign IDs
-- `campaignChannels` (array) — Filter by channel
-- `campaignStatuses` (array) — Filter by status
+- `campaign_ids` (array, repeated param) — Filter by campaign IDs
+- `channel` (array, repeated param) — Filter by campaign channel
+- `statuses` (array, repeated param) — Filter by status
 - `sort_field`, `sort_direction`, `limit`, `offset`
 
 **Response:** 200 — `CampaignDraftsResponse` (`campaign_drafts` array)
@@ -245,7 +245,7 @@ Publish or validate a draft campaign hierarchy.
 - `draft_hierarchy_version` (integer, required) — Must match the current version from the draft campaign
 
 **Response:** 200 — `PublishCampaignResult`
-- `campaign` — Published `CampaignResponse` (present on successful publish)
+- `campaign` — Published `CampaignResponse` (present on successful `PUBLISH`; may be absent for `VALIDATE`)
 - `validation_errors` — Array of `HierarchyValidationError`:
   - `validation_entity_type` — `CAMPAIGN`, `AD_SET`, or `AD`
   - `validation_entity_id` — UUID of the entity with the error

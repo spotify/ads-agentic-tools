@@ -1,7 +1,7 @@
 ---
 name: drafts
 description: "Create, edit, validate, and publish draft campaigns, ad sets, and ads via the Spotify Ads API. Drafts let you build a full campaign hierarchy without going live — review and iterate before publishing. Use when the user wants to draft a campaign, validate before publishing, edit drafts, list drafts, or publish drafts."
-argument-hint: "build <description> | list [campaigns|ad-sets|ads] | get <draft_id> | edit <draft_id> | validate <draft_campaign_id> | publish <draft_campaign_id> | delete <draft_id> | draft-from <campaign_id|ad_set_id|ad_id>"
+argument-hint: "build <description> | list [campaigns|ad-sets|ads] | get <campaign|ad-set|ad> <draft_id> | edit <campaign|ad-set|ad> <draft_id> | validate <draft_campaign_id> | publish <draft_campaign_id> | delete <campaign|ad-set|ad> <draft_id> | draft-from <campaign|ad-set|ad> <entity_id>"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
 
@@ -32,7 +32,7 @@ The alternative (direct entity creation via `/campaigns`, `/ad_sets`, `/ads`) va
 
 ## Operations
 
-Parse the user's argument to determine the operation.
+Parse the user's argument to determine the operation. For `get`, `edit`, `delete`, and `draft-from`, require an entity type (`campaign`, `ad-set`, or `ad`) with the ID. If the user provides only a bare UUID, infer the type only when the current conversation makes it unambiguous; otherwise ask which draft entity type they mean.
 
 ---
 
@@ -80,7 +80,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns"
 ```
 
-Extract the draft campaign `id` from the response. Also note the `draft_hierarchy_version` — this is needed later for validate/publish.
+Extract the draft campaign `id` from the response. The response includes an initial `draft_hierarchy_version`, but do not rely on that value after creating child draft ad sets or ads because any hierarchy edit can increment the version.
 
 **4b. Create Draft Ad Sets** (using `campaign_id` = draft campaign ID from 4a):
 
@@ -131,7 +131,13 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 
 #### Step 5: Validate the Draft
 
-After all draft entities are created, automatically run validation:
+After all draft entities are created, fetch the draft campaign again to get the current `draft_hierarchy_version`, then automatically run validation. Do not reuse a version captured before child draft ad sets or ads were created.
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+```
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -141,7 +147,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
-The `draft_hierarchy_version` must match the value from the draft campaign response (it increments with each edit).
+The `draft_hierarchy_version` must match the current value from the draft campaign response.
 
 **If validation succeeds** (200 with empty `validation_errors`):
 - Display a success summary with the full draft hierarchy
@@ -155,7 +161,7 @@ The `draft_hierarchy_version` must match the value from the draft campaign respo
   ✗ AD (id: def-456): Missing companion_asset_id for AUDIO format
   ```
 - Suggest fixes for each error
-- Ask the user if they want to fix the issues (use the `edit` operation) or delete the draft
+- Ask the user if they want to fix the issues (for example, `edit ad-set <draft_ad_set_id>` or `edit ad <draft_ad_id>`) or delete the draft
 
 #### Step 6: Summary
 
@@ -170,7 +176,7 @@ Display a final summary:
 Include the `draft_hierarchy_version` and remind the user they can:
 - **Validate**: `/spotify-ads-api:drafts validate <draft_campaign_id>`
 - **Publish**: `/spotify-ads-api:drafts publish <draft_campaign_id>`
-- **Edit**: `/spotify-ads-api:drafts edit <draft_id>`
+- **Edit**: `/spotify-ads-api:drafts edit <campaign|ad-set|ad> <draft_id>`
 
 ---
 
@@ -186,6 +192,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```
 
 Format as table: Draft ID | Name | Status | Objective | Version | Created
+
+Optional filters use the actual query parameter names: `campaign_ids` (repeated param), `channel`, `statuses` (repeated param), `sort_field`, `sort_direction`.
 
 **List draft ad sets:**
 ```bash
@@ -211,9 +219,9 @@ Optional filters: `ad_set_ids` (repeated param), `statuses` (repeated param).
 
 ---
 
-### `get <draft_id>` — Get a Draft by ID
+### `get <campaign|ad-set|ad> <draft_id>` — Get a Draft by ID
 
-Determine the entity type from context or ask the user, then fetch:
+Use the entity type from the command to select the endpoint. If the user supplies only a bare ID, infer the type only when prior context is unambiguous; otherwise ask the user for `campaign`, `ad-set`, or `ad`.
 
 **Draft campaign:**
 ```bash
@@ -240,9 +248,9 @@ Display all fields in a readable format, including `draft_hierarchy_version`.
 
 ---
 
-### `edit <draft_id>` — Update a Draft
+### `edit <campaign|ad-set|ad> <draft_id>` — Update a Draft
 
-Prompt the user for fields to update. The same field validations as create apply.
+Use the entity type from the command to select the endpoint, then prompt the user for fields to update. The same field validations as create apply.
 
 **Update draft campaign:**
 ```bash
@@ -304,7 +312,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 **Handling the response:**
 
 The response is a `PublishCampaignResult` with:
-- `campaign` — the campaign data (present on success)
+- `campaign` — published campaign data, present on successful `PUBLISH`; may be absent for `VALIDATE`
 - `validation_errors` — array of `HierarchyValidationError` objects
 
 Each `HierarchyValidationError` has:
@@ -329,7 +337,7 @@ Each `HierarchyValidationError` has:
   AD              | def-456      | Missing companion_asset_id for AUDIO format
   AD              | ghi-789      | call_to_action.clickthrough_url is required
 
-Fix these issues with: /spotify-ads-api:drafts edit <draft_id>
+Fix these issues with: /spotify-ads-api:drafts edit <campaign|ad-set|ad> <draft_id>
 Then re-validate with: /spotify-ads-api:drafts validate <draft_campaign_id>
 ```
 
@@ -375,6 +383,14 @@ This will create live entities. Proceed?
 
 #### Step 4: Publish
 
+Fetch the draft campaign again immediately before publishing. If the `draft_hierarchy_version` differs from the version that just passed validation, re-run validation before publishing.
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+```
+
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
@@ -387,9 +403,9 @@ Display the published campaign details from the response.
 
 ---
 
-### `delete <draft_id>` — Delete a Draft
+### `delete <campaign|ad-set|ad> <draft_id>` — Delete a Draft
 
-Determine the entity type from context or ask the user, then delete:
+Use the entity type from the command to select the endpoint. If the user supplies only a bare ID, infer the type only when prior context is unambiguous; otherwise ask.
 
 **Delete draft campaign** (also removes associated draft ad sets and ads):
 ```bash
@@ -416,9 +432,9 @@ Expect a `204 No Content` response on success.
 
 ---
 
-### `draft-from <entity_id>` — Create a Draft from a Published Entity
+### `draft-from <campaign|ad-set|ad> <entity_id>` — Create a Draft from a Published Entity
 
-Create a draft copy of an existing live campaign, ad set, or ad for editing. This is useful for making changes to published entities via the draft → edit → validate → publish workflow.
+Create a draft copy of an existing live campaign, ad set, or ad for editing. Use the entity type from the command to select the endpoint. This is useful for making changes to published entities via the draft → edit → validate → publish workflow.
 
 **Draft from published campaign:**
 ```bash
@@ -442,7 +458,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 ```
 
 Display the created draft with its `draft_hierarchy_version` and suggest next steps:
-- Edit: `/spotify-ads-api:drafts edit <draft_id>`
+- Edit: `/spotify-ads-api:drafts edit <campaign|ad-set|ad> <draft_id>`
 - Validate: `/spotify-ads-api:drafts validate <draft_campaign_id>`
 - Publish: `/spotify-ads-api:drafts publish <draft_campaign_id>`
 
@@ -460,14 +476,15 @@ These are the same non-obvious API requirements from the direct entity endpoints
 6. **`companion_asset_id`** is required when creating ads for AUDIO ad sets
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
 8. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
-9. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the draft campaign before calling publish/validate
+9. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the draft campaign immediately before calling publish/validate; never reuse a version captured before child drafts or edits
 10. **Draft ad set `campaign_id`** must reference the **draft campaign ID**, not a published campaign ID
 11. **Draft ad `ad_set_id`** must reference a **draft ad set ID**, not a published ad set ID
 
 ## Execution Behavior
 
-- If `auto_execute` is `true`, execute each API call directly.
+- If `auto_execute` is `true`, execute read, create, edit, delete, and validate calls directly after any required planning or asset-selection confirmation.
 - If `auto_execute` is `false`, present the curl command to the user and ask for confirmation before executing.
+- Never auto-execute `PUBLISH`. Publishing creates live entities and always requires explicit user confirmation immediately before the publish request.
 - Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
 - On error, show the error message from the response body. Never automatically retry POST or PATCH requests.
 - **Draft DELETE is safe to retry** — unlike POST/PATCH, DELETE on drafts is idempotent.

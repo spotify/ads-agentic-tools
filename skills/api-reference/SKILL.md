@@ -51,6 +51,8 @@ Every CRUD operation on campaigns, ad sets, ads, assets, and audiences is scoped
 
 **Draft workflow (preferred for new campaigns):** Create draft entities → validate the entire hierarchy → publish. See the Drafts endpoint group below.
 
+For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately before the action and use its current `draft_hierarchy_version`. `PUBLISH` creates live entities and always requires explicit user confirmation, even when automatic execution is enabled.
+
 ## Key Conventions
 
 - **Budgets use micro-amounts**: Multiply dollar values by 1,000,000. A $50 budget = `50000000` micro-amount.

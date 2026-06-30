@@ -542,7 +542,7 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
 ### PublishCampaignResult
 ```json
 {
-  "campaign": { "...": "CampaignResponse (present on successful publish)" },
+  "campaign": { "...": "CampaignResponse (present on successful PUBLISH; may be absent for VALIDATE)" },
   "validation_errors": [
     {
       "validation_entity_type": "CAMPAIGN | AD_SET | AD",
@@ -554,6 +554,6 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
 ```
 
 **Notes:**
-- `draft_hierarchy_version` is read-only and increments whenever any entity in the draft hierarchy is edited. Always fetch the current version before publishing or validating.
+- `draft_hierarchy_version` is read-only and increments whenever any entity in the draft hierarchy is edited. Always fetch the draft campaign immediately before publishing or validating, and do not reuse a version captured before child draft entities or edits.
 - `validation_errors` is empty on success; populated with per-entity errors on failure.
 - The same schema pitfalls apply to drafts: `bid_strategy` is a plain string, `geo_targets` is a flat object, `category` is required on ad sets, etc.

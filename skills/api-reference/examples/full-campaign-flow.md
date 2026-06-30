@@ -264,24 +264,29 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
 
 ### Step 4: Validate the Draft Hierarchy
 
-Dry-run publish to check for errors across the entire hierarchy:
+Dry-run publish to check for errors across the entire hierarchy. First fetch the draft campaign to get the current `draft_hierarchy_version`; do not reuse the version returned before child draft ad sets or ads were created.
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+```
+
+Set `CURRENT_DRAFT_HIERARCHY_VERSION` from the `draft_hierarchy_version` field in that response.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
-  -d '{
-    "action": "VALIDATE",
-    "draft_hierarchy_version": 1
-  }' \
+  -d "{\"action\":\"VALIDATE\",\"draft_hierarchy_version\":$CURRENT_DRAFT_HIERARCHY_VERSION}" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
 ```
 
-**Success (200, no errors):**
+**Success (200, no errors; no live entities are created):**
 ```json
 {
-  "campaign": { "id": "...", "name": "Summer Sale 2025", "status": "ACTIVE" },
   "validation_errors": []
 }
 ```
@@ -308,17 +313,23 @@ Fix errors with PATCH on the draft entities, then re-validate.
 
 ### Step 5: Publish
 
-Once validation passes, publish to create live entities:
+Once validation passes, publish to create live entities. Fetch the draft campaign again immediately before publishing. If the version has changed since validation, re-run validation with the new version before publishing.
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+```
+
+Set `CURRENT_DRAFT_HIERARCHY_VERSION` from this latest response.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
-  -d '{
-    "action": "PUBLISH",
-    "draft_hierarchy_version": 1
-  }' \
+  -d "{\"action\":\"PUBLISH\",\"draft_hierarchy_version\":$CURRENT_DRAFT_HIERARCHY_VERSION}" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
 ```
 
@@ -339,6 +350,6 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
 
 All the same schema pitfalls from the direct flow apply to drafts (bid_strategy is a string, geo_targets is flat, etc.). Additional draft-specific notes:
 
-- **`draft_hierarchy_version`** is read-only — returned on every draft entity. Must be passed when publishing or validating. It increments whenever any entity in the hierarchy is edited.
+- **`draft_hierarchy_version`** is read-only — returned on every draft entity. Must be passed when publishing or validating. It increments whenever any entity in the hierarchy is edited, so always fetch the draft campaign immediately before validate/publish.
 - **Draft entities can be truly deleted** (DELETE returns 204) — unlike live entities which can only be archived.
 - **Draft `campaign_id` and `ad_set_id`** must reference other draft entity IDs, not published entity IDs.

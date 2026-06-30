@@ -19,6 +19,8 @@ The draft flow is preferred because:
 - **Safe iteration** — the user can review and edit drafts before publishing
 - **Easy undo** — delete the draft if something looks wrong; no live entities to clean up
 
+Publishing a draft always requires explicit user confirmation immediately before the `PUBLISH` request, even when `auto_execute` is enabled.
+
 Only use the direct creation flow below if the user explicitly asks to skip drafts or create live entities immediately.
 
 ## Direct Creation Flow (Legacy)

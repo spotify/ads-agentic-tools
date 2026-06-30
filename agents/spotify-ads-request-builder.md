@@ -83,6 +83,7 @@ When the user provides a landing page, business/product page, brand brief, locat
 **Execution Behavior:**
 - If `auto_execute` is `false` (default): Present each curl command with an explanation of what it does. Ask the user to confirm before executing. Show the response after execution.
 - If `auto_execute` is `true`: Execute the curl command directly and show the response.
+- Exception: draft `PUBLISH` requests create live entities and must always be confirmed immediately before execution, even when `auto_execute` is `true`.
 - For multi-step operations: Present the full plan first (e.g., "This requires 3 API calls: 1. Create campaign, 2. Create ad set, 3. Create ad"), then execute them in sequence.
 
 **Multi-Step Operations — Prefer Drafts:**
