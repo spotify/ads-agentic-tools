@@ -68,17 +68,17 @@ These non-obvious API quirks were discovered through real testing and are critic
 When creating new campaigns, prefer the **draft workflow** over direct entity creation:
 
 1. **Create drafts** — `POST /ad_accounts/{id}/drafts/campaigns`, then `POST /ad_accounts/{id}/drafts/ad_sets` (with `campaign_id` = draft campaign ID), then `POST /ad_accounts/{id}/drafts/ads` (with `ad_set_id` = draft ad set ID)
-2. **Validate** — `POST /ad_accounts/{id}/drafts/campaigns/{draft_id}` with `{"action": "VALIDATE", "draft_hierarchy_version": N}`. This checks the entire hierarchy at once and returns a list of `validation_errors` with entity type, ID, and message for each issue.
+2. **Validate** — `POST /ad_accounts/{id}/drafts/campaigns/{draft_id}` with `{"action": "VALIDATE", "draft_hierarchy_version": N}`. This checks the entire hierarchy at once. On success, returns HTTP 200 with `validation_errors: null`. On failure, returns HTTP 400 with a `validation_errors` array containing entity type, ID, and message for each issue.
 3. **Fix and re-validate** — use PATCH on draft entities to fix errors, then validate again
-4. **Publish** — `POST /ad_accounts/{id}/drafts/campaigns/{draft_id}` with `{"action": "PUBLISH", "draft_hierarchy_version": N}`. This atomically creates all live entities.
+4. **Publish** — `POST /ad_accounts/{id}/drafts/campaigns/{draft_id}` with `{"action": "PUBLISH", "draft_hierarchy_version": N}`. This publishes the drafts as live entities, retaining the same entity IDs.
 
 The draft flow is preferred because validation is batched — all errors across campaigns, ad sets, and ads surface before anything goes live. The direct flow validates per-entity, so errors in ads are only discovered after the campaign and ad sets are already live.
 
 Key draft conventions:
-- **`draft_hierarchy_version`** is a read-only field on every draft entity. It increments when the draft hierarchy changes. Always fetch the current version from the draft campaign immediately before publishing or validating; do not reuse a version captured before creating child draft ad sets/ads or applying edits.
+- **`draft_hierarchy_version`** is a read-only field on the draft **campaign** entity only (ad set and ad drafts return it as `null`). It increments when any entity in the hierarchy is created or edited. Always fetch the current version from the draft campaign immediately before publishing or validating; do not reuse a version captured before creating child draft ad sets/ads or applying edits.
 - **Publishing requires explicit confirmation** — `PUBLISH` creates live entities, so ask the user to confirm immediately before the publish request even when `auto_execute` is true.
 - **Draft entities can be deleted** — `DELETE` on `/drafts/campaigns/{id}`, `/drafts/ad_sets/{id}`, or `/drafts/ads/{id}`. Draft DELETE returns 204 and is safe to retry.
-- **Create-from-published** — `POST /ad_accounts/{id}/campaigns/{campaign_id}/drafts` (also for ad sets and ads) creates a draft copy of a live entity for editing.
+- **Create-from-published** — `POST /ad_accounts/{id}/campaigns/{campaign_id}/drafts` (also for ad sets and ads) creates a draft copy of a live entity for editing. The draft reuses the same entity `id` (not a new UUID) and its status becomes `ACTIVE_RESTRICTED`.
 
 ## Execution Pattern
 

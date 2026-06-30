@@ -34,11 +34,22 @@ Scenarios should be run sequentially, as some depend on entities created in prio
 | 3 | Create campaign | Scenario 1 |
 | 4 | Create ad set | Scenario 3 (campaign ID) |
 | 5 | Create audio ad | Scenario 4 (ad set ID) + uploaded assets |
-| 6 | Full build-campaign | Scenario 1 + uploaded assets |
+| 6 | Full build-campaign (draft default) | Scenario 1 + uploaded assets |
 | 7 | Aggregate report | Scenario 1 + existing campaigns |
 | 8 | Pause campaign | Scenario 3 or 6 (campaign to pause) |
 | 9 | Async CSV report | Scenario 1 + existing campaigns |
 | 10 | Token refresh | Scenario 1 (OAuth credentials) |
+| 11 | Upload asset | Scenario 1 + local audio/video/image file |
+| 12 | Pre-flight audience estimate | Scenario 1 |
+| 13 | Dashboard | Scenario 1 + active campaigns |
+| 14 | List draft campaigns | Scenario 1 |
+| 15 | Create draft campaign hierarchy | Scenario 1 + uploaded assets |
+| 16 | Edit a draft ad set | Scenario 15 (draft ad set ID) |
+| 17 | Validate a draft campaign | Scenario 15 (draft campaign ID) |
+| 18 | Publish a draft campaign | Scenario 17 (validated draft) |
+| 19 | Delete a draft | Scenario 15 (draft campaign ID) |
+| 20 | Create draft from published | Scenario 3 or 6 (live campaign ID) |
+| 21 | Draft validation error recovery | Scenario 1 + uploaded assets (audio without companion) |
 
 ### Validation Checklist
 

@@ -16,6 +16,7 @@ The draft flow is the **preferred** way to create campaigns because:
 - **Batch validation** — the validate action checks the entire campaign hierarchy (campaign + ad sets + ads) at once, surfacing all errors before anything is created
 - **Safe iteration** — edit any part of the draft hierarchy without affecting live entities
 - **Undo-friendly** — delete drafts at any time before publishing; no cleanup of live entities needed
+- **Incomplete data allowed** — drafts accept partial entities (e.g., an AUDIO ad without `companion_asset_id`). Required fields are only enforced during VALIDATE or PUBLISH, so you can build the hierarchy incrementally
 
 The alternative (direct entity creation via `/campaigns`, `/ad_sets`, `/ads`) validates at each individual API call, so errors in later entities (e.g., ads) are discovered only after the campaign and ad sets are already live. Prefer the draft flow for any new campaign creation.
 
@@ -149,11 +150,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 
 The `draft_hierarchy_version` must match the current value from the draft campaign response.
 
-**If validation succeeds** (200 with empty `validation_errors`):
+**If validation succeeds** (HTTP 200 with `validation_errors: null`):
 - Display a success summary with the full draft hierarchy
 - Ask the user: **Publish now** or **Keep as draft for later**
 
-**If validation returns errors** (200 with `validation_errors` array):
+**If validation returns errors** (HTTP 400 with `validation_errors` array):
 - Display each error with its entity type, entity ID, and message:
   ```
   Validation Errors:
@@ -202,7 +203,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets?limit=50"
 ```
 
-Format as table: Draft ID | Name | Campaign ID | Status | Format | Budget | Version
+Format as table: Draft ID | Name | Campaign ID | Status | Format | Budget
 
 Optional filters: `campaign_ids` (repeated param), `statuses` (repeated param).
 
@@ -213,7 +214,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads?limit=50"
 ```
 
-Format as table: Draft ID | Name | Ad Set ID | Status | Version
+Format as table: Draft ID | Name | Ad Set ID | Status
 
 Optional filters: `ad_set_ids` (repeated param), `statuses` (repeated param).
 
@@ -244,7 +245,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads/$DRAFT_AD_ID"
 ```
 
-Display all fields in a readable format, including `draft_hierarchy_version`.
+Display all fields in a readable format. Note that `draft_hierarchy_version` is only populated on campaign drafts; ad set and ad drafts return `null` for this field.
 
 ---
 
@@ -285,7 +286,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKE
 
 Updatable ad fields: `name`, `advertiser_name`, `tagline`, `assets`, `asset_format`, `call_to_action`, `third_party_tracking`, `placements`, `weight`, `status`.
 
-After updating, display the updated draft and note the new `draft_hierarchy_version`.
+After updating, display the updated draft. For campaign drafts, note the new `draft_hierarchy_version`. For ad set and ad drafts, `draft_hierarchy_version` is `null` in the response — fetch the parent draft campaign to get the updated version.
 
 ---
 
@@ -311,16 +312,15 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 
 **Handling the response:**
 
-The response is a `PublishCampaignResult` with:
-- `campaign` — published campaign data, present on successful `PUBLISH`; may be absent for `VALIDATE`
-- `validation_errors` — array of `HierarchyValidationError` objects
+- **HTTP 200** — validation passed. The response is a `PublishCampaignResult` with `validation_errors: null` and optionally `campaign` data.
+- **HTTP 400** — validation failed. The response contains a `validation_errors` array of `HierarchyValidationError` objects.
 
 Each `HierarchyValidationError` has:
 - `validation_entity_type`: `CAMPAIGN`, `AD_SET`, or `AD`
 - `validation_entity_id`: UUID of the failing entity
 - `message`: human-readable error description
 
-**If no validation errors:**
+**If no validation errors (HTTP 200):**
 ```
 ✓ Draft campaign "My Campaign" passed validation.
   Campaign + 2 ad sets + 3 ads are ready to publish.
@@ -328,7 +328,7 @@ Each `HierarchyValidationError` has:
   Publish now? /spotify-ads-api:drafts publish <draft_campaign_id>
 ```
 
-**If validation errors exist:**
+**If validation errors exist (HTTP 400):**
 ```
 ✗ Draft campaign "My Campaign" has validation errors:
 
@@ -345,7 +345,7 @@ Then re-validate with: /spotify-ads-api:drafts validate <draft_campaign_id>
 
 ### `publish <draft_campaign_id>` — Publish a Draft Campaign
 
-Publish the entire draft hierarchy (campaign + ad sets + ads) as live entities. **Always validate first** before publishing.
+Publish the entire draft hierarchy (campaign + ad sets + ads) as live entities. Published entities retain the same IDs they had as drafts. **Always validate first** before publishing.
 
 #### Step 1: Fetch the draft campaign to get `draft_hierarchy_version`
 
@@ -399,7 +399,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
-Display the published campaign details from the response.
+Display the published campaign details from the response. Published entities retain the same IDs they had as drafts.
 
 ---
 
@@ -457,7 +457,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID/drafts"
 ```
 
-Display the created draft with its `draft_hierarchy_version` and suggest next steps:
+The draft-from-published response reuses the **same ID** as the live entity (not a new UUID). The status becomes `ACTIVE_RESTRICTED`. Display the created draft and suggest next steps:
 - Edit: `/spotify-ads-api:drafts edit <campaign|ad-set|ad> <draft_id>`
 - Validate: `/spotify-ads-api:drafts validate <draft_campaign_id>`
 - Publish: `/spotify-ads-api:drafts publish <draft_campaign_id>`
@@ -466,17 +466,17 @@ Display the created draft with its `draft_hierarchy_version` and suggest next st
 
 ## Critical Schema Notes
 
-These are the same non-obvious API requirements from the direct entity endpoints:
+Unlike direct entity creation, draft creation accepts incomplete data — required fields are only enforced during VALIDATE or PUBLISH actions. This is a key benefit of drafts: save work in progress and complete it later.
 
 1. **`bid_strategy`** is a plain STRING enum, NOT an object. Valid: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, `UNSET`
 2. **`geo_targets`** is a flat object `{"country_code": "US"}`, NOT an array of objects
 3. **`platforms`** valid values are `ANDROID`, `DESKTOP`, `IOS` — NOT "MOBILE" or "CONNECTED_DEVICE"
 4. **`category`** is required on ad sets — must be a valid `ADV_X_Y` code from `GET /ad_categories`
 5. **`end_time`** is required when budget type is `LIFETIME`
-6. **`companion_asset_id`** is required when creating ads for AUDIO ad sets
+6. **`companion_asset_id`** is required for AUDIO format ads at publish/validation time, but can be omitted when creating draft ads
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
 8. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
-9. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the draft campaign immediately before calling publish/validate; never reuse a version captured before child drafts or edits
+9. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the **draft campaign** immediately before calling publish/validate; never reuse a version captured before child drafts or edits. This field is only populated on draft campaign responses; ad set and ad draft responses return `null`. The version on the campaign increments when any entity in the hierarchy is created or edited
 10. **Draft ad set `campaign_id`** must reference the **draft campaign ID**, not a published campaign ID
 11. **Draft ad `ad_set_id`** must reference a **draft ad set ID**, not a published ad set ID
 
