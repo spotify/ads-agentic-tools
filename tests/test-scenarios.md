@@ -1,6 +1,6 @@
 # Test Scenarios
 
-10 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors.
+21 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors.
 
 **Important:** All entity names (campaigns, ad sets, ads) must be prefixed with `[Test reject]` so they are automatically rejected by ad review and never serve live impressions.
 
@@ -121,7 +121,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
     "start_time": "2026-03-01T00:00:00Z",
     "budget": {"micro_amount": 75000000, "type": "DAILY"},
     "asset_format": "AUDIO",
-    "category": "ADV_X_Y",
+    "category": "ADV_1_5",
     "targets": {
       "age_ranges": [{"min": 18, "max": 34}],
       "geo_targets": {"country_code": "US"},
@@ -192,25 +192,35 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 
 ---
 
-## Scenario 6: Full Build-Campaign Flow
+## Scenario 6: Full Build-Campaign Flow (Draft Default)
 
 **Prompt:** "Build me a complete audio campaign called [Test reject] Summer Promo targeting US listeners aged 25-44 with $100/day budget"
 
-**Quirks tested:** End-to-end multi-step (campaign -> ad set -> ad), ID passing, all quirks combined
+**Quirks tested:** End-to-end multi-step draft creation (draft campaign -> draft ad set -> draft ad), ID passing, draft_hierarchy_version, auto-validation, all schema quirks combined
 
 **Expected behavior:**
-1. Agent presents full plan as tree visualization
-2. Creates campaign via POST (extracts `id`)
-3. Creates ad set via POST using campaign `id` (extracts ad set `id`)
-4. Prompts for assets, creates ad via POST using ad set `id`
-5. Displays summary table
+1. Agent presents full plan as tree visualization, labeled as **DRAFT**
+2. Prompts for assets
+3. Creates **draft** campaign via `POST /drafts/campaigns` (extracts draft campaign `id`)
+4. Creates **draft** ad set via `POST /drafts/ad_sets` using draft campaign `id` (extracts draft ad set `id`)
+5. Creates **draft** ad via `POST /drafts/ads` using draft ad set `id`
+6. Fetches draft campaign to get current `draft_hierarchy_version`
+7. Runs validation with that version
+8. Displays validation results and summary table
+9. Asks: publish now or keep as draft
 
 **Success criteria:**
-- Campaign created with objective (default REACH) and `[Test reject]` prefix in name
-- Ad set created with all required fields (budget 100000000, geo_targets flat, platforms correct, category present, placements present, bid_strategy as string) and `[Test reject]` prefix in name
-- Ad created with all required assets (including companion_asset_id for AUDIO) and `[Test reject]` prefix in name
-- IDs correctly passed from each step to the next
-- Final summary shows all created entities
+- Uses draft endpoints (`/drafts/campaigns`, `/drafts/ad_sets`, `/drafts/ads`), NOT direct entity endpoints
+- Tree visualization labels entities as "DRAFT"
+- Draft campaign created with objective (default REACH) and `[Test reject]` prefix in name
+- Draft ad set created with all required fields (budget 100000000, geo_targets flat, platforms correct, category present, placements present, bid_strategy as string) and `[Test reject]` prefix in name
+- Draft ad created with all required assets (including companion_asset_id for AUDIO) and `[Test reject]` prefix in name
+- Draft IDs correctly passed from each step to the next
+- `draft_hierarchy_version` fetched fresh before validation (not reused from creation response)
+- Validation runs automatically after all drafts are created
+- If user requests publish, explicit confirmation is required even with `auto_execute: true`
+
+**Note:** If the user explicitly says "skip drafts" or "create live entities", the agent should use direct endpoints instead (legacy behavior).
 
 ---
 
@@ -461,3 +471,331 @@ limit=50"
 - Zero-impression rows are excluded
 - Table is cleanly formatted with aligned columns
 - Total spend is shown in the header summary
+
+---
+
+## Scenario 14: List Draft Campaigns
+
+**Prompt:** "Show me all my draft campaigns"
+
+**Quirks tested:** Draft list endpoint (not live campaigns endpoint), table formatting, `draft_hierarchy_version` display
+
+**Expected behavior:**
+1. Agent reads settings file
+2. Constructs GET to `/drafts/campaigns` (NOT `/campaigns`)
+3. Formats response as table: Draft ID | Name | Status | Objective | Version | Created
+
+**Expected curl:**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns?limit=50&sort_direction=DESC"
+```
+
+**Success criteria:**
+- Uses `/drafts/campaigns` endpoint, NOT `/campaigns`
+- Output includes `draft_hierarchy_version` column
+- Returns 200 with drafts list or empty array
+- Output formatted as readable table
+
+---
+
+## Scenario 15: Create Draft Campaign Hierarchy (Explicit)
+
+**Prompt:** `/spotify-ads-api:drafts build [Test reject] Audio Draft Campaign targeting US listeners aged 25-44 with $50/day budget and a Learn More button linking to example.com`
+
+**Quirks tested:** Draft-specific skill invocation, sequential draft entity creation, `campaign_id` references draft (not live) ID, `ad_set_id` references draft (not live) ID, auto-validation after creation
+
+**Expected behavior:**
+1. Agent presents plan as tree with DRAFT labels
+2. Prompts for assets (fetches from `GET /assets`)
+3. Creates draft campaign: `POST /drafts/campaigns`
+4. Creates draft ad set: `POST /drafts/ad_sets` with `campaign_id` = draft campaign ID
+5. Creates draft ad: `POST /drafts/ads` with `ad_set_id` = draft ad set ID
+6. Fetches draft campaign to get current `draft_hierarchy_version`
+7. Validates with that version
+8. Displays summary and asks: publish or keep as draft
+
+**Expected curl (draft campaign):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"[Test reject] Audio Draft Campaign","objective":"REACH"}' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns"
+```
+
+**Expected curl (draft ad set):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "campaign_id": "<draft_campaign_id>",
+    "name": "[Test reject] Audio Draft Ad Set",
+    "start_time": "2026-07-01T00:00:00Z",
+    "budget": {"micro_amount": 50000000, "type": "DAILY"},
+    "asset_format": "AUDIO",
+    "category": "ADV_1_5",
+    "targets": {
+      "age_ranges": [{"min": 25, "max": 44}],
+      "geo_targets": {"country_code": "US"},
+      "platforms": ["ANDROID", "DESKTOP", "IOS"],
+      "placements": ["MUSIC"]
+    },
+    "bid_strategy": "MAX_BID",
+    "bid_micro_amount": 15000000
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ad_sets"
+```
+
+**Expected curl (draft ad):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ad_set_id": "<draft_ad_set_id>",
+    "name": "[Test reject] Audio Draft Ad",
+    "tagline": "...",
+    "advertiser_name": "...",
+    "assets": {
+      "asset_id": "<uuid>",
+      "logo_asset_id": "<uuid>",
+      "companion_asset_id": "<uuid>"
+    },
+    "call_to_action": {
+      "key": "LEARN_MORE",
+      "clickthrough_url": "https://example.com"
+    }
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ads"
+```
+
+**Success criteria:**
+- All three entities created via `/drafts/` endpoints
+- Draft ad set `campaign_id` references the draft campaign ID from step 3 (not a live campaign)
+- Draft ad `ad_set_id` references the draft ad set ID from step 4 (not a live ad set)
+- All schema quirks applied: micro-amounts, flat geo_targets, platform enums, bid_strategy as string, category present, companion_asset_id for AUDIO
+- `call_to_action` uses `key` (not `type`) and `clickthrough_url` (not `url`)
+- `draft_hierarchy_version` fetched fresh before validation
+- Validation runs automatically after all drafts created
+- Summary table shows all draft entity IDs
+
+---
+
+## Scenario 16: Edit a Draft Ad Set
+
+**Prompt:** "Change the budget on that draft ad set to $150/day and expand targeting to ages 18-54"
+
+**Quirks tested:** PATCH on draft ad set endpoint (not live ad set), micro-amount conversion, `draft_hierarchy_version` only on campaign entity
+
+**Expected behavior:**
+1. Agent identifies the draft ad set ID from prior context
+2. Constructs PATCH to `/drafts/ad_sets/<id>` (NOT `/ad_sets/<id>`)
+3. Converts $150 to 150000000 micro-amount
+4. Updates age_ranges to `[{"min": 18, "max": 54}]`
+5. Displays updated draft — note that `draft_hierarchy_version` is `null` on ad set responses (version only lives on the campaign entity)
+
+**Expected curl:**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "budget": {"micro_amount": 150000000, "type": "DAILY"},
+    "targets": {
+      "age_ranges": [{"min": 18, "max": 54}],
+      "geo_targets": {"country_code": "US"},
+      "platforms": ["ANDROID", "DESKTOP", "IOS"],
+      "placements": ["MUSIC"]
+    }
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ad_sets/<draft_ad_set_id>"
+```
+
+**Success criteria:**
+- Uses `/drafts/ad_sets/<id>` endpoint, NOT `/ad_sets/<id>`
+- Budget converted to micro-amount: 150000000
+- Age range updated correctly
+- Response shows updated fields. `draft_hierarchy_version` is `null` on ad set draft responses — fetch the parent draft campaign to verify the version incremented
+- Does NOT create a new draft — updates the existing one via PATCH
+
+---
+
+## Scenario 17: Validate a Draft Campaign
+
+**Prompt:** `/spotify-ads-api:drafts validate <draft_campaign_id>`
+
+**Quirks tested:** Two-step version fetch + validate, `draft_hierarchy_version` freshness, `VALIDATE` action, validation error display
+
+**Expected behavior:**
+1. Agent fetches draft campaign to get current `draft_hierarchy_version`
+2. POSTs `{"action":"VALIDATE","draft_hierarchy_version":<version>}` to the draft campaign endpoint
+3. Displays validation results
+
+**Expected curl (fetch version):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns/<draft_campaign_id>"
+```
+
+**Expected curl (validate):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"VALIDATE","draft_hierarchy_version":<version>}' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns/<draft_campaign_id>"
+```
+
+**Success criteria:**
+- Version fetched via GET on the **draft campaign** before validation POST (not reused from earlier; `draft_hierarchy_version` is only populated on campaign drafts — ad set and ad drafts return `null`)
+- `action` is `"VALIDATE"`, not `"PUBLISH"`
+- `draft_hierarchy_version` in POST body matches the GET response
+- On success (HTTP 200): `validation_errors` is `null` — displays "passed validation" and suggests publish
+- On errors (HTTP 400): response body contains `validation_errors` array — displays each `HierarchyValidationError` with `validation_entity_type`, `validation_entity_id`, and `message`
+- Suggests fix commands for each error
+
+---
+
+## Scenario 18: Publish a Draft Campaign
+
+**Prompt:** `/spotify-ads-api:drafts publish <draft_campaign_id>`
+
+**Quirks tested:** Pre-publish validation, explicit user confirmation even with `auto_execute: true`, version re-fetch immediately before publish, `PUBLISH` action
+
+**Expected behavior:**
+1. Agent fetches draft campaign to get `draft_hierarchy_version`
+2. Runs validation first — if errors, stops and displays them
+3. Shows the full hierarchy and asks for explicit confirmation
+4. Re-fetches draft campaign immediately before publish to check version hasn't changed
+5. If version changed since validation, re-validates before publishing
+6. POSTs `{"action":"PUBLISH","draft_hierarchy_version":<version>}`
+7. Displays published campaign details
+
+**Expected curl (publish):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"PUBLISH","draft_hierarchy_version":<version>}' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns/<draft_campaign_id>"
+```
+
+**Success criteria:**
+- Validation runs BEFORE publish attempt
+- If validation errors exist, publish is blocked — errors displayed instead
+- User explicitly confirms before publish, even when `auto_execute` is true
+- `draft_hierarchy_version` re-fetched immediately before publish POST
+- If version changed between validation and publish, re-validates
+- `action` is `"PUBLISH"`, not `"VALIDATE"`
+- Response shows the published campaign (HTTP 200). Published entities retain the same IDs they had as drafts — no new UUIDs are generated
+- Never auto-executes the PUBLISH request
+
+---
+
+## Scenario 19: Delete a Draft
+
+**Prompt:** "Delete the draft campaign <unpublished_draft_campaign_id>"
+
+**Quirks tested:** DELETE on draft endpoint (unlike live entities which use status changes), 204 response, cascade behavior
+
+**Setup:** Use a separate unpublished throwaway draft campaign. Do not reuse a draft campaign that was already published in Scenario 18.
+
+**Expected behavior:**
+1. Agent identifies draft type and ID
+2. Confirms deletion with user (cascade warning for campaigns)
+3. Sends DELETE to `/drafts/campaigns/<id>`
+4. Expects 204 No Content
+
+**Expected curl:**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X DELETE -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns/<unpublished_draft_campaign_id>"
+```
+
+**Success criteria:**
+- Uses DELETE method (drafts support DELETE, unlike live entities)
+- Endpoint is `/drafts/campaigns/<id>`, NOT `/campaigns/<id>`
+- Does NOT attempt status change (ARCHIVED/PAUSED) — those are for live entities
+- Uses an unpublished draft fixture, not the draft published in Scenario 18
+- Returns 204 No Content
+- For draft campaigns: warns that associated draft ad sets and ads are also deleted
+- DELETE is safe to retry (idempotent)
+
+---
+
+## Scenario 20: Create Draft from Published Entity
+
+**Prompt:** "Create a draft from campaign <campaign_id> so I can make changes"
+
+**Quirks tested:** `draft-from` endpoint path (entity ID in URL, not body), creates editable draft copy of live entity, parent draft campaign resolution for child drafts
+
+**Expected behavior:**
+1. Agent constructs POST to the appropriate create-from-published endpoint for campaign, ad set, or ad
+2. Response includes a draft entity with the **same ID** as the live entity (not a new UUID), status `ACTIVE_RESTRICTED`
+3. For campaign drafts, the returned ID is the draft campaign ID
+4. For ad set drafts, agent uses the returned `campaign_id` as the draft campaign ID for validate/publish
+5. For ad drafts, agent fetches the draft ad set referenced by `ad_set_id`, then uses that ad set's `campaign_id` as the draft campaign ID for validate/publish
+6. Agent displays draft details and suggests next steps (edit, validate, publish)
+
+**Expected curl (campaign):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns/<campaign_id>/drafts"
+```
+
+**Expected curl (ad set):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ad_sets/<ad_set_id>/drafts"
+```
+
+**Expected curl (ad):**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ads/<ad_id>/drafts"
+```
+
+**Success criteria:**
+- Endpoint is `/campaigns/<live_id>/drafts`, `/ad_sets/<live_id>/drafts`, or `/ads/<live_id>/drafts` with live entity ID in path
+- Does NOT use `/drafts/campaigns`, `/drafts/ad_sets`, or `/drafts/ads` (those are for creating new drafts)
+- Response includes a draft entity with the **same `id`** as the live entity (not a new UUID)
+- Status becomes `ACTIVE_RESTRICTED`
+- For child drafts, agent resolves the parent draft campaign ID before suggesting validate/publish commands
+- `draft_hierarchy_version` may be `null` initially (no draft hierarchy edits yet)
+- Agent suggests edit/validate/publish as next steps
+- No request body required
+
+---
+
+## Scenario 21: Draft Validation Error Recovery
+
+**Prompt:** Build a draft audio campaign that is intentionally missing `companion_asset_id` on the ad, then validate and fix
+
+**Quirks tested:** Validation error display, edit to fix, re-validation cycle
+
+**Setup:** Create a draft hierarchy (campaign + ad set + audio ad) but omit `companion_asset_id` from the ad's assets.
+
+**Expected behavior:**
+1. Draft hierarchy created (campaign, ad set, audio ad without `companion_asset_id`) — the draft create endpoint accepts incomplete data; validation only runs on explicit VALIDATE
+2. Validation returns HTTP 400 with `validation_errors` array: `AD` entity missing `companion_asset_id` for AUDIO format
+3. Agent displays error with entity type, ID, and message
+4. User says "fix it" or provides the missing asset
+5. Agent PATCHes the draft ad with the corrected `assets` object
+6. Agent re-validates — this time validation passes (HTTP 200, `validation_errors: null`)
+7. Asks user to publish or keep as draft
+
+**Success criteria:**
+- Draft ad creation succeeds without `companion_asset_id` (drafts accept incomplete data — this is the key benefit over direct creation)
+- Validation catches the error with HTTP 400 (not 200) and `validation_errors` array
+- Error display includes entity type (`AD`), entity ID, and descriptive message
+- Fix uses PATCH on `/drafts/ads/<id>` (not creating a new draft ad)
+- Re-validation uses fresh `draft_hierarchy_version` from the draft campaign (not the version from before the edit; `draft_hierarchy_version` is `null` on ad drafts)
+- Full cycle: create → validate (fail @ 400) → edit → validate (pass @ 200) → offer publish

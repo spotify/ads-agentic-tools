@@ -9,6 +9,8 @@ allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 
 Clone an existing campaign or ad set by reading its full hierarchy and recreating it with optional modifications.
 
+**Note:** If the goal is to _edit_ an existing campaign rather than _duplicate_ it, use `/spotify-ads-api:drafts draft-from <campaign_id>` instead — this creates a draft copy of the live entity that can be edited and re-published.
+
 ## Setup
 
 1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:

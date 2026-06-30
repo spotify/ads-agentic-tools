@@ -1,6 +1,6 @@
 ---
 name: build-campaign
-description: Create a full campaign (campaign + ad sets + ads) from a plain-text description. Parses natural language into structured API calls.
+description: Create a full campaign (campaign + ad sets + ads) from a plain-text description. Parses natural language into structured API calls. Prefers the draft workflow for safer creation with batch validation.
 argument-hint: "<plain-text campaign description>"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
@@ -9,6 +9,21 @@ allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 
 Given a plain-text description of an advertising campaign, parse it into structured API
 calls and create the full campaign hierarchy: Campaign → Ad Sets → Ads.
+
+## Preferred Flow: Draft → Validate → Publish
+
+By default, use the **draft workflow** to build campaigns. This creates draft entities first, validates the entire hierarchy, and only publishes after confirmation. Route to the `/spotify-ads-api:drafts build <description>` skill to execute the draft flow.
+
+The draft flow is preferred because:
+- **Batch validation** catches all errors across the hierarchy before anything goes live
+- **Safe iteration** — the user can review and edit drafts before publishing
+- **Easy undo** — delete the draft if something looks wrong; no live entities to clean up
+
+Publishing a draft always requires explicit user confirmation immediately before the `PUBLISH` request, even when `auto_execute` is enabled.
+
+Only use the direct creation flow below if the user explicitly asks to skip drafts or create live entities immediately.
+
+## Direct Creation Flow (Legacy)
 
 ## Setup
 
