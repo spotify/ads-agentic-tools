@@ -65,7 +65,7 @@ Return a compact strategy package:
 - **Validated targeting:** category code, geo IDs, and any other target IDs. Mark unvalidated ideas clearly.
 - **Forecasts:** audience estimate, likely-to-deliver flag, reach/impression/CPM ranges, and bid estimate when available.
 - **API-ready plan:** campaign tree plus JSON skeletons for campaign and ad sets.
-- **Next step:** what to confirm before handing off to `/spotify-ads-api:build-campaign`.
+- **Next step:** what to confirm before handing off to `/spotify-ads-api:drafts build` (preferred) or `/spotify-ads-api:build-campaign`. Recommend the draft flow so the user can review and validate the full hierarchy before going live.
 
 ## Guardrails
 

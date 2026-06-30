@@ -4,6 +4,10 @@
 
 This example shows the complete sequence of API calls to create a campaign, ad set, and ad.
 
+**Recommended:** Use the draft flow (see [Draft Campaign Flow](#draft-campaign-flow-recommended) at the end) for new campaigns. It validates the entire hierarchy before going live.
+
+## Direct Flow (Legacy)
+
 ## Step 1: Create Campaign
 
 ```bash
@@ -165,3 +169,176 @@ These are non-obvious requirements discovered through real API testing:
 - All budgets and bids use **micro-amounts** — multiply dollar values by 1,000,000.
 - Using a `campaign_id` that doesn't belong to the same `ad_account_id` will fail.
 - Setting `end_time` before `start_time` will fail.
+
+---
+
+## Draft Campaign Flow (Recommended)
+
+The draft flow creates staging entities, validates everything at once, then publishes. Same data, safer workflow.
+
+### Step 1: Create Draft Campaign
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Summer Sale 2025",
+    "objective": "REACH"
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns"
+```
+
+**Expected Response (200):**
+```json
+{
+  "id": "d1e2f3a4-b5c6-7890-abcd-ef1234567890",
+  "name": "Summer Sale 2025",
+  "objective": "REACH",
+  "draft_hierarchy_version": 1,
+  "created_at": "2025-06-01T12:00:00Z"
+}
+```
+
+Save `id` and `draft_hierarchy_version`.
+
+### Step 2: Create Draft Ad Set
+
+Uses the draft `campaign_id` from Step 1.
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "campaign_id": "d1e2f3a4-b5c6-7890-abcd-ef1234567890",
+    "name": "Summer Sale - Audio US 18-34",
+    "start_time": "2025-06-15T00:00:00Z",
+    "end_time": "2025-07-15T23:59:59Z",
+    "budget": {
+      "micro_amount": 50000000,
+      "type": "DAILY"
+    },
+    "asset_format": "AUDIO",
+    "category": "ADV_1_2",
+    "targets": {
+      "age_ranges": [{"min": 18, "max": 34}],
+      "geo_targets": {"country_code": "US"},
+      "platforms": ["ANDROID", "DESKTOP", "IOS"],
+      "placements": ["MUSIC"]
+    },
+    "bid_strategy": "MAX_BID",
+    "bid_micro_amount": 15000000
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets"
+```
+
+### Step 3: Create Draft Ad
+
+Uses the draft `ad_set_id` from Step 2.
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ad_set_id": "e2f3a4b5-c6d7-8901-bcde-f12345678901",
+    "name": "Summer Sale - 30s Audio Spot",
+    "tagline": "Summer deals up to 50% off",
+    "advertiser_name": "My Brand",
+    "assets": {
+      "asset_id": "audio-asset-uuid",
+      "logo_asset_id": "logo-image-uuid",
+      "companion_asset_id": "companion-image-uuid"
+    },
+    "call_to_action": {
+      "key": "SHOP_NOW",
+      "clickthrough_url": "https://mybrand.com/summer-sale"
+    }
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/ads"
+```
+
+### Step 4: Validate the Draft Hierarchy
+
+Dry-run publish to check for errors across the entire hierarchy:
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "VALIDATE",
+    "draft_hierarchy_version": 1
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+```
+
+**Success (200, no errors):**
+```json
+{
+  "campaign": { "id": "...", "name": "Summer Sale 2025", "status": "ACTIVE" },
+  "validation_errors": []
+}
+```
+
+**Validation errors (200, with errors):**
+```json
+{
+  "validation_errors": [
+    {
+      "validation_entity_type": "AD_SET",
+      "validation_entity_id": "e2f3a4b5-c6d7-8901-bcde-f12345678901",
+      "message": "Ad set targeting is required"
+    },
+    {
+      "validation_entity_type": "AD",
+      "validation_entity_id": "f3a4b5c6-d7e8-9012-cdef-123456789012",
+      "message": "Missing companion_asset_id for AUDIO format"
+    }
+  ]
+}
+```
+
+Fix errors with PATCH on the draft entities, then re-validate.
+
+### Step 5: Publish
+
+Once validation passes, publish to create live entities:
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "PUBLISH",
+    "draft_hierarchy_version": 1
+  }' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+```
+
+**Expected Response (200):**
+```json
+{
+  "campaign": {
+    "id": "published-campaign-uuid",
+    "name": "Summer Sale 2025",
+    "status": "ACTIVE",
+    "objective": "REACH"
+  },
+  "validation_errors": []
+}
+```
+
+### Draft Schema Notes
+
+All the same schema pitfalls from the direct flow apply to drafts (bid_strategy is a string, geo_targets is flat, etc.). Additional draft-specific notes:
+
+- **`draft_hierarchy_version`** is read-only — returned on every draft entity. Must be passed when publishing or validating. It increments whenever any entity in the hierarchy is edited.
+- **Draft entities can be truly deleted** (DELETE returns 204) — unlike live entities which can only be archived.
+- **Draft `campaign_id` and `ad_set_id`** must reference other draft entity IDs, not published entity IDs.

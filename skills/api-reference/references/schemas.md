@@ -461,3 +461,99 @@ Required: `asset_format`, `objective`, `bid_strategy`, `currency`, `targets`
 ```
 
 Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
+
+---
+
+## Draft Schemas
+
+### CampaignDraft
+```json
+{
+  "id": "uuid",
+  "name": "string (max 200 chars)",
+  "objective": "REACH | EVEN_IMPRESSION_DELIVERY | CLICKS | VIDEO_VIEWS | PODCAST_STREAMS",
+  "purchase_order": "string (max 45 chars)",
+  "delivery_goal_group": "AWARENESS | CONSIDERATION",
+  "status": "CampaignStatus enum",
+  "draft_hierarchy_version": 1,
+  "ad_account_id": "uuid",
+  "needs_advertiser_review": false,
+  "modified_by_role": "ADVERTISER | IMPERSONATOR",
+  "created_at": "ISO 8601",
+  "updated_at": "ISO 8601"
+}
+```
+
+### AdSetDraft
+```json
+{
+  "id": "uuid",
+  "campaign_id": "uuid (draft campaign ID)",
+  "name": "string (max 200 chars)",
+  "start_time": "ISO 8601",
+  "end_time": "ISO 8601",
+  "budget": { "micro_amount": 50000000, "type": "DAILY | LIFETIME" },
+  "bid_strategy": "MAX_BID | COST_PER_RESULT | AUTOBID | UNSET",
+  "bid_micro_amount": 15000000,
+  "asset_format": "AUDIO | VIDEO | IMAGE | CATALOG",
+  "category": "ADV_X_Y",
+  "targets": { "...": "Targets object" },
+  "pacing": "PACING_EVEN | PACING_ASAP",
+  "frequency_caps": [{ "...": "FrequencyCap objects" }],
+  "cost_model": "CPM | CPCL",
+  "delivery_goal": "string",
+  "status": "AdSetStatus enum",
+  "draft_hierarchy_version": 1,
+  "created_at": "ISO 8601",
+  "updated_at": "ISO 8601"
+}
+```
+
+### AdDraft
+```json
+{
+  "id": "uuid",
+  "ad_set_id": "uuid (draft ad set ID)",
+  "name": "string",
+  "advertiser_name": "string",
+  "tagline": "string",
+  "assets": { "asset_id": "uuid", "logo_asset_id": "uuid", "companion_asset_id": "uuid" },
+  "asset_format": "AUDIO | VIDEO | IMAGE",
+  "call_to_action": { "key": "LEARN_MORE", "clickthrough_url": "https://...", "language": "ENGLISH" },
+  "third_party_tracking": [{ "measurement_partner": "string", "url": "string" }],
+  "weight": 10,
+  "status": "AdStatus enum",
+  "draft_hierarchy_version": 1,
+  "created_at": "ISO 8601",
+  "updated_at": "ISO 8601"
+}
+```
+
+### PublishCampaignRequest
+```json
+{
+  "action": "PUBLISH | VALIDATE",
+  "draft_hierarchy_version": 1
+}
+```
+- `action`: `VALIDATE` (default) = dry-run check; `PUBLISH` = create live entities
+- `draft_hierarchy_version`: must match the current version from the draft campaign
+
+### PublishCampaignResult
+```json
+{
+  "campaign": { "...": "CampaignResponse (present on successful publish)" },
+  "validation_errors": [
+    {
+      "validation_entity_type": "CAMPAIGN | AD_SET | AD",
+      "validation_entity_id": "uuid",
+      "message": "string"
+    }
+  ]
+}
+```
+
+**Notes:**
+- `draft_hierarchy_version` is read-only and increments whenever any entity in the draft hierarchy is edited. Always fetch the current version before publishing or validating.
+- `validation_errors` is empty on success; populated with per-entity errors on failure.
+- The same schema pitfalls apply to drafts: `bid_strategy` is a plain string, `geo_targets` is a flat object, `category` is required on ad sets, etc.

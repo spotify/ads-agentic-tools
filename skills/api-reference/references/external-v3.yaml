@@ -13,16 +13,10 @@ servers:
 security:
   - oauth2: []
 tags:
-  - name: ab-tests
-    description: Operations to manage AB tests.
   - name: ad-accounts
     description: Operations to manage ad accounts.
-  - name: ad-accounts-internal
-    description: Operations to manage ad accounts internally.
   - name: ad-categories
     description: Operations to manage ad categories.
-  - name: ads-manager-config
-    description: Operations to manage ads manager configuration.
   - name: ad-sets
     description: Operations to manage ad sets.
   - name: ads
@@ -31,24 +25,12 @@ tags:
     description: Operations to manage assets.
   - name: audiences
     description: Operations to manage audiences.
-  - name: audit-logs
-    description: Operations to manage audit logs.
-  - name: billing
-    description: Operations to manage billing.
-  - name: billing-settings
-    description: Operations to manage billing settings.
   - name: businesses
     description: Operations to manage businesses.
   - name: campaigns
     description: Operations to manage campaigns.
-  - name: deals
-    description: Operations to manage deals.
-  - name: drafts
-    description: Operations to manage drafts.
   - name: estimates
     description: Operations to manage audience forecasting.
-  - name: experiments
-    description: Operations to manage experiments.
   - name: mobile-measurement
     description: Operations to manage mobile measurement.
   - name: pixel-measurement
@@ -57,40 +39,14 @@ tags:
     description: Operations to manage Conversion API measurement.
   - name: measurement-datasets
     description: Operations to manage measurement datasets.
-  - name: conversion-lift-study
-    description: Operations to manage conversion lift studies.
-  - name: offers
-    description: Operations to manage offers.
-  - name: partnerships
-    description: Operations to manage partnerships.
   - name: podcast-shows
     description: Operations to fetch podcast shows.
-  - name: podcast-episodes
-    description: Operations to fetch podcast episodes.
-  - name: prepay
-    description: Operations to manage prepay transactions
   - name: pricing
     description: Operations to manage pricing.
-  - name: category-policies
-    description: Operations to query category policies from Policy Manager.
   - name: reports
     description: Operations to manage reporting.
-  - name: tax
-    description: Operations related to tax.
-  - name: vat
-    description: '[DEPRECATED] VASE-backed VAT validation. Returns a stub (is_valid=false, EX_VAT_SERVICE_UNAVAILABLE); will be removed in v4.'
-  - name: promo-codes
-    description: Operations to manage promo codes.
-  - name: reservations
-    description: Operations to manage reservations.
   - name: targets
     description: Operations to manage targeting.
-  - name: tests
-    description: Operations to manage test data.
-  - name: users
-    description: Operations to manage users.
-  - name: recommendations
-    description: Operations to manage recommendations.
 paths:
   /ad_accounts/{ad_account_id}:
     get:
@@ -653,6 +609,35 @@ paths:
       summary: Update Ad Set
       tags:
         - ad-sets
+  /ad_accounts/{ad_account_id}/ad_sets/{ad_set_id}/drafts:
+    post:
+      description: Creates a draft version of a published ad set under a given ad account.
+      operationId: createDraftFromAdSet
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/ad_set_id'
+      responses:
+        '200':
+          description: Metadata of created draft ad set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdSetDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create a Draft Ad Set from a Published Ad Set
+      tags:
+        - ad-sets
   /ad_accounts/{ad_account_id}/ad_sets:
     post:
       description: Create a new ad set.
@@ -825,20 +810,6 @@ paths:
                   playlist_ids:
                     - cooking
                     - holidays
-          links:
-            CreateAdForAdSet:
-              operationId: createAd
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-              requestBody:
-                ad_set_id: $response.body#/id
-              description: Use the ad set id from this response as ad_set_id when creating an ad (step 3 of campaign-creation flow).
-            GetAdSetById:
-              operationId: getAdSetById
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                ad_set_id: $response.body#/id
-              description: Retrieve the newly created ad set by its ID.
         '400':
           description: Bad request.
           content:
@@ -1061,6 +1032,170 @@ paths:
       summary: Get Ad Sets by Ad Account ID
       tags:
         - ad-sets
+  /ad_accounts/{ad_account_id}/drafts/ad_sets:
+    get:
+      description: Get a list of draft ad sets for the ad account.
+      operationId: getAdSetDrafts
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/campaign_ids'
+        - $ref: '#/components/parameters/statuses'
+      responses:
+        '200':
+          description: Ad Set Drafts response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdSetDraftsResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Ad Set Drafts
+      tags:
+        - ad-sets
+    post:
+      description: Creates a draft ad set under a given ad account.
+      operationId: createAdSetDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdSetDraftCreateRequest'
+      responses:
+        '200':
+          description: Metadata of created draft ad set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdSetDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create a Draft Ad Set
+      tags:
+        - ad-sets
+  /ad_accounts/{ad_account_id}/drafts/ad_sets/{draft_ad_set_id}:
+    get:
+      description: Returns draft ad set based on a given draft ad set ID.
+      operationId: getAdSetDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_ad_set_id'
+      responses:
+        '200':
+          description: Metadata for a single draft ad set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdSetDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Draft Ad Set by ID
+      tags:
+        - ad-sets
+    patch:
+      description: Updates the given existing draft ad set.
+      operationId: updateAdSetDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_ad_set_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdSetDraftUpdateRequest'
+      responses:
+        '200':
+          description: Metadata for a single draft campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdSetDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Update a Draft Ad Set
+      tags:
+        - ad-sets
+    delete:
+      description: Deletes the given draft ad set.
+      operationId: deleteAdSetDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_ad_set_id'
+      responses:
+        '204':
+          description: Draft ad set deleted.
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Delete a Draft Ad Set
+      tags:
+        - ad-sets
   /ad_accounts/{ad_account_id}/ads:
     post:
       description: Create a new Ad.
@@ -1085,19 +1220,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdResponse'
-          links:
-            GetAdById:
-              operationId: getAd
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                ad_id: $response.body#/id
-              description: Retrieve the newly created ad by its ID.
-            GetAdSetForAd:
-              operationId: getAdSetById
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                ad_set_id: $response.body#/ad_set_id
-              description: Retrieve the parent ad set for this ad.
         '400':
           description: Bad request.
           content:
@@ -1298,6 +1420,199 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       summary: Update an Ad
+      tags:
+        - ads
+  /ad_accounts/{ad_account_id}/ads/{ad_id}/drafts:
+    post:
+      description: Creates a draft version of a published ad under a given ad account.
+      operationId: createDraftFromAd
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/ad_id'
+      responses:
+        '200':
+          description: Metadata of created draft ad.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create a Draft Ad from a Published Ad
+      tags:
+        - ads
+  /ad_accounts/{ad_account_id}/drafts/ads:
+    get:
+      description: Get a list of draft ads for the ad account.
+      operationId: getAdDrafts
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/ad_set_ids'
+        - $ref: '#/components/parameters/parameters-statuses'
+      responses:
+        '200':
+          description: Ad Drafts response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdDraftsResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Ad Drafts
+      tags:
+        - ads
+    post:
+      description: Creates a draft ad under a given ad account.
+      operationId: createAdDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdDraftCreateRequest'
+      responses:
+        '200':
+          description: Metadata of created draft ad.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create a Draft Ad
+      tags:
+        - ads
+  /ad_accounts/{ad_account_id}/drafts/ads/{draft_ad_id}:
+    get:
+      description: Returns draft ad based on a given ad draft ID.
+      operationId: getAdDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_ad_id'
+      responses:
+        '200':
+          description: Metadata for a single draft ad.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Draft Ad by ID
+      tags:
+        - ads
+    patch:
+      description: Updates the given existing draft ad.
+      operationId: updateAdDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_ad_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdDraftUpdateRequest'
+      responses:
+        '200':
+          description: Metadata for a single draft ad.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Update a Draft Ad
+      tags:
+        - ads
+    delete:
+      description: Deletes the given draft ad.
+      operationId: deleteAdDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_ad_id'
+      responses:
+        '204':
+          description: Draft ad deleted.
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Delete a Draft Ad
       tags:
         - ads
   /ad_accounts/{ad_account_id}/assets:
@@ -2527,6 +2842,7 @@ paths:
         - $ref: '#/components/parameters/sort_direction'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/salesforceSalesOrder'
       responses:
         '200':
           description: A list of campaigns.
@@ -2540,6 +2856,11 @@ paths:
               parameters:
                 ad_account_id: $request.path.ad_account_id
                 campaign_ids: $response.body#/campaign.id
+            GetSalesforceOpportunityForCampaign:
+              operationId: getOpportunitiesByAdAccountId
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                search_key: $response.body#/campaign.salesforceOpportunity
         '400':
           description: Bad request.
           content:
@@ -2578,20 +2899,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CampaignResponse'
-          links:
-            CreateAdSetForCampaign:
-              operationId: createAdSet
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-              requestBody:
-                campaign_id: $response.body#/id
-              description: Use the campaign id from this response as campaign_id when creating an ad set (step 2 of campaign-creation flow).
-            GetCampaignById:
-              operationId: getCampaign
-              parameters:
-                ad_account_id: $request.path.ad_account_id
-                campaign_id: $response.body#/id
-              description: Retrieve the newly created campaign by its ID.
         '400':
           description: Bad request.
           content:
@@ -2628,6 +2935,11 @@ paths:
               parameters:
                 ad_account_id: $request.path.ad_account_id
                 campaign_ids: $response.body#/campaigns.id
+            GetSalesforceOpportunityForCampaign:
+              operationId: getOpportunitiesByAdAccountId
+              parameters:
+                ad_account_id: $request.path.ad_account_id
+                search_key: $response.body#/campaigns.salesforceOpportunity
         '400':
           description: Bad request.
           content:
@@ -2675,6 +2987,224 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       summary: Update a Campaign
+      tags:
+        - campaigns
+  /ad_accounts/{ad_account_id}/campaigns/{campaign_id}/drafts:
+    post:
+      description: Creates a draft version of a published campaign under a given ad account.
+      operationId: createDraftFromCampaign
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/campaign_id'
+      responses:
+        '200':
+          description: Metadata of created draft campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create a Draft Campaign from a Published Campaign
+      tags:
+        - campaigns
+  /ad_accounts/{ad_account_id}/drafts/campaigns:
+    post:
+      description: Creates a draft campaign under a given ad account.
+      operationId: createCampaignDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignDraftRequestProperties'
+      responses:
+        '200':
+          description: Metadata of created draft campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Create a Draft Campaign
+      tags:
+        - campaigns
+    get:
+      description: Get a list of draft campaigns for the ad account.
+      operationId: getCampaignDraftsV3
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/campaignIds'
+        - $ref: '#/components/parameters/campaignChannels'
+        - $ref: '#/components/parameters/campaignStatuses'
+        - $ref: '#/components/parameters/parameters-sort_field'
+        - $ref: '#/components/parameters/sort_direction'
+      responses:
+        '200':
+          description: Metadata for a single draft campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraftsResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Draft Campaigns
+      tags:
+        - campaigns
+  /ad_accounts/{ad_account_id}/drafts/campaigns/{draft_campaign_id}:
+    get:
+      description: Returns draft campaign based on a given draft campaign ID.
+      operationId: getCampaignDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_campaign_id'
+      responses:
+        '200':
+          description: Metadata for a single draft campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Draft Campaign by ID
+      tags:
+        - campaigns
+    patch:
+      description: Updates the given existing draft campaign.
+      operationId: updateCampaignDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_campaign_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignDraftRequestProperties'
+      responses:
+        '200':
+          description: Metadata for a single draft campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDraft'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Update a Draft Campaign
+      tags:
+        - campaigns
+    post:
+      description: Publish or validate a drafted campaign and its associated ad sets and ads.
+      operationId: publishCampaignDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_campaign_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishCampaignRequest'
+      responses:
+        '200':
+          description: Published campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishCampaignResult'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Publish or validate a draft campaign
+      tags:
+        - campaigns
+    delete:
+      description: Deletes the given draft campaign.
+      operationId: deleteCampaignDraft
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/draft_campaign_id'
+      responses:
+        '204':
+          description: Draft campaign deleted.
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Delete a Draft Campaign
       tags:
         - campaigns
   /estimates/audience:
@@ -3810,6 +4340,42 @@ paths:
       summary: Get Podcast Shows
       tags:
         - podcast-shows
+  /ad_accounts/{ad_account_id}/reserved_prices:
+    post:
+      description: |
+        Get pricing for a reserved ad product (fCPM).
+        Supported ad products: CONTENT (Reserved Podcasts), FPMNG (Reserved Music).
+      operationId: getReservedPricing
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservedPriceRequest'
+      responses:
+        '200':
+          description: Price response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicPriceResponse'
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get pricing for a reserved ad product.
+      tags:
+        - pricing
   /ad_accounts/{ad_account_id}/aggregate_reports/totals:
     get:
       operationId: getAggregatedTotals
@@ -4468,6 +5034,10 @@ components:
       enum:
         - ACTIVE
         - INACTIVE
+        - GREY_LISTED
+        - PENDING_MARKET
+        - SUSPEND_LISTED
+        - BLACKLISTED
       description: The status of the ad account.
     AdAccountRole:
       type: string
@@ -4919,14 +5489,14 @@ components:
           '33': Telecommunications
           '34': Travel
         common_examples:
-          ADV_32_266: Technology > Apps
-          ADV_21_182: Media and Entertainment > Books and Literature
-          ADV_15_140: Food and Drink > Food
-          ADV_6_44: Clothing and Fashion > Clothing
-          ADV_34_276: Travel > Adventure Travel
           ADV_1_6: Automotive > Car Manufacturers
-          ADV_29_244: Retailers > Apparel
+          ADV_6_44: Clothing and Fashion > Clothing
           ADV_12_101: Finance and Insurance > Banking
+          ADV_15_140: Food and Drink > Food
+          ADV_21_182: Media and Entertainment > Books and Literature
+          ADV_29_244: Retailers > Apparel
+          ADV_32_266: Technology > Apps
+          ADV_34_276: Travel > Adventure Travel
         restrictions:
           ADV_15_139: Alcoholic Beverages — requires minimum age targeting of 18+
           ADV_16_144: Casinos and Gambling — restricted in many countries
@@ -5100,6 +5670,7 @@ components:
       example: ACTIVE
       enum:
         - ACTIVE
+        - ACTIVE_RESTRICTED
         - APPROVED
         - ARCHIVED
         - COMPLETED
@@ -5218,6 +5789,41 @@ components:
         - MUSIC
         - PODCAST
       example: MUSIC
+    DayPart:
+      type: object
+      description: Day parting targeting for the ad set.
+      properties:
+        day_of_week:
+          type: array
+          description: List of days of the week to target.
+          items:
+            type: string
+            enum:
+              - SUNDAY
+              - MONDAY
+              - TUESDAY
+              - WEDNESDAY
+              - THURSDAY
+              - FRIDAY
+              - SATURDAY
+        hour_of_day:
+          type: array
+          description: List of hour ranges (0-23) to target.
+          items:
+            type: object
+            properties:
+              min:
+                type: integer
+                format: int32
+                description: Start of the hour range (0-23, inclusive). Hour values represent the start of each 1-hour slot; for example, 9 means 9:00 AM.
+                minimum: 0
+                maximum: 23
+              max:
+                type: integer
+                format: int32
+                description: End of the hour range (0-23, inclusive). The end hour slot is fully included; for example, a max of 9 means targeting runs through the 9:00–10:00 AM slot, ending at 10:00 AM.
+                minimum: 0
+                maximum: 23
     Targets:
       type: object
       description: The targeting used for this ad set.
@@ -5362,6 +5968,12 @@ components:
           description: ID(s) of audiences to exclude from targeting.
           items:
             $ref: '#/components/schemas/Uuid'
+        user_day_parts:
+          type: array
+          description: Day parting targeting for the spotify user's time zone.
+          items:
+            $ref: '#/components/schemas/DayPart'
+          uniqueItems: true
     Pacing:
       type: string
       description: Set a pacing option to deliver your ads throughout the schedule of your ad set with standard pacing("PACING_EVEN"), or accelerated pacing("PACING_ASAP") to deliver your ads as quickly as possible.
@@ -5406,18 +6018,18 @@ components:
       description: Toggle to enable/disable SKAd network tracking for an iOS app id.
       example: true
     AdSetResponse:
-      description: |
-        An ad set is the core component of your Ad Studio advertising campaign.
-        It contains all the essential information Ad Studio needs to execute your campaign. For
-        example, an ad set contains: Information about how, when, and where your campaign runs (e
-        .g., start and end dates, budgets, targeting, etc). A single ad set can’t be used across
-        multiple campaigns. A single ad set is associated with only one campaign.
       x-spotify-flow-output:
         flow: campaign-creation
         step: 2
         chaining_field: id
         pass_to: createAd.ad_set_id
         description: Extract the "id" field from this response and pass it as "ad_set_id" in the createAd request body (step 3).
+      description: |
+        An ad set is the core component of your Ad Studio advertising campaign.
+        It contains all the essential information Ad Studio needs to execute your campaign. For
+        example, an ad set contains: Information about how, when, and where your campaign runs (e
+        .g., start and end dates, budgets, targeting, etc). A single ad set can’t be used across
+        multiple campaigns. A single ad set is associated with only one campaign.
       allOf:
         - $ref: '#/components/schemas/AdSetBase'
         - type: object
@@ -5491,7 +6103,6 @@ components:
               $ref: '#/components/schemas/SKAdEnabled'
     AdSetRequestBase:
       description: Represents the base schema that the create and patch request schemas extend.
-      type: object
       x-spotify-defaults:
         pacing:
           value: PACING_EVEN
@@ -5505,21 +6116,22 @@ components:
             - DESKTOP
             - IOS
           description: Defaults to all three platforms when omitted. For APP_INSTALLS objective, only IOS or ANDROID is allowed (one at a time, no DESKTOP).
-        frequency_caps:
-          value:
-            - frequency_unit: DAY
-              frequency_period: 1
-              max_impressions: 5
-            - frequency_unit: WEEK
-              frequency_period: 1
-              max_impressions: 35
-            - frequency_unit: MONTH
-              frequency_period: 1
-              max_impressions: 50
-          description: Default frequency caps when omitted. Limits to 5/day, 35/week, 50/month impressions per user.
         cost_model:
           value: CPM
           description: Defaults to CPM (Cost Per Mille) for standard ad products. The server determines the cost model based on ad product type — most external API users will get CPM.
+        frequency_caps:
+          value:
+            - frequency_period: 1
+              frequency_unit: DAY
+              max_impressions: 5
+            - frequency_period: 1
+              frequency_unit: WEEK
+              max_impressions: 35
+            - frequency_period: 1
+              frequency_unit: MONTH
+              max_impressions: 50
+          description: Default frequency caps when omitted. Limits to 5/day, 35/week, 50/month impressions per user.
+      type: object
       allOf:
         - $ref: '#/components/schemas/AdSetBase'
         - type: object
@@ -5547,6 +6159,184 @@ components:
         - type: object
       example:
         name: Updated Ad Set
+    BaseResponseProperties:
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        created_at:
+          $ref: '#/components/schemas/CreatedAt'
+        updated_at:
+          $ref: '#/components/schemas/UpdatedAt'
+    AdSetDraftCreateOnlyProperties:
+      properties:
+        campaign_id:
+          $ref: '#/components/schemas/Uuid'
+      required:
+        - campaign_id
+    DraftAdSetName:
+      type: string
+      maxLength: 200
+      description: Name given to identify the draft ad set.
+      example: New Draft Ad Set
+    DraftBudgetRequest:
+      x-parent: true
+      type: object
+      description: Users should specify one budget when creating an ad set.
+      properties:
+        micro_amount:
+          type: integer
+          format: int64
+          description: |
+            Total budget for the ad set multiplied by x10 to the 6th power. Ex: In order to set a
+            budget of $250, you would specify a budget_micro_amount of 250000000.
+          example: 15000000
+        type:
+          type: string
+          example: DAILY
+          enum:
+            - DAILY
+            - LIFETIME
+    BidStrategyRequest:
+      type: string
+      description: |
+        Strategy for how bids will be applied in the auction.
+         - "MAX_BID": the bid_micro_amount will act as a bid cap, meaning the maximum amount paid
+        per 1000 impressions.
+         - "AUTOBID": bids are automatically set to optimize delivery.
+      example: MAX_BID
+      x-spotify-common-mistakes:
+        - field: bid_strategy
+          mistake: 'Passing bid_strategy as a nested object (e.g., {"type": "MAX_BID"}) instead of a plain string'
+          correct: 'bid_strategy is a plain string value, not an object. Use "bid_strategy": "MAX_BID" not "bid_strategy": {"type": "MAX_BID"}.'
+      enum:
+        - COST_PER_RESULT
+        - MAX_BID
+        - AUTOBID
+        - UNSET
+    DraftPromotion:
+      type: object
+      description: This would be artist promo or podcast promo.
+      properties:
+        promotion_goal:
+          $ref: '#/components/schemas/Promotion_Goal'
+        promotion_target_id:
+          $ref: '#/components/schemas/Promotion_Target_Id'
+        conversion_events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversionEvent'
+          uniqueItems: true
+          example:
+            - tracking_event_type: IMPRESSION
+              window_duration_ms: 97400000
+            - tracking_event_type: IMPRESSION
+              window_duration_ms: 86400000
+    DraftVideoDeliveryFormats:
+      type: array
+      uniqueItems: true
+      items:
+        $ref: '#/components/schemas/VideoDeliveryFormat'
+      example:
+        - IN_STREAM
+        - OPT_IN
+    IasCampaignId:
+      type: string
+      description: The unique identifier for ias enabled campaign.
+    SuccessMetric:
+      type: string
+      description: Success metric for the AB Test.
+      minLength: 3
+      maxLength: 100
+      example: E_CPC
+    AdSetDraftUpdateRequest:
+      properties:
+        name:
+          $ref: '#/components/schemas/DraftAdSetName'
+        start_time:
+          type: string
+        end_time:
+          type: string
+        frequency_caps:
+          $ref: '#/components/schemas/AdSetFrequencyCaps'
+        dataset_id:
+          description: The unique identifier for a dataset attached to an ad set.
+          example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
+          type: string
+        category:
+          $ref: '#/components/schemas/AdSetCategory'
+        cost_model:
+          $ref: '#/components/schemas/CostModel'
+        base_rate_micro_amount:
+          type: integer
+          format: int64
+          description: |
+            The base rate per 1000 impressions or actions, multiplied by x10 to the 6th power.
+            Ex: In order to set a base rate of $15, you would specify a base_rate_micro_amount of 15000000.
+          example: 15000000
+        cost_modifiers:
+          type: array
+          description: List of cost modifiers to apply to the base rate.
+          items:
+            $ref: '#/components/schemas/CostModifier'
+        budget:
+          $ref: '#/components/schemas/DraftBudgetRequest'
+        bid_micro_amount:
+          $ref: '#/components/schemas/BidMicroAmount'
+        targets:
+          $ref: '#/components/schemas/Targets'
+        pacing:
+          $ref: '#/components/schemas/Pacing'
+        asset_format:
+          $ref: '#/components/schemas/AssetFormat'
+        bid_strategy:
+          $ref: '#/components/schemas/BidStrategyRequest'
+        mobile_app_id:
+          description: ID of the mobile app to be tied to this ad set.
+          example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
+          type: string
+        reservation_id:
+          description: ID of the reservation to be tied to this ad set.
+          example: ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
+          type: string
+        delivery_goal:
+          $ref: '#/components/schemas/DeliveryGoal'
+        promotion:
+          $ref: '#/components/schemas/DraftPromotion'
+        video_delivery_formats:
+          $ref: '#/components/schemas/DraftVideoDeliveryFormats'
+        ias_campaign_id:
+          $ref: '#/components/schemas/IasCampaignId'
+        skad_enabled:
+          $ref: '#/components/schemas/SKAdEnabled'
+        success_metric:
+          $ref: '#/components/schemas/SuccessMetric'
+        status:
+          $ref: '#/components/schemas/AdSetStatus'
+        slot_positions:
+          type: array
+          description: |
+            Allowed slot positions for ads in this ad set (constraint).
+            Restricts which positions CREMA can select when creating ads.
+            Values: PRE_ROLL, MID_ROLL, POST_ROLL.
+          items:
+            $ref: '#/components/schemas/SlotPosition'
+    AdSetDraftCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/AdSetDraftCreateOnlyProperties'
+        - $ref: '#/components/schemas/AdSetDraftUpdateRequest'
+    AdSetDraft:
+      properties:
+        status:
+          $ref: '#/components/schemas/AdSetStatus'
+        draft_hierarchy_version:
+          type: integer
+          minimum: 1
+          description: The version of the draft hierarchy. Required when publishing the campaign draft.
+          readOnly: true
+          example: 1
+      allOf:
+        - $ref: '#/components/schemas/BaseResponseProperties'
+        - $ref: '#/components/schemas/AdSetDraftCreateRequest'
     SortDirection:
       type: string
       enum:
@@ -5575,30 +6365,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdSetResponse'
-    BidStrategyRequest:
-      type: string
-      description: |
-        Strategy for how bids will be applied in the auction.
-         - "MAX_BID": the bid_micro_amount will act as a bid cap, meaning the maximum amount paid
-        per 1000 impressions.
-         - "AUTOBID": bids are automatically set to optimize delivery.
-      example: MAX_BID
-      x-spotify-common-mistakes:
-        - field: bid_strategy
-          mistake: 'Passing bid_strategy as a nested object (e.g., {"type": "MAX_BID"}) instead of a plain string'
-          correct: 'bid_strategy is a plain string value, not an object. Use "bid_strategy": "MAX_BID" not "bid_strategy": {"type": "MAX_BID"}.'
-      enum:
-        - COST_PER_RESULT
-        - MAX_BID
-        - AUTOBID
-        - UNSET
     AdSetCreateRequest:
       description: Represents a create request.
-      type: object
       x-spotify-common-mistakes:
         - field: campaign_id
           mistake: Omitting campaign_id or using a non-existent campaign ID
           correct: campaign_id is required and must reference a campaign created in step 1 of the campaign-creation flow (createCampaign). Use the id field from the createCampaign response.
+      type: object
       allOf:
         - $ref: '#/components/schemas/AdSetRequestBase'
         - type: object
@@ -5698,6 +6471,15 @@ components:
               window_duration_ms: 86400000
         bid_strategy: MAX_BID
         bid_micro_amount: 1000000
+    AdSetDraftsResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        ad_set_drafts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdSetDraft'
     AdField:
       type: string
       enum:
@@ -5706,6 +6488,7 @@ components:
         - AD_PREVIEW_URL
         - AD_SET_ID
         - ASSETS
+        - ASSET_FORMAT
         - CAMPAIGN_ID
         - CALL_TO_ACTION
         - CREATED_AT
@@ -6149,21 +6932,21 @@ components:
       description: The metadata for the behavior of the call-to-action button.
     CreateAdRequest:
       description: Represents a create request.
-      type: object
       x-spotify-common-mistakes:
         - field: ad_set_id
           mistake: Omitting ad_set_id or using a non-existent ad set ID
           correct: ad_set_id is required and must reference an ad set created in step 2 of the campaign-creation flow (createAdSet). Use the id field from the createAdSet response.
       x-spotify-defaults:
-        delivery:
-          value: 'ON'
-          description: Defaults to ON (delivering) when omitted.
-        call_to_action.language:
-          value: ENGLISH
-          description: Defaults to ENGLISH when omitted.
         call_to_action.key:
           value: LEARN_MORE
           description: Defaults to LEARN_MORE when omitted.
+        call_to_action.language:
+          value: ENGLISH
+          description: Defaults to ENGLISH when omitted.
+        delivery:
+          value: 'ON'
+          description: Defaults to ON (delivering) when omitted.
+      type: object
       allOf:
         - $ref: '#/components/schemas/BaseRequestAdEntity'
         - type: object
@@ -6212,6 +6995,171 @@ components:
             delivery:
               $ref: '#/components/schemas/Delivery'
           minProperties: 1
+    AdDraftCreateOnlyProperties:
+      properties:
+        ad_set_id:
+          $ref: '#/components/schemas/Uuid'
+        status:
+          $ref: '#/components/schemas/AdStatus'
+      required:
+        - ad_set_id
+    DraftAdName:
+      type: string
+      description: Name given to identify the ad draft.
+      example: New Ad Draft
+    DraftAdAdvertiserName:
+      type: string
+      description: Name of the advertiser for the ad draft.
+      example: Heart Dance Recordings
+    DraftAdTagline:
+      type: string
+      description: Tagline to give listeners more context about your company or product. This will be displayed in the CTA card leavebehind.
+      example: Good Food for Good Dogs
+    DraftAdCallToActionType:
+      type: string
+      enum:
+        - APPLY_NOW
+        - BOOK_NOW
+        - BUY_NOW
+        - BUY_TICKETS
+        - CLICK_NOW
+        - DOWNLOAD
+        - FIND_STORES
+        - GET_COUPON
+        - GET_INFO
+        - LEARN_MORE
+        - LISTEN_NOW
+        - MORE_INFO
+        - ORDER_NOW
+        - PRE_SAVE
+        - SAVE_NOW
+        - SHARE
+        - SHOP_NOW
+        - SIGN_UP
+        - VISIT_PROFILE
+        - VISIT_SITE
+        - WATCH_NOW
+      description: The identifier used for the call-to-action button. This will be translated using the locale.
+      example: LEARN_MORE
+    DraftAdLanguage:
+      type: string
+      enum:
+        - ARABIC
+        - ARABIC_EGYPT
+        - BULGARIAN
+        - CHINESE
+        - CHINESE_HK
+        - CHINESE_TAIWAN
+        - CROATIAN
+        - CZECH
+        - DANISH
+        - DUTCH
+        - ENGLISH
+        - FINNISH
+        - FRENCH
+        - FRENCH_CANADA
+        - GERMAN
+        - GREEK
+        - HEBREW
+        - HUNGARIAN
+        - INDONESIAN
+        - ITALIAN
+        - JAPANESE
+        - KOREAN
+        - NORWEGIAN
+        - POLISH
+        - PORTUGUESE
+        - PORTUGUESE_PORTUGAL
+        - ROMANIAN
+        - RUSSIAN
+        - SLOVAK
+        - SPANISH
+        - SPANISH_ARGENTINA
+        - SPANISH_LATAM_CARIBBEAN
+        - SPANISH_MEXICO
+        - SWEDISH
+        - THAI
+        - TURKISH
+        - UKRAINIAN
+        - VIETNAMESE
+      description: The language which the ad is presented.
+      example: ENGLISH
+    DraftAdCallToActionRequest:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/DraftAdCallToActionType'
+        language:
+          $ref: '#/components/schemas/DraftAdLanguage'
+        clickthrough_url:
+          type: string
+          description: The link to the ads desired landing page.
+          example: https://www.spotify.com
+      description: The metadata for the behavior of the call-to-action button.
+    AdWeight:
+      type: integer
+      format: int32
+      minimum: 1
+      maximum: 100
+      description: The weight of the ad.
+      example: 10
+    AdDraftUpdateRequest:
+      properties:
+        name:
+          $ref: '#/components/schemas/DraftAdName'
+        advertiser_name:
+          $ref: '#/components/schemas/DraftAdAdvertiserName'
+        assets:
+          $ref: '#/components/schemas/AdAssets'
+        asset_format:
+          $ref: '#/components/schemas/AssetFormat'
+        tagline:
+          $ref: '#/components/schemas/DraftAdTagline'
+        third_party_tracking:
+          type: array
+          maxItems: 11
+          items:
+            $ref: '#/components/schemas/AdThirdPartyTracking'
+        call_to_action:
+          $ref: '#/components/schemas/DraftAdCallToActionRequest'
+        placements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Placement'
+        catalog:
+          $ref: '#/components/schemas/Catalog'
+        dv_client_code:
+          $ref: '#/components/schemas/DVClientCode'
+        weight:
+          $ref: '#/components/schemas/AdWeight'
+        status:
+          $ref: '#/components/schemas/AdStatus'
+    AdDraftCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/AdDraftCreateOnlyProperties'
+        - $ref: '#/components/schemas/AdDraftUpdateRequest'
+    AdDraft:
+      properties:
+        status:
+          $ref: '#/components/schemas/AdStatus'
+        draft_hierarchy_version:
+          type: integer
+          minimum: 1
+          description: The version of the draft hierarchy. Required when publishing the campaign draft.
+          readOnly: true
+          example: 1
+      allOf:
+        - $ref: '#/components/schemas/BaseResponseProperties'
+        - $ref: '#/components/schemas/AdDraftCreateRequest'
+    AdDraftsResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        ad_drafts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdDraft'
     GeneralAudioType:
       type: string
       example: AUDIO_AD
@@ -6234,6 +7182,7 @@ components:
       enum:
         - HORIZONTAL_16_9
         - HORIZONTAL_1_91_1
+        - HORIZONTAL_1_2_1
         - SQUARE
         - VERTICAL_9_16
     SortField:
@@ -6242,6 +7191,7 @@ components:
         - CREATED_AT
         - NAME
     Image:
+      x-spotify-docs-type: IMAGE
       description: Metadata object for an image asset type.
       title: Image
       allOf:
@@ -6307,6 +7257,7 @@ components:
         - QUICKTIME
       description: The file type of the video asset as defined by the 'file type' specification of the ISO base media file format standard.
     Video:
+      x-spotify-docs-type: VIDEO
       description: Metadata object for a video asset type.
       title: Video
       allOf:
@@ -6349,6 +7300,7 @@ components:
         - WAV
       description: The file type of the audio asset as defined by the 'file type' specification of the ISO base media file format standard.
     Audio:
+      x-spotify-docs-type: AUDIO
       description: Metadata object for an audio asset type.
       title: Audio
       allOf:
@@ -6373,6 +7325,12 @@ components:
         - $ref: '#/components/schemas/Image'
         - $ref: '#/components/schemas/Audio'
         - $ref: '#/components/schemas/Video'
+      discriminator:
+        propertyName: asset_type
+        mapping:
+          IMAGE: '#/components/schemas/Image'
+          AUDIO: '#/components/schemas/Audio'
+          VIDEO: '#/components/schemas/Video'
     AssetsResponse:
       type: object
       properties:
@@ -6638,6 +7596,9 @@ components:
             $ref: '#/components/schemas/Uuid'
         exposure_type:
           $ref: '#/components/schemas/ExposureType'
+        audience_category:
+          type: string
+          description: Audience category from Rolodex (e.g., ARTIST_AFFINITY, EVENT_AFFINITY, CUSTOM).
     AudiencesListResponse:
       type: object
       properties:
@@ -7034,6 +7995,7 @@ components:
         - ARTIST
         - MANAGER
         - PUBLISHER
+        - PUBLISHER_PROMOS
     BusinessAdAccountsResponse:
       type: object
       properties:
@@ -7070,6 +8032,9 @@ components:
         - ACTIVE
         - PAUSED
         - ARCHIVED
+        - AGENT_CONTROLLED
+        - ACTIVE_RESTRICTED
+        - PENDING_ADVERTISER_REVIEW
         - UNRECOGNIZED
       example: ACTIVE
       description: Current state of campaign.
@@ -7112,6 +8077,16 @@ components:
     OptimizationPrefs:
       type: string
       deprecated: true
+      x-spotify-enum-descriptions:
+        EVEN_IMPRESSION_DELIVERY: 'Default objective. Distributes impressions evenly across the flight. Best for brand awareness campaigns. Compatible with all asset formats. Bid strategy: MAX_BID only.'
+        CLICKS: 'Optimize for clicks — drive users to a landing page. Enables leave-behind ad slots for higher click-through. Compatible with AUDIO and VIDEO. VIDEO must use IN_STREAM delivery format. Bid strategy: MAX_BID or COST_PER_RESULT (COST_PER_RESULT requires LIFETIME budget and PACING_EVEN).'
+        REACH: 'Optimize for audience reach — maximize the number of unique listeners who hear or see the ad. Compatible with AUDIO and VIDEO asset formats. Bid strategy: MAX_BID only.'
+        VIDEO_VIEWS: 'Optimize for completed video views. VIDEO asset format only, uses OPT_IN delivery format (embedded in music player). Desktop platform not supported. Placements must be MUSIC only. Bid strategy: MAX_BID only.'
+        WEBSITE_VISITS: 'Optimize for website visits. Enables leave-behind ad slots. Compatible with AUDIO and VIDEO formats. Bid strategy: MAX_BID only.'
+        APP_INSTALLS: 'Optimize for mobile app installations. Platforms restricted to IOS or ANDROID (not both, and no DESKTOP). Requires mobile_app_id on the ad set. Bid strategy: MAX_BID only.'
+        PODCAST_STREAMS: 'Optimize for podcast streams. Enables leave-behind ad slots. Compatible with AUDIO format. Bid strategy: MAX_BID only.'
+        LEAD_GEN: 'Optimize for lead generation. Enables leave-behind ad slots. Compatible with AUDIO format. Bid strategy: MAX_BID only.'
+        UNSET: Should not be used when creating campaigns. Reserved for internal use.
       enum:
         - UNSET
         - REACH
@@ -7124,16 +8099,6 @@ components:
       default: EVEN_IMPRESSION_DELIVERY
       example: EVEN_IMPRESSION_DELIVERY
       description: 'Deprecated: Use delivery_goal_group and delivery_goal on ad sets instead. Objective for a campaign. UNSET should not be used.'
-      x-spotify-enum-descriptions:
-        REACH: 'Optimize for audience reach — maximize the number of unique listeners who hear or see the ad. Compatible with AUDIO and VIDEO asset formats. Bid strategy: MAX_BID only.'
-        EVEN_IMPRESSION_DELIVERY: 'Default objective. Distributes impressions evenly across the flight. Best for brand awareness campaigns. Compatible with all asset formats. Bid strategy: MAX_BID only.'
-        CLICKS: 'Optimize for clicks — drive users to a landing page. Enables leave-behind ad slots for higher click-through. Compatible with AUDIO and VIDEO. VIDEO must use IN_STREAM delivery format. Bid strategy: MAX_BID or COST_PER_RESULT (COST_PER_RESULT requires LIFETIME budget and PACING_EVEN).'
-        VIDEO_VIEWS: 'Optimize for completed video views. VIDEO asset format only, uses OPT_IN delivery format (embedded in music player). Desktop platform not supported. Placements must be MUSIC only. Bid strategy: MAX_BID only.'
-        PODCAST_STREAMS: 'Optimize for podcast streams. Enables leave-behind ad slots. Compatible with AUDIO format. Bid strategy: MAX_BID only.'
-        APP_INSTALLS: 'Optimize for mobile app installations. Platforms restricted to IOS or ANDROID (not both, and no DESKTOP). Requires mobile_app_id on the ad set. Bid strategy: MAX_BID only.'
-        WEBSITE_VISITS: 'Optimize for website visits. Enables leave-behind ad slots. Compatible with AUDIO and VIDEO formats. Bid strategy: MAX_BID only.'
-        LEAD_GEN: 'Optimize for lead generation. Enables leave-behind ad slots. Compatible with AUDIO format. Bid strategy: MAX_BID only.'
-        UNSET: Should not be used when creating campaigns. Reserved for internal use.
     DeliveryGoalGroup:
       type: string
       enum:
@@ -7178,6 +8143,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CampaignResponse'
+    CampaignAdProduct:
+      type: string
+      enum:
+        - UNSET
+        - UNKNOWN
+        - CONTENT
+        - FPMNG
+      x-enum-varnames:
+        - UNSET
+        - UNKNOWN
+        - CONTENT
+        - FPMNG
+      description: The ad product of the campaign being created.
+      default: UNSET
     CreateCampaignRequest:
       type: object
       required:
@@ -7190,6 +8169,8 @@ components:
           $ref: '#/components/schemas/CampaignPurchaseOrder'
         objective:
           $ref: '#/components/schemas/OptimizationPrefs'
+        ad_product:
+          $ref: '#/components/schemas/CampaignAdProduct'
         delivery_goal_group:
           $ref: '#/components/schemas/DeliveryGoalGroup'
     UpdateCampaignRequest:
@@ -7197,9 +8178,178 @@ components:
       properties:
         name:
           $ref: '#/components/schemas/CampaignName'
+        purchase_order:
+          $ref: '#/components/schemas/CampaignPurchaseOrder'
         status:
           $ref: '#/components/schemas/CampaignStatus'
       minProperties: 1
+    DraftCampaignName:
+      type: string
+      maxLength: 200
+      description: Name given to identify your campaign.
+      example: Spotify Ads Summer Campaign 2022
+    DraftCampaignPurchaseOrder:
+      type: string
+      maxLength: 45
+      description: A purchase order number, to be shown on your invoice, for your own personal organization.
+      example: ORDER_1
+    OptimizationPrefsDraftValues:
+      type: string
+      deprecated: true
+      enum:
+        - UNSET
+        - REACH
+        - EVEN_IMPRESSION_DELIVERY
+        - CLICKS
+        - VIDEO_VIEWS
+        - PODCAST_STREAMS
+      example: EVEN_IMPRESSION_DELIVERY
+      description: 'Deprecated: Use delivery_goal_group and delivery_goal on ad sets instead. Objective for a campaign. UNSET should not be used.'
+    CampaignChannelDraftValues:
+      type: string
+      enum:
+        - UNSET
+      x-enum-varnames:
+        - UNSET
+      description: Channel to identify the booking flow which the campaign was created.
+    CampaignAdProductDraftValues:
+      type: string
+      enum:
+        - UNSET
+      x-enum-varnames:
+        - UNSET
+      description: The ad product of the campaign being created.
+    DraftSalesforceOpportunity:
+      type: string
+      maxLength: 200
+      description: Salesforce opportunity code.
+      example: S0067S000009GF0ZQAW
+    DraftSalesforceSalesOrder:
+      type: string
+      maxLength: 200
+      description: Salesforce sales order code.
+      example: SO-765621
+    CampaignDraftRequestProperties:
+      properties:
+        name:
+          $ref: '#/components/schemas/DraftCampaignName'
+        purchase_order:
+          $ref: '#/components/schemas/DraftCampaignPurchaseOrder'
+        restricted_ad_category:
+          deprecated: true
+          description: Deprecated. The auto/restricted ad category feature has been removed; this field is accepted for backwards compatibility but ignored by the server.
+        objective:
+          $ref: '#/components/schemas/OptimizationPrefsDraftValues'
+        channel:
+          $ref: '#/components/schemas/CampaignChannelDraftValues'
+        ad_product:
+          $ref: '#/components/schemas/CampaignAdProductDraftValues'
+        salesforce_opportunity:
+          $ref: '#/components/schemas/DraftSalesforceOpportunity'
+        salesforce_sales_order:
+          $ref: '#/components/schemas/DraftSalesforceSalesOrder'
+        delivery_goal_group:
+          $ref: '#/components/schemas/DeliveryGoalGroup'
+        media_plan_id:
+          type: string
+          format: uuid
+          description: Optional ID of the media plan associated with this campaign
+        status:
+          $ref: '#/components/schemas/CampaignStatus'
+    DraftHierarchyVersion:
+      type: integer
+      minimum: 1
+      description: The version of the draft hierarchy.
+      example: 1
+    CampaignDraftResponseProperties:
+      properties:
+        media_plan_id:
+          type: string
+          format: uuid
+          description: Optional ID of the media plan associated with this campaign
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/CampaignStatus'
+        needs_advertiser_review:
+          type: boolean
+          readOnly: true
+          description: Indicates whether this draft was created or modified by an impersonator and needs review before publishing
+          example: false
+        ad_account_id:
+          $ref: '#/components/schemas/Uuid'
+        modified_by_role:
+          type: string
+          description: The role that last modified the draft.
+          example: ADVERTISER
+          enum:
+            - ADVERTISER
+            - IMPERSONATOR
+        draft_hierarchy_version:
+          $ref: '#/components/schemas/DraftHierarchyVersion'
+          readOnly: true
+    CampaignDraft:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponseProperties'
+        - $ref: '#/components/schemas/CampaignDraftRequestProperties'
+        - $ref: '#/components/schemas/CampaignDraftResponseProperties'
+    CampaignChannel:
+      type: string
+      enum:
+        - UNSET
+        - UNKNOWN
+      x-enum-varnames:
+        - UNSET
+        - UNKNOWN
+      description: Channel to identify the booking flow which the campaign was created.
+      default: UNSET
+    CampaignDraftsResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        campaign_drafts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampaignDraft'
+    PublishCampaignRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - PUBLISH
+            - VALIDATE
+          description: Action to be taken on the draft campaign.
+          example: PUBLISH
+          default: VALIDATE
+        draft_hierarchy_version:
+          $ref: '#/components/schemas/DraftHierarchyVersion'
+    HierarchyValidationError:
+      type: object
+      properties:
+        validation_entity_type:
+          type: string
+          enum:
+            - CAMPAIGN
+            - AD_SET
+            - AD
+        validation_entity_id:
+          $ref: '#/components/schemas/Uuid'
+        message:
+          type: string
+          description: Error message describing the validation issue
+          example: Ad set targeting is required
+    PublishCampaignResult:
+      type: object
+      description: Result of publishing or validating a campaign draft
+      properties:
+        campaign:
+          $ref: '#/components/schemas/CampaignResponse'
+        validation_errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/HierarchyValidationError'
+          description: List of validation errors across the campaign hierarchy
     BidAmount:
       type: integer
       format: int64
@@ -8245,6 +9395,47 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ContentPromotionBase'
+    ReservedAdProduct:
+      type: string
+      enum:
+        - CONTENT
+        - FPMNG
+      description: |
+        Ad product for reserved buying.
+        CONTENT: Reserved Podcasts.
+        FPMNG: Reserved Music.
+      example: CONTENT
+    ReservedPriceRequest:
+      type: object
+      properties:
+        ad_product:
+          $ref: '#/components/schemas/ReservedAdProduct'
+        start_date:
+          $ref: '#/components/schemas/EventTime'
+        end_date:
+          $ref: '#/components/schemas/EventTime'
+        targets:
+          $ref: '#/components/schemas/Targets'
+        asset_format:
+          $ref: '#/components/schemas/AssetFormat'
+      required:
+        - ad_product
+        - start_date
+        - targets
+    PublicPriceResponse:
+      type: object
+      properties:
+        cost_micro:
+          type: integer
+          format: int64
+          description: |
+            Total cost multiplied by x10 to the 6th power. Ex: cost of $250, would be a cost_micro of 250000000.
+          example: 250000000
+        currency:
+          type: string
+          description: |
+            The currency of the cost.
+          example: USD
     EntityDimensionType:
       type: string
       enum:
@@ -8414,6 +9605,7 @@ components:
         - MEGAPHONE_CMS
         - MEGAPHONE_MAPPER
         - SALESFORCE
+        - SAX
       x-enum-varnames:
         - AD_STUDIO
         - S4A
@@ -8421,6 +9613,7 @@ components:
         - MEGAPHONE_CMS
         - MEGAPHONE_MAPPER
         - SALESFORCE
+        - SAX
       description: The internal service that created the ad account.
     AdAccountSourceId:
       type: string
@@ -8429,9 +9622,11 @@ components:
       description: |
         Ad, Ad Set, and Campaign statuses that are used in report requests as well as responses. Not
         every status is valid for each entity type. The valid statuses for each entity are the following:
-        Ad: APPROVED, ARCHIVED, PENDING, PENDING_APPROVAL, REJECTED
-        Ad Set: ACTIVE, APPROVED, ARCHIVED, COMPLETED, PENDING_APPROVAL, READY, REJECTED
+        Ad: APPROVED, ARCHIVED, PENDING, PENDING_APPROVAL, PENDING_ADVERTISER_APPROVAL, REJECTED
+        Ad Set: ACTIVE, APPROVED, ARCHIVED, COMPLETED, PENDING_APPROVAL, PENDING_ADVERTISER_APPROVAL, READY, REJECTED
         Campaign: ACTIVE, ARCHIVED, PAUSED
+
+        Note: The PENDING_ADVERTISER_APPROVAL status is only available for managed service campaigns.
       type: string
       enum:
         - ACTIVE
@@ -8439,6 +9634,7 @@ components:
         - ARCHIVED
         - PENDING_APPROVAL
         - REJECTED
+        - PENDING_ADVERTISER_APPROVAL
         - PAUSED
         - COMPLETED
         - READY
@@ -8711,8 +9907,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ReportField'
+    SummaryTotal:
+      type: object
+      properties:
+        stat:
+          $ref: '#/components/schemas/ReportFieldType'
+        value:
+          type: number
+          description: The total value for this metric
+          example: 123.45
     AudienceInsightResponse:
       type: object
+      x-internal-fields:
+        type: array
+        items:
+          - summary_totals
       properties:
         granularity:
           type: string
@@ -8725,6 +9934,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AudienceInsightReportRow'
+        summary_totals:
+          description: Summary totals for all metrics summed across the returned insight value buckets (excluding UNSET values). Note that these totals reflect only the rows in the response; if rows are paginated, filtered, or limited upstream, the totals will only reflect that subset.
+          type: array
+          items:
+            $ref: '#/components/schemas/SummaryTotal'
       example:
         granularity: LIFETIME
         entity: AD_SET
@@ -9228,6 +10442,12 @@ components:
         items:
           $ref: '#/components/schemas/AdSetStatus'
         uniqueItems: true
+    draft_ad_set_id:
+      name: draft_ad_set_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
     ad_fields:
       name: fields
       in: query
@@ -9242,6 +10462,7 @@ components:
           - ADVERTISER_NAME
           - AD_PREVIEW_URL
           - AD_SET_ID
+          - ASSET_FORMAT
           - ASSET_URI
           - ASSETS
           - CAMPAIGN_ID
@@ -9311,6 +10532,12 @@ components:
         $ref: '#/components/schemas/AdSortField'
     ad_id:
       name: ad_id
+      in: path
+      schema:
+        $ref: '#/components/schemas/Uuid'
+      required: true
+    draft_ad_id:
+      name: draft_ad_id
       in: path
       schema:
         $ref: '#/components/schemas/Uuid'
@@ -9492,8 +10719,30 @@ components:
       in: query
       schema:
         $ref: '#/components/schemas/CampaignSortField'
+    salesforceSalesOrder:
+      name: salesforce_sales_order
+      in: query
+      description: Filter by campaign's Salesforce sales order
+      required: false
+      schema:
+        type: string
     campaign_id:
       name: campaign_id
+      in: path
+      schema:
+        $ref: '#/components/schemas/Uuid'
+      required: true
+    campaignChannels:
+      name: channel
+      in: query
+      description: Filter by campaign's channel
+      required: false
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/CampaignChannel'
+    draft_campaign_id:
+      name: draft_campaign_id
       in: path
       schema:
         $ref: '#/components/schemas/Uuid'

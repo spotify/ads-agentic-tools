@@ -198,6 +198,134 @@ Update an ad.
 
 ---
 
+## Drafts (Preferred for New Campaigns)
+
+Draft entities are staging versions of campaigns, ad sets, and ads. Nothing goes live until you publish. The workflow: create drafts → edit → validate → publish.
+
+### POST /ad_accounts/{ad_account_id}/drafts/campaigns
+Create a draft campaign.
+
+**Request Body:** `CampaignDraftRequestProperties`
+- `name` (string, max 200 chars)
+- `purchase_order` (string, max 45 chars, optional)
+- `objective` (string, optional) — REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, PODCAST_STREAMS
+- `delivery_goal_group` (string, optional) — AWARENESS, CONSIDERATION
+- `status` (string, optional)
+
+**Response:** 200 — `CampaignDraft` (includes `id`, `draft_hierarchy_version`)
+
+### GET /ad_accounts/{ad_account_id}/drafts/campaigns
+List draft campaigns.
+
+**Query Parameters:**
+- `campaignIds` (array) — Filter by campaign IDs
+- `campaignChannels` (array) — Filter by channel
+- `campaignStatuses` (array) — Filter by status
+- `sort_field`, `sort_direction`, `limit`, `offset`
+
+**Response:** 200 — `CampaignDraftsResponse` (`campaign_drafts` array)
+
+### GET /ad_accounts/{ad_account_id}/drafts/campaigns/{draft_campaign_id}
+Get a draft campaign by ID.
+
+**Response:** 200 — `CampaignDraft`
+
+### PATCH /ad_accounts/{ad_account_id}/drafts/campaigns/{draft_campaign_id}
+Update a draft campaign.
+
+**Request Body:** `CampaignDraftRequestProperties` — same fields as create, all optional.
+
+**Response:** 200 — `CampaignDraft`
+
+### POST /ad_accounts/{ad_account_id}/drafts/campaigns/{draft_campaign_id}
+Publish or validate a draft campaign hierarchy.
+
+**Request Body:** `PublishCampaignRequest`
+- `action` (string, required) — `PUBLISH` or `VALIDATE` (default: VALIDATE)
+- `draft_hierarchy_version` (integer, required) — Must match the current version from the draft campaign
+
+**Response:** 200 — `PublishCampaignResult`
+- `campaign` — Published `CampaignResponse` (present on successful publish)
+- `validation_errors` — Array of `HierarchyValidationError`:
+  - `validation_entity_type` — `CAMPAIGN`, `AD_SET`, or `AD`
+  - `validation_entity_id` — UUID of the entity with the error
+  - `message` — Human-readable error description
+
+### DELETE /ad_accounts/{ad_account_id}/drafts/campaigns/{draft_campaign_id}
+Delete a draft campaign.
+
+**Response:** 204 No Content
+
+### POST /ad_accounts/{ad_account_id}/campaigns/{campaign_id}/drafts
+Create a draft from an existing published campaign.
+
+**Response:** 200 — `CampaignDraft`
+
+### POST /ad_accounts/{ad_account_id}/drafts/ad_sets
+Create a draft ad set.
+
+**Request Body:** `AdSetDraftCreateRequest`
+- `campaign_id` (uuid, **required** — must reference a draft campaign ID)
+- `name` (string, max 200 chars)
+- `start_time`, `end_time` (ISO 8601 strings)
+- `budget` — `{micro_amount, type}` (DAILY or LIFETIME)
+- `bid_strategy` (string) — `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, `UNSET`
+- `bid_micro_amount` (int64)
+- `asset_format`, `category`, `targets`, `pacing`, `frequency_caps`, `cost_model`, `delivery_goal`, `promotion`, `video_delivery_formats`, `status`
+
+**Response:** 200 — `AdSetDraft` (includes `id`, `draft_hierarchy_version`)
+
+### GET /ad_accounts/{ad_account_id}/drafts/ad_sets
+List draft ad sets.
+
+**Query Parameters:** `campaign_ids`, `statuses`, `limit`, `offset`
+
+**Response:** 200 — `AdSetDraftsResponse` (`ad_set_drafts` array)
+
+### GET /ad_accounts/{ad_account_id}/drafts/ad_sets/{draft_ad_set_id}
+Get a draft ad set by ID.
+
+### PATCH /ad_accounts/{ad_account_id}/drafts/ad_sets/{draft_ad_set_id}
+Update a draft ad set. Same fields as create, all optional.
+
+### DELETE /ad_accounts/{ad_account_id}/drafts/ad_sets/{draft_ad_set_id}
+Delete a draft ad set. **Response:** 204
+
+### POST /ad_accounts/{ad_account_id}/ad_sets/{ad_set_id}/drafts
+Create a draft from an existing published ad set.
+
+### POST /ad_accounts/{ad_account_id}/drafts/ads
+Create a draft ad.
+
+**Request Body:** `AdDraftCreateRequest`
+- `ad_set_id` (uuid, **required** — must reference a draft ad set ID)
+- `name`, `advertiser_name`, `tagline` (strings)
+- `assets` — `{asset_id, logo_asset_id, companion_asset_id, canvas_asset_id}`
+- `asset_format`, `call_to_action` (`{key, clickthrough_url, language}`), `third_party_tracking`, `placements`, `weight`, `status`
+
+**Response:** 200 — `AdDraft` (includes `id`, `draft_hierarchy_version`)
+
+### GET /ad_accounts/{ad_account_id}/drafts/ads
+List draft ads.
+
+**Query Parameters:** `ad_set_ids`, `statuses`, `limit`, `offset`
+
+**Response:** 200 — `AdDraftsResponse` (`ad_drafts` array)
+
+### GET /ad_accounts/{ad_account_id}/drafts/ads/{draft_ad_id}
+Get a draft ad by ID.
+
+### PATCH /ad_accounts/{ad_account_id}/drafts/ads/{draft_ad_id}
+Update a draft ad. Same fields as create, all optional.
+
+### DELETE /ad_accounts/{ad_account_id}/drafts/ads/{draft_ad_id}
+Delete a draft ad. **Response:** 204
+
+### POST /ad_accounts/{ad_account_id}/ads/{ad_id}/drafts
+Create a draft from an existing published ad.
+
+---
+
 ## Assets
 
 ### POST /ad_accounts/{ad_account_id}/assets

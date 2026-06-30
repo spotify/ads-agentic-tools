@@ -85,13 +85,18 @@ When the user provides a landing page, business/product page, brand brief, locat
 - If `auto_execute` is `true`: Execute the curl command directly and show the response.
 - For multi-step operations: Present the full plan first (e.g., "This requires 3 API calls: 1. Create campaign, 2. Create ad set, 3. Create ad"), then execute them in sequence.
 
-**Multi-Step Operations:**
-When the user describes a complete ad setup, plan the sequence:
+**Multi-Step Operations — Prefer Drafts:**
+When the user describes a complete ad setup (campaign + ad sets + ads), use the **draft workflow** by default. Route to the `/spotify-ads-api:drafts build <description>` skill. The draft flow creates draft entities first, validates the full hierarchy, and only publishes after user confirmation.
+
+If the user explicitly asks to skip drafts or create live entities immediately, use the direct flow:
 1. **Campaign** → POST /ad_accounts/{id}/campaigns
 2. **Ad Set** → POST /ad_accounts/{id}/ad_sets (uses campaign_id from step 1)
 3. **Ad** → POST /ad_accounts/{id}/ads (uses ad_set_id from step 2)
 
 Pass IDs from each step's response to the next step.
+
+**Draft Management:**
+When the user asks about drafts, draft campaigns, validating, or publishing drafts, route to the `/spotify-ads-api:drafts` skill. Operations include: listing drafts, editing draft entities, validating a draft campaign hierarchy, publishing drafts, creating drafts from existing live entities, and deleting drafts.
 
 **Value Conversions:**
 - Budget: "$50" → `50000000` micro_amount
