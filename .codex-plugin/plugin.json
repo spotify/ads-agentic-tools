@@ -10,7 +10,7 @@
   "license": "Apache-2.0",
   "keywords": ["spotify", "ads", "api", "campaigns", "advertising", "oauth", "reporting"],
   "skills": "./skills/",
-  "hooks": "./hooks/claude-hooks.json",
+  "hooks": "./.codex-plugin/hooks.json",
   "interface": {
     "displayName": "Spotify Ads API",
     "shortDescription": "Manage Spotify ad campaigns with natural language",

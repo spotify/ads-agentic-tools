@@ -10,5 +10,5 @@
   "license": "Apache-2.0",
   "keywords": ["spotify", "ads", "api", "campaigns", "advertising", "oauth", "reporting"],
   "skills": "./skills/",
-  "hooks": "./hooks/claude-hooks.json"
+  "hooks": "./.claude-plugin/hooks.json"
 }
