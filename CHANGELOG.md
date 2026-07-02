@@ -4,7 +4,7 @@
 
 ### Added
 - Gemini CLI extension support: root `gemini-extension.json` manifest, `GEMINI.md` context file, and a `/configure` custom command; skills load through Gemini's native Agent Skills support with no content duplication
-- OAuth token auto-refresh on Gemini CLI via a `BeforeTool` hook; hook configs are now split per platform (`hooks/hooks.json` for Gemini, `hooks/claude-hooks.json` for Claude/Codex) since each platform rejects the other's event names
+- OAuth token auto-refresh on Gemini CLI via a `BeforeTool` hook; hook configs are now split per platform (`hooks/hooks.json` for Gemini, `.claude-plugin/hooks.json` for Claude/Codex) since each platform rejects the other's event names
 - `.gemini/spotify-ads-api.local.md` settings path (gitignored)
 
 ### Changed
