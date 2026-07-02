@@ -24,7 +24,13 @@ Include `-H "$SDK_HEADER"` on all curl commands to `api-partner.spotify.com`.
 
 ## Token Expiry
 
-A BeforeTool hook refreshes expired OAuth tokens automatically before API calls. If a request still returns 401, refresh the token per the configure skill's instructions or re-run `/configure`.
+A BeforeTool hook refreshes expired OAuth tokens automatically before API calls. Gemini CLI auto-discovers hooks at the fixed path `hooks/hooks.json`, but the file ships as `hooks/gemini-hooks.json` to avoid conflicts with Claude Code's hook loader. After installing the extension, activate the hook once:
+
+```bash
+cp hooks/gemini-hooks.json hooks/hooks.json
+```
+
+If a request still returns 401, refresh the token per the configure skill's instructions or re-run `/configure`.
 
 ## Contributors
 
