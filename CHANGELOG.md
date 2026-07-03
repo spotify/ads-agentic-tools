@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.7.0] - 2026-07-03
+
+### Added
+- Antigravity CLI plugin support replacing Gemini CLI extension: root `plugin.json` manifest, `ANTIGRAVITY.md` context file, and `hooks/antigravity-hooks.json` hook config using `PreToolUse` event
+- `.agents/spotify-ads-api.local.md` settings path for Antigravity CLI (gitignored)
+
+### Changed
+- `gemini-extension.json` → `plugin.json` (Antigravity manifest filename)
+- `GEMINI.md` → `ANTIGRAVITY.md` (Antigravity context file)
+- `hooks/gemini-hooks.json` → `hooks/antigravity-hooks.json`; hook event migrated from `BeforeTool` to `PreToolUse` and tool matcher from `run_shell_command` to `run_command`
+- Settings directory changed from `.gemini/` to `.agents/` across all skills, agent, and hook
+- SDK tracking header product changed from `gemini-cli-extension` to `antigravity-cli-plugin`
+- Plugin version synced across `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and `plugin.json`, all bumped to 1.7.0
+- `check-token.sh` updated to detect Antigravity CLI platform and emit compatible hook output
+- All documentation, skills, and agent updated to reference Antigravity CLI
+
+### Removed
+- Gemini CLI extension support (deprecated by Google in favor of Antigravity CLI)
+- `gemini-extension.json` manifest
+- `GEMINI.md` context file
+- `hooks/gemini-hooks.json` hook config
+
 ## [1.5.0] - 2026-06-10
 
 ### Added

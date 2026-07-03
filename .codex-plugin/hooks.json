@@ -1,5 +1,5 @@
 {
-  "description": "Auto-refresh expired Spotify OAuth tokens before API calls (Claude Code and Codex; Gemini uses hooks/hooks.json)",
+  "description": "Auto-refresh expired Spotify OAuth tokens before API calls (Claude Code and Codex; Antigravity uses hooks/antigravity-hooks.json)",
   "hooks": {
     "PreToolUse": [
       {

@@ -25,11 +25,11 @@ X-Spotify-Ads-Sdk: <sdk-product>/<version>
 Use the active platform SDK product and plugin version:
 - Codex: read `.codex-plugin/plugin.json`, set `SDK_PRODUCT="codex-plugin"`.
 - Claude: read `.claude-plugin/plugin.json`, set `SDK_PRODUCT="claude-code-plugin"`.
-- Gemini: read `gemini-extension.json` (extension root), set `SDK_PRODUCT="gemini-cli-extension"`.
+- Antigravity: read `plugin.json` (plugin root), set `SDK_PRODUCT="antigravity-cli-plugin"`.
 
 Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
 
-To set up authentication, run the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini), which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
+To set up authentication, run the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity), which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
 ## Resource Hierarchy
 
@@ -145,16 +145,16 @@ create drafts → edit → validate → publish.
 ## Making API Calls
 
 Read the user's plugin settings from the active platform settings file created by the configure skill:
-- Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-- Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-- Gemini: prefer `.gemini/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
+- Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
+- Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
+- Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
 
 Use the settings file to get:
 - `access_token` — Bearer token for authentication
 - `ad_account_id` — Default ad account ID
 - `auto_execute` — Whether to execute API calls automatically or present them first (default: false)
 
-If the settings file does not exist, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
+If the settings file does not exist, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
 
 Construct curl commands using the appropriate base URL. Example:
 
