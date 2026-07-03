@@ -24,10 +24,10 @@ Include `-H "$SDK_HEADER"` on all curl commands to `api-partner.spotify.com`.
 
 ## Token Expiry
 
-A PreToolUse hook refreshes expired OAuth tokens automatically before API calls. Antigravity CLI auto-discovers hooks at the fixed path `.agents/hooks.json`, but the file ships as `hooks/antigravity-hooks.json` to avoid conflicts with Claude Code's hook loader. After installing the plugin, activate the hook once:
+A PreToolUse hook refreshes expired OAuth tokens automatically before API calls. When installed via `agy plugin install`, Antigravity auto-discovers `hooks.json` at the plugin root. For local development with `agy plugin link`, the hook file ships as `hooks/antigravity-hooks.json` to avoid conflicts with Claude Code's hook loader. Activate it once:
 
 ```bash
-cp hooks/antigravity-hooks.json .agents/hooks.json
+cp hooks/antigravity-hooks.json hooks.json
 ```
 
 If a request still returns 401, refresh the token per the configure skill's instructions or re-run `/configure`.

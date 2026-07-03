@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${pluginPath}${/}hooks${/}check-token.sh\"",
+            "command": "bash \"${extensionPath}${/}hooks${/}check-token.sh\"",
             "timeout": 30
           }
         ]

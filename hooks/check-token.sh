@@ -27,8 +27,8 @@ if ! command -v jq &>/dev/null; then
   exit 0
 fi
 
-# Detect platform from env vars
-if [ -n "${ANTIGRAVITY_PROJECT_DIR:-}" ]; then
+# Detect platform from env vars (Antigravity uses GEMINI_* env vars)
+if [ -n "${GEMINI_PROJECT_DIR:-}" ]; then
   PLATFORM="antigravity"
 elif [ -n "${CODEX_PROJECT_DIR:-}" ]; then
   PLATFORM="codex"
@@ -38,7 +38,7 @@ else
   PLATFORM="codex"
 fi
 
-PROJECT_DIR="${ANTIGRAVITY_PROJECT_DIR:-${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}}"
+PROJECT_DIR="${GEMINI_PROJECT_DIR:-${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}}"
 
 find_settings_file() {
   local order dir candidate
