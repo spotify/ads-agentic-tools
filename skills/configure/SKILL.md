@@ -76,13 +76,14 @@ uv run "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
 
 9. Write the active platform settings file (see Settings File Format below).
 
-10. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`.
+10. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: configure"`.
 
 11. Verify with a test API call:
 ```bash
 curl -s -o /dev/null -w "%{http_code}" \
   -H "Authorization: Bearer <token>" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<ad_account_id>"
 ```
 

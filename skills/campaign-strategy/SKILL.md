@@ -51,7 +51,7 @@ If budget, dates, or market are missing, make a conservative recommendation and 
      - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
      - Gemini: prefer `.gemini/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
    - Base URL: `https://api-partner.spotify.com/ads/v3`.
-   - Include `Authorization: Bearer $TOKEN` and `X-Spotify-Ads-Sdk: <sdk-product>/<plugin-version>` on API calls.
+   - Include `Authorization: Bearer $TOKEN`, `X-Spotify-Ads-Sdk: <sdk-product>/<plugin-version>`, and `X-Spotify-Ads-Skill: campaign-strategy` on API calls.
    - Include `-w "\nHTTP_STATUS:%{http_code}"` on all API curl commands except file uploads.
    - Treat `POST /estimates/audience` and `POST /estimates/bid` as non-mutating planning calls. Do not run entity-creation POSTs in this skill unless the user explicitly asks.
 
