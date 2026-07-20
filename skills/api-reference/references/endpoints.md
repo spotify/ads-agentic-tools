@@ -155,6 +155,8 @@ Create a new ad within an ad set.
   - `key` (string, required) — e.g. `SHOP_NOW`, `LEARN_MORE`, `LISTEN_NOW`
   - `clickthrough_url` (string, required) — Landing page URL
   - `language` (string, optional, default `ENGLISH`)
+- `start_time` (ISO 8601 datetime, optional, nullable) — Override the ad set's start time
+- `end_time` (ISO 8601 datetime, optional, nullable) — Override the ad set's end time
 - `delivery` (string, optional) — ON or OFF
 - `third_party_tracking` (array, optional, max 11) — Third-party tracking URLs
 
