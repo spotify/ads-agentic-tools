@@ -146,7 +146,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 - `category` is **required** — use a valid `ADV_X_Y` code from the `GET /ad_categories` endpoint.
 - `end_time` is **required** when `budget.type` is `LIFETIME`.
 - `placements` inside `targets` is required — typically `["MUSIC"]` or `["PODCAST"]`.
-- `frequency_caps` supports up to **6** caps per ad set. Each cap has `frequency_unit`, `frequency_period`, `max_impressions`. For Sponsored Playlist V3 campaigns, caps also support `group` (integer, min 1) and `ad_ids` (array of uuid, max 100) for group frequency capping — ads sharing the same `group` value share that cap. Group caps can only be configured after ads exist (via PATCH or draft flow), not on initial ad set creation.
+- `frequency_caps` supports up to **6** caps per ad set. Each cap has `frequency_unit`, `frequency_period`, `max_impressions`.
 
 ### Targets Object
 ```json

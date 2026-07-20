@@ -85,7 +85,7 @@ Create a new ad set within a campaign.
 - `bid_strategy` (string, required) — Plain string enum: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. **Not an object.**
 - `bid_micro_amount` (int64, required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 bid cap = `15000000`
 - `promotion` (object, optional) — Promotion configuration
-- `frequency_caps` (array, optional, max 6) — Array of `FrequencyCap` objects: `{frequency_unit, frequency_period, max_impressions}`. For Sponsored Playlist V3 campaigns, caps also support `group` (integer) and `ad_ids` (array of uuid, max 100) for group frequency capping across ads
+- `frequency_caps` (array, optional, max 6) — Array of `FrequencyCap` objects: `{frequency_unit, frequency_period, max_impressions}`
 - `pacing` (string, optional) — PACING_EVEN or PACING_ACCELERATED
 - `delivery` (string, optional) — ON or OFF
 - `mobile_app_id` (uuid, optional) — For app install campaigns

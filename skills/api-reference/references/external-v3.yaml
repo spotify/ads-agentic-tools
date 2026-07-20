@@ -5354,22 +5354,6 @@ components:
           minimum: 1
           description: Maximum impressions per user over the frequency period.
           example: 2
-        group:
-          type: integer
-          format: int32
-          minimum: 1
-          example: 1
-          description: Group identifier for group frequency capping. Ads with the same group share this cap. Only applicable to ad set frequency caps for Sponsored Playlist V3 campaigns. Cannot be set when creating an ad set — configure group caps once its ads exist (via PATCH or the draft flow).
-        ad_ids:
-          type: array
-          uniqueItems: true
-          maxItems: 100
-          items:
-            type: string
-            format: uuid
-          example:
-            - ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a
-          description: Ad IDs that share this group cap. Required when group is set. Only applicable to ad set frequency caps for Sponsored Playlist V3 campaigns.
       required:
         - frequency_unit
         - frequency_period
