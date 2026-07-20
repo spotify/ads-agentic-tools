@@ -34,7 +34,8 @@ Only use the direct creation flow below if the user explicitly asks to skip draf
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
 4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: build-campaign"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: build-campaign"`. Include `-H "$SDK_HEADER"`, `-H "$SKILL_HEADER"`, and `-H "$SESSION_HEADER"` on all API requests.
+6. Generate a session ID once at the start of this conversation: `SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')` and set `SESSION_HEADER="X-Spotify-Ads-Session: $SESSION_ID"`. Reuse the same `SESSION_ID` for all API requests in this conversation.
 
 ## Step 1: Parse the Campaign Description
 
@@ -119,6 +120,7 @@ After the user confirms the plan but before executing API calls, run an audience
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
@@ -170,6 +172,7 @@ For each ad, fetch available assets from the account:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?limit=50&sort_direction=DESC"
 ```
 
@@ -188,6 +191,7 @@ Execute each step in order, passing IDs forward from each response.
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"name":"...","objective":"..."}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -203,6 +207,7 @@ For each ad set:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -236,6 +241,7 @@ For each ad:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",

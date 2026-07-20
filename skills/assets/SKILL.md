@@ -18,7 +18,8 @@ Upload, list, retrieve, and archive creative assets (audio, video, images) for u
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
 4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: assets"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: assets"`. Include `-H "$SDK_HEADER"`, `-H "$SKILL_HEADER"`, and `-H "$SESSION_HEADER"` on all API requests.
+6. Generate a session ID once at the start of this conversation: `SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')` and set `SESSION_HEADER="X-Spotify-Ads-Session: $SESSION_ID"`. Reuse the same `SESSION_ID` for all API requests in this conversation.
 
 ## Parsing Arguments
 
@@ -58,6 +59,7 @@ Use AskUserQuestion to ask for the asset name (2-120 characters). Default to the
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"asset_type":"AUDIO","name":"my-creative"}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"
@@ -80,6 +82,7 @@ stat -f%z "/path/to/file"  # macOS
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -F "media=@/path/to/file" \
   -F "asset_type=AUDIO" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/upload"
@@ -92,6 +95,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/start"
 ```
@@ -107,6 +111,7 @@ split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file /tmp/chunk_
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -F "media=@/tmp/chunk_aa" \
   -F "upload_section=1" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/transfer"
@@ -117,6 +122,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"upload_session_id":"<session_id>","number_of_sections":<total_chunks>}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/complete"
@@ -135,6 +141,7 @@ After upload, poll `GET /assets/{id}` until status changes from `PROCESSING` to 
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -164,6 +171,7 @@ List assets in the account, optionally filtered by type.
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?asset_types=AUDIO&limit=50&sort_direction=DESC"
 ```
 
@@ -191,6 +199,7 @@ Get full details of a specific asset.
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -209,6 +218,7 @@ Archive or unarchive an asset using the bulk action endpoint.
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"action":"ARCHIVE","ids":["<asset_id>"]}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"

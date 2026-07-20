@@ -18,7 +18,8 @@ Pull reporting data from the Spotify Ads API. Read settings from the active plat
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
 4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: report"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: report"`. Include `-H "$SDK_HEADER"`, `-H "$SKILL_HEADER"`, and `-H "$SESSION_HEADER"` on all API requests.
+6. Generate a session ID once at the start of this conversation: `SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')` and set `SESSION_HEADER="X-Spotify-Ads-Session: $SESSION_ID"`. Reuse the same `SESSION_ID` for all API requests in this conversation.
 
 ## Operations
 
@@ -52,6 +53,7 @@ Prompt for:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&\
@@ -80,6 +82,7 @@ Prompt for:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports/totals?\
 entity_type=AD_SET&\
 entity_ids=$ID1&entity_ids=$ID2&\
@@ -115,6 +118,7 @@ Prompt for:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/insight_reports?\
 insight_dimension=GENDER&\
 fields=IMPRESSIONS&fields=CLICKS&fields=CTR&\
@@ -153,6 +157,7 @@ Prompt for:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -174,6 +179,7 @@ Check the status of an async report and get the download URL when ready.
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
+  -H "$SESSION_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
 ```
 
