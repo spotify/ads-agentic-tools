@@ -234,6 +234,17 @@ Prompt for required fields:
   - `key`: SHOP_NOW, LEARN_MORE, LISTEN_NOW, SIGN_UP, WATCH_NOW, BUY_NOW, DOWNLOAD, etc.
   - `clickthrough_url`: landing page URL
 - **delivery** (ON/OFF, default ON)
+- **third_party_tracking** (optional) — array of tracking pixels. Each entry needs:
+  - `measurement_event`: **required** — `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, or `VIEWABLE_IMPRESSION`. If omitted, defaults to IMPRESSION — always set explicitly, especially for click trackers.
+  - `measurement_partner`: `DCM`, `IAS`, `MOAT`, `DOUBLEVERIFY`, or `UNSET`
+  - `url`: the tracking pixel URL
+  - Example with both impression and click trackers:
+    ```json
+    "third_party_tracking": [
+      {"measurement_event": "IMPRESSION", "measurement_partner": "DCM", "url": "https://ad.doubleclick.net/ddm/trackimp/..."},
+      {"measurement_event": "CLICKED", "measurement_partner": "DCM", "url": "https://ad.doubleclick.net/ddm/trackclk/..."}
+    ]
+    ```
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
