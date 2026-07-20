@@ -622,9 +622,8 @@ Get available interest targets. Returns all interests in one response (no pagina
 **Query Parameters:**
 - `ids` (array of string, optional) — Filter by specific interest IDs. Repeated format: `ids=<uuid>&ids=<uuid>`
 - `q` (string, optional) — Free-text search across both parent interests and subtargets (e.g. `q=gaming` returns "Video Gaming" with its subtargets)
-- `context` (string, optional) — Unified taxonomy context. Defaults to `SAM_1P_INTERESTS`. Values: `SAM`, `SAM_1P_INTERESTS`, `DIRECT`, `SAX_SPAN`, `SAX_PMP`, `SAX_PG`, `SAX_DEAL_SYNC`, `MEGAPHONE`, `PODCAST_RESERVED`, `SAM_MIXED`
 
-This endpoint rejects `limit`, `offset`, and any parameter not listed above with a 400 error.
+**No other parameters accepted.** This endpoint rejects `limit`, `offset`, and any parameter not listed above with a 400 error.
 
 **Response:** 200 — `InterestTargetsResponse`
 ```json

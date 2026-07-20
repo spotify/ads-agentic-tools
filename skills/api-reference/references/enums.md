@@ -294,19 +294,6 @@ Used with the `fields` query parameter on aggregate and insight report endpoints
 
 **Important:** The field name in requests is `key`, NOT `type` or `text`.
 
-### InterestContext
-Unified taxonomy context for the `GET /targets/interests` endpoint. Defaults to `SAM_1P_INTERESTS`.
-- `SAM`
-- `SAM_1P_INTERESTS` (default)
-- `DIRECT`
-- `SAX_SPAN`
-- `SAX_PMP`
-- `SAX_PG`
-- `SAX_DEAL_SYNC`
-- `MEGAPHONE`
-- `PODCAST_RESERVED`
-- `SAM_MIXED`
-
 ### Gender
 - `MALE`
 - `FEMALE`

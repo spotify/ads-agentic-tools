@@ -4774,24 +4774,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/interest_ids'
         - $ref: '#/components/parameters/q'
-        - name: context
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - SAM
-              - SAM_1P_INTERESTS
-              - DIRECT
-              - SAX_SPAN
-              - SAX_PMP
-              - SAX_PG
-              - SAX_DEAL_SYNC
-              - MEGAPHONE
-              - PODCAST_RESERVED
-              - SAM_MIXED
-          description: |
-            Unified taxonomy context. Defaults to SAM_1P_INTERESTS.
       responses:
         '200':
           description: A list of interest targets.
