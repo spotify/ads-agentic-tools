@@ -125,7 +125,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
     "call_to_action": {
       "key": "SHOP_NOW",
       "clickthrough_url": "https://..."
-    }
+    },
+    "third_party_tracking": [
+      {"measurement_event": "IMPRESSION", "measurement_partner": "DCM", "url": "https://...trackimp/..."},
+      {"measurement_event": "CLICKED", "measurement_partner": "DCM", "url": "https://...trackclk/..."}
+    ]
   }' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads"
 ```
@@ -479,10 +483,11 @@ Unlike direct entity creation, draft creation accepts incomplete data — requir
 5. **`end_time`** is required when budget type is `LIFETIME`
 6. **`companion_asset_id`** is required for AUDIO format ads at publish/validation time, but can be omitted when creating draft ads
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
-8. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
-9. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the **draft campaign** immediately before calling publish/validate; never reuse a version captured before child drafts or edits. This field is only populated on draft campaign responses; ad set and ad draft responses return `null`. The version on the campaign increments when any entity in the hierarchy is created or edited
-10. **Draft ad set `campaign_id`** must reference the **draft campaign ID**, not a published campaign ID
-11. **Draft ad `ad_set_id`** must reference a **draft ad set ID**, not a published ad set ID
+8. **`third_party_tracking`** uses field `measurement_event` (NOT `type`) to distinguish tracker categories. Valid values: `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, `VIEWABLE_IMPRESSION`. **If `measurement_event` is omitted, it defaults to IMPRESSION** — always set it explicitly. Use `CLICKED` for click trackers and `IMPRESSION` for impression trackers.
+9. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
+10. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the **draft campaign** immediately before calling publish/validate; never reuse a version captured before child drafts or edits. This field is only populated on draft campaign responses; ad set and ad draft responses return `null`. The version on the campaign increments when any entity in the hierarchy is created or edited
+11. **Draft ad set `campaign_id`** must reference the **draft campaign ID**, not a published campaign ID
+12. **Draft ad `ad_set_id`** must reference a **draft ad set ID**, not a published ad set ID
 
 ## Execution Behavior
 
