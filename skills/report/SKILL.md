@@ -97,13 +97,13 @@ Prompt for:
 - **fields** — Metrics to include. Use repeated `fields` params. Insight reports do not allow
   `E_CPCL`, `FREQUENCY`, `OFF_SPOTIFY_IMPRESSIONS`, `PAID_LISTENS_FREQUENCY`,
   `SKIPS`, `SPEND`, `STARTS`, or `UNMUTES`.
-- **entity_ids** — One ad set ID to analyze
-- **entity_ids_type** — Required when `entity_ids` is set; use `AD_SET` for insight reports
-- **statuses** + **entity_status_type** (optional; use `AD_SET` for insight reports)
+- **entity_ids** — One ad set or campaign ID to analyze (only one ID at a time)
+- **entity_ids_type** — Required when `entity_ids` is set; use `AD_SET` or `CAMPAIGN`
+- **statuses** + **entity_status_type** (optional; must match the entity type used in `entity_ids_type`)
 
 **Insight report guardrails:**
-- Insight reports support one `entity_ids` value at a time, and it must be an ad set ID.
-- Always send `entity_ids_type=AD_SET` when `entity_ids` is present. Do not use `CAMPAIGN`.
+- Insight reports support one `entity_ids` value at a time — either an ad set ID or a campaign ID.
+- Always send `entity_ids_type` matching the entity: `AD_SET` for ad set IDs, `CAMPAIGN` for campaign IDs.
 - Do not send `entity_type` on insight reports; `entity_type=AD_SET` does not substitute for `entity_ids_type=AD_SET`.
 - Do not send `report_start`, `report_end`, `granularity`, or `limit`; insight reports are LIFETIME only.
 - Use only the listed `insight_dimension` values. Do not use `LOCATION`, `GEO`, `DMA`, `STATE`, `ZIP`, `POSTAL`, `POSTAL_CODE`, `MARKET`, `DEVICE`, `OS`, `ARTIST`, `AGE_RANGE`, or `CITY_NAME`.
@@ -120,6 +120,17 @@ entity_ids_type=AD_SET"
 ```
 
 Format results showing the breakdown by the selected dimension.
+
+**Handling 422 — Insufficient Data:**
+Insight data becomes available only after an ad has delivered enough activity to meet reporting thresholds. If the API returns HTTP 422 with one of these error codes, the entity does not yet have enough data:
+- `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_IMPRESSIONS`
+- `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_REACH`
+- `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_LISTENERS`
+
+When this happens:
+- Inform the user that the entity hasn't met the minimum data threshold yet
+- Suggest checking back later — poll no more than once per day
+- If the ad's flight has ended, stop retrying approximately two weeks after the end date (additional data is unlikely after that point)
 
 ### `async-create`
 Create an async CSV report for download.

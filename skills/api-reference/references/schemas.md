@@ -134,7 +134,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
   "bid_micro_amount": 15000000,
   "pacing": "PACING_EVEN",
   "delivery": "ON",
-  "frequency_caps": [{"frequency_unit": "DAY", "frequency_period": 1, "max_impressions": 5}],
+  "frequency_caps": [{"frequency_unit": "DAY", "frequency_period": 1, "max_impressions": 5}],  // max 6 caps per ad set
   "mobile_app_id": "uuid (optional)"
 }
 ```
@@ -146,6 +146,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 - `category` is **required** — use a valid `ADV_X_Y` code from the `GET /ad_categories` endpoint.
 - `end_time` is **required** when `budget.type` is `LIFETIME`.
 - `placements` inside `targets` is required — typically `["MUSIC"]` or `["PODCAST"]`.
+- `frequency_caps` supports up to **6** caps per ad set. Each cap has `frequency_unit`, `frequency_period`, `max_impressions`. For Sponsored Playlist V3 campaigns, caps also support `group` (integer, min 1) and `ad_ids` (array of uuid, max 100) for group frequency capping — ads sharing the same `group` value share that cap. Group caps can only be configured after ads exist (via PATCH or draft flow), not on initial ad set creation.
 
 ### Targets Object
 ```json
@@ -198,6 +199,9 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 
 ### CreateAdRequest
 Required: `name`, `ad_set_id`, `tagline`, `advertiser_name`, `assets`, `call_to_action`
+
+Optional time fields: `start_time` and `end_time` (ISO 8601 datetime, nullable) — ads inherit the ad set's schedule by default; set these only to override.
+
 ```json
 {
   "name": "string (2-200 chars)",
@@ -352,6 +356,9 @@ Required: `name`, `granularity`, `dimensions`, `metrics`
 Async report dimensions are entity metadata columns only. Do not put geo, demographic, platform, or audience dimensions such as `CITY`, `COUNTRY`, `REGION`, `GENDER`, `AGE`, `PLATFORM`, or `DEVICE` in `dimensions`. For async CSV delivery insight breakdowns, set `insight_dimension` with `granularity=LIFETIME`; for direct JSON insight results, use `GET /insight_reports`.
 
 ### AudienceInsightResponse
+
+Insight reports support filtering by a single ad set ID or campaign ID via `entity_ids` (max 1) with `entity_ids_type` set to `AD_SET` or `CAMPAIGN`.
+
 ```json
 {
   "granularity": "LIFETIME",
