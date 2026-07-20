@@ -20,7 +20,7 @@ Clone an existing campaign or ad set by reading its full hierarchy and recreatin
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
 4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: clone"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
 
 ## Parsing Arguments
 
@@ -39,6 +39,7 @@ Clone an existing campaign or ad set by reading its full hierarchy and recreatin
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
 ```
 
@@ -47,6 +48,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?campaign_ids=$CAMPAIGN_ID&limit=50&sort_direction=DESC"
 ```
 
@@ -57,6 +59,7 @@ Paginate with `offset` if `total_results > 50`.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?campaign_ids=$CAMPAIGN_ID&limit=50&sort_direction=DESC"
 ```
 
@@ -107,6 +110,7 @@ For each ad that will be cloned, check that the referenced assets (`asset_id`, `
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -123,6 +127,7 @@ If targeting, dates, objective, bid, or budget changed for any cloned ad set, ru
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
@@ -167,6 +172,7 @@ Create entities in dependency order, passing IDs forward.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"name":"Summer Promo (Copy)","objective":"REACH"}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
@@ -181,6 +187,7 @@ For each source ad set (excluding any the user filtered out):
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "US 18-34 Audio (Copy)",
@@ -210,6 +217,7 @@ For each source ad (excluding ARCHIVED/REJECTED), mapped to the correct new ad s
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "30s Spot A",
@@ -264,12 +272,14 @@ Clone a single ad set and its ads into an existing or new campaign.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID"
 ```
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?ad_set_ids=$AD_SET_ID&limit=50"
 ```
 
@@ -295,6 +305,7 @@ Create the ad set, then create its ads:
 # Create ad set
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{...}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets"
@@ -304,6 +315,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 # Create each ad under the new ad set
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{...}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads"
