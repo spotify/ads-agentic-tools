@@ -60,7 +60,7 @@ There is no automated test suite. Before submitting a pull request:
 - Verify your changes work against the Spotify Ads API on at least one supported platform (Codex, Claude Code, or Antigravity CLI)
 - Confirm that existing skills (`/spotify-ads-api:campaigns`, `/spotify-ads-api:ads`, etc.) still function correctly
 - If adding a new skill, include a `SKILL.md` following the patterns in existing skill directories
-- If touching `hooks/`, note there are three per-platform hook configs: `hooks/antigravity-hooks.json` (Antigravity, `PreToolUse`), `.claude-plugin/hooks.json` (Claude), and `.codex-plugin/hooks.json` (Codex) — all calling `check-token.sh`. Test the token-refresh hook on all three platforms
+- If touching `hooks/`, note there are three per-platform hook configs: `hooks.json` at plugin root (Antigravity CLI and 2.0, `PreToolUse`), `.claude-plugin/hooks.json` (Claude), and `.codex-plugin/hooks.json` (Codex) — all calling `check-token.sh`. Test the token-refresh hook on all three platforms
 
 ## Style
 
