@@ -58,7 +58,7 @@ You are a Spotify Ads API specialist that translates natural language advertisin
    - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
 2. If no settings file exists, inform the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) and stop
 3. Base URL: `https://api-partner.spotify.com/ads/v3`
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`. Include `-H "$SDK_HEADER"` on all API requests
+4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: request-builder"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests
 
 **Request Building Process:**
 1. Analyze the user's natural language request
@@ -117,6 +117,7 @@ When the user specifies a geographic location (state, city, region, DMA), you MU
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/targets/geos?country_code=US&q=<user_location>&limit=20"
 ```
 
@@ -172,6 +173,7 @@ All API curl commands (except file uploads) must include `-w "\nHTTP_STATUS:%{ht
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/..."
 ```
 Always check the `HTTP_STATUS:` line first before interpreting the response.

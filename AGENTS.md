@@ -56,6 +56,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
 - **Base URL**: `https://api-partner.spotify.com/ads/v3`.
 - **Tracking header**: Every API request must include the SDK tracking header. On Codex, read the `version` from `.codex-plugin/plugin.json` and set `SDK_HEADER="X-Spotify-Ads-Sdk: codex-plugin/$PLUGIN_VERSION"`. On Claude, read `.claude-plugin/plugin.json` and use `claude-code-plugin/$PLUGIN_VERSION`. On Antigravity, read `plugin.json` (plugin root) and use `antigravity-cli-plugin/$PLUGIN_VERSION`. Include `-H "$SDK_HEADER"` on all curl commands.
+- **Skill attribution header**: Every API request must also include `X-Spotify-Ads-Skill: <skill-name>`, where `<skill-name>` is the directory name of the active skill (e.g. `campaigns`, `dashboard`, `report`) or `request-builder` for the agent. Set `SKILL_HEADER="X-Spotify-Ads-Skill: <skill-name>"` and include `-H "$SKILL_HEADER"` on all curl commands. This enables per-skill invocation counts and error rates in API logs.
 - **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
 
@@ -89,6 +90,7 @@ All skills follow the same pattern: read settings file -> construct curl command
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/..."
 ```
 

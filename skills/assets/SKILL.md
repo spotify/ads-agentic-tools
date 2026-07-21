@@ -18,7 +18,7 @@ Upload, list, retrieve, and archive creative assets (audio, video, images) for u
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
 4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: assets"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
 
 ## Parsing Arguments
 
@@ -57,6 +57,7 @@ Use AskUserQuestion to ask for the asset name (2-120 characters). Default to the
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"asset_type":"AUDIO","name":"my-creative"}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"
@@ -78,6 +79,7 @@ stat -f%z "/path/to/file"  # macOS
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -F "media=@/path/to/file" \
   -F "asset_type=AUDIO" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/upload"
@@ -89,6 +91,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/start"
 ```
@@ -103,6 +106,7 @@ split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file /tmp/chunk_
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -F "media=@/tmp/chunk_aa" \
   -F "upload_section=1" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/transfer"
@@ -112,6 +116,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 ```bash
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"upload_session_id":"<session_id>","number_of_sections":<total_chunks>}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/complete"
@@ -129,6 +134,7 @@ After upload, poll `GET /assets/{id}` until status changes from `PROCESSING` to 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -157,6 +163,7 @@ List assets in the account, optionally filtered by type.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?asset_types=AUDIO&limit=50&sort_direction=DESC"
 ```
 
@@ -183,6 +190,7 @@ Get full details of a specific asset.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
 ```
 
@@ -200,6 +208,7 @@ Archive or unarchive an asset using the bulk action endpoint.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"action":"ARCHIVE","ids":["<asset_id>"]}' \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"

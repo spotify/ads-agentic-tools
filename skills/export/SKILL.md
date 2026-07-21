@@ -18,7 +18,7 @@ Export campaign hierarchies to CSV for offline review, combining entity data wit
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
 4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: export"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
 
 ## Parsing Arguments
 
@@ -48,6 +48,7 @@ Fetch all entity data with full pagination. Unlike other skills that show the fi
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&offset=0"
 ```
 
@@ -56,6 +57,7 @@ Check `paging.total_results` in the response. If `total_results > 50`, make addi
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
 ```
 
@@ -64,6 +66,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?limit=50&offset=0"
 ```
 
@@ -74,6 +77,7 @@ For a single campaign: add `&campaign_ids=$CAMPAIGN_ID`. Paginate with `offset` 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?limit=50&offset=0"
 ```
 
@@ -90,6 +94,7 @@ When metrics are included, fetch aggregate reports at each entity level. For a s
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=CTR&fields=COMPLETES&\
@@ -107,6 +112,7 @@ Paginate with `continuation_token` if present in the response.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=AD_SET&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=COMPLETES&fields=COMPLETION_RATE&\
@@ -123,6 +129,7 @@ For a single-campaign export, add `&entity_ids=$CAMPAIGN_ID&entity_ids_type=CAMP
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=AD&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&\

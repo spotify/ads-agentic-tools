@@ -134,7 +134,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
   "bid_micro_amount": 15000000,
   "pacing": "PACING_EVEN",
   "delivery": "ON",
-  "frequency_caps": [{"frequency_unit": "DAY", "frequency_period": 1, "max_impressions": 5}],
+  "frequency_caps": [{"frequency_unit": "DAY", "frequency_period": 1, "max_impressions": 5}],  // max 6 caps per ad set
   "mobile_app_id": "uuid (optional)"
 }
 ```
@@ -146,6 +146,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 - `category` is **required** — use a valid `ADV_X_Y` code from the `GET /ad_categories` endpoint.
 - `end_time` is **required** when `budget.type` is `LIFETIME`.
 - `placements` inside `targets` is required — typically `["MUSIC"]` or `["PODCAST"]`.
+- `frequency_caps` supports up to **6** caps per ad set. Each cap has `frequency_unit`, `frequency_period`, `max_impressions`.
 
 ### Targets Object
 ```json
@@ -189,7 +190,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
   "reject_reasons": ["string"],
   "placements": ["MUSIC", "PODCAST", "VIDEO"],
   "ad_preview_url": "string URI",
-  "third_party_tracking": [{ "type": "string", "url": "string" }],
+  "third_party_tracking": [{ "measurement_event": "IMPRESSION | CLICKED | START | ...", "measurement_partner": "DCM | IAS | MOAT | DOUBLEVERIFY | UNSET", "url": "string" }],
   "created_at": "ISO 8601",
   "updated_at": "ISO 8601",
   "version": 1
@@ -198,6 +199,9 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 
 ### CreateAdRequest
 Required: `name`, `ad_set_id`, `tagline`, `advertiser_name`, `assets`, `call_to_action`
+
+Optional time fields: `start_time` and `end_time` (ISO 8601 datetime, nullable) — ads inherit the ad set's schedule by default; set these only to override.
+
 ```json
 {
   "name": "string (2-200 chars)",
@@ -216,7 +220,8 @@ Required: `name`, `ad_set_id`, `tagline`, `advertiser_name`, `assets`, `call_to_
   },
   "delivery": "ON",
   "third_party_tracking": [
-    { "type": "IMPRESSION", "url": "https://tracker.example.com/imp" }
+    { "measurement_event": "IMPRESSION", "measurement_partner": "DCM", "url": "https://ad.doubleclick.net/ddm/trackimp/..." },
+    { "measurement_event": "CLICKED", "measurement_partner": "DCM", "url": "https://ad.doubleclick.net/ddm/trackclk/..." }
   ]
 }
 ```
@@ -226,6 +231,7 @@ Required: `name`, `ad_set_id`, `tagline`, `advertiser_name`, `assets`, `call_to_
 - `assets.asset_id` and `assets.logo_asset_id` are always required.
 - `assets.companion_asset_id` is required for AUDIO format ads.
 - Valid `call_to_action.key` values: `SHOP_NOW`, `LEARN_MORE`, `LISTEN_NOW`, `SIGN_UP`, `WATCH_NOW`, `BUY_NOW`, `BOOK_NOW`, `DOWNLOAD`, `GET_INFO`, `ORDER_NOW`, `PRE_SAVE`, `VISIT_SITE`, etc.
+- `third_party_tracking` uses field `measurement_event` (NOT `type`) to distinguish tracker types. Valid values: `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, `VIEWABLE_IMPRESSION`. **If `measurement_event` is omitted, it defaults to IMPRESSION** — always set it explicitly, especially for click trackers (`CLICKED`).
 
 ### UpdateAdRequest
 Minimum 1 property required.
@@ -352,6 +358,9 @@ Required: `name`, `granularity`, `dimensions`, `metrics`
 Async report dimensions are entity metadata columns only. Do not put geo, demographic, platform, or audience dimensions such as `CITY`, `COUNTRY`, `REGION`, `GENDER`, `AGE`, `PLATFORM`, or `DEVICE` in `dimensions`. For async CSV delivery insight breakdowns, set `insight_dimension` with `granularity=LIFETIME`; for direct JSON insight results, use `GET /insight_reports`.
 
 ### AudienceInsightResponse
+
+Insight reports support filtering by a single ad set ID or campaign ID via `entity_ids` (max 1) with `entity_ids_type` set to `AD_SET` or `CAMPAIGN`.
+
 ```json
 {
   "granularity": "LIFETIME",
@@ -520,7 +529,7 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
   "assets": { "asset_id": "uuid", "logo_asset_id": "uuid", "companion_asset_id": "uuid" },
   "asset_format": "AUDIO | VIDEO | IMAGE",
   "call_to_action": { "key": "LEARN_MORE", "clickthrough_url": "https://...", "language": "ENGLISH" },
-  "third_party_tracking": [{ "measurement_partner": "string", "url": "string" }],
+  "third_party_tracking": [{ "measurement_event": "IMPRESSION | CLICKED | START | ...", "measurement_partner": "DCM | IAS | MOAT | DOUBLEVERIFY | UNSET", "url": "string" }],
   "weight": 10,
   "status": "AdStatus enum",
   "draft_hierarchy_version": null,

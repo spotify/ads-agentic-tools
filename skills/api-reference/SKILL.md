@@ -20,6 +20,7 @@ All requests require a Bearer token and the SDK tracking header:
 ```
 Authorization: Bearer <access_token>
 X-Spotify-Ads-Sdk: <sdk-product>/<version>
+X-Spotify-Ads-Skill: <skill-name>
 ```
 
 Use the active platform SDK product and plugin version:
@@ -27,7 +28,7 @@ Use the active platform SDK product and plugin version:
 - Claude: read `.claude-plugin/plugin.json`, set `SDK_PRODUCT="claude-code-plugin"`.
 - Antigravity: read `plugin.json` (plugin root), set `SDK_PRODUCT="antigravity-cli-plugin"`.
 
-Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: <skill-name>"` (where `<skill-name>` is the directory name of the active skill, e.g. `campaigns`, `dashboard`, `report`). Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
 
 To set up authentication, run the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity), which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
@@ -162,6 +163,7 @@ Construct curl commands using the appropriate base URL. Example:
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50"
 ```
 

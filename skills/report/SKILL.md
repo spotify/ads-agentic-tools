@@ -18,7 +18,7 @@ Pull reporting data from the Spotify Ads API. Read settings from the active plat
 2. Base URL: `https://api-partner.spotify.com/ads/v3`
 3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
 4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: report"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
 
 ## Operations
 
@@ -51,6 +51,7 @@ Prompt for:
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&\
@@ -78,6 +79,7 @@ Prompt for:
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports/totals?\
 entity_type=AD_SET&\
 entity_ids=$ID1&entity_ids=$ID2&\
@@ -97,13 +99,13 @@ Prompt for:
 - **fields** — Metrics to include. Use repeated `fields` params. Insight reports do not allow
   `E_CPCL`, `FREQUENCY`, `OFF_SPOTIFY_IMPRESSIONS`, `PAID_LISTENS_FREQUENCY`,
   `SKIPS`, `SPEND`, `STARTS`, or `UNMUTES`.
-- **entity_ids** — One ad set ID to analyze
-- **entity_ids_type** — Required when `entity_ids` is set; use `AD_SET` for insight reports
-- **statuses** + **entity_status_type** (optional; use `AD_SET` for insight reports)
+- **entity_ids** — One ad set or campaign ID to analyze (only one ID at a time)
+- **entity_ids_type** — Required when `entity_ids` is set; use `AD_SET` or `CAMPAIGN`
+- **statuses** + **entity_status_type** (optional; must match the entity type used in `entity_ids_type`)
 
 **Insight report guardrails:**
-- Insight reports support one `entity_ids` value at a time, and it must be an ad set ID.
-- Always send `entity_ids_type=AD_SET` when `entity_ids` is present. Do not use `CAMPAIGN`.
+- Insight reports support one `entity_ids` value at a time — either an ad set ID or a campaign ID.
+- Always send `entity_ids_type` matching the entity: `AD_SET` for ad set IDs, `CAMPAIGN` for campaign IDs.
 - Do not send `entity_type` on insight reports; `entity_type=AD_SET` does not substitute for `entity_ids_type=AD_SET`.
 - Do not send `report_start`, `report_end`, `granularity`, or `limit`; insight reports are LIFETIME only.
 - Use only the listed `insight_dimension` values. Do not use `LOCATION`, `GEO`, `DMA`, `STATE`, `ZIP`, `POSTAL`, `POSTAL_CODE`, `MARKET`, `DEVICE`, `OS`, `ARTIST`, `AGE_RANGE`, or `CITY_NAME`.
@@ -112,6 +114,7 @@ Prompt for:
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/insight_reports?\
 insight_dimension=GENDER&\
 fields=IMPRESSIONS&fields=CLICKS&fields=CTR&\
@@ -120,6 +123,17 @@ entity_ids_type=AD_SET"
 ```
 
 Format results showing the breakdown by the selected dimension.
+
+**Handling 422 — Insufficient Data:**
+Insight data becomes available only after an ad has delivered enough activity to meet reporting thresholds. If the API returns HTTP 422 with one of these error codes, the entity does not yet have enough data:
+- `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_IMPRESSIONS`
+- `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_REACH`
+- `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_LISTENERS`
+
+When this happens:
+- Inform the user that the entity hasn't met the minimum data threshold yet
+- Suggest checking back later — poll no more than once per day
+- If the ad's flight has ended, stop retrying approximately two weeks after the end date (additional data is unlikely after that point)
 
 ### `async-create`
 Create an async CSV report for download.
@@ -149,6 +163,7 @@ Prompt for:
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "...",
@@ -169,6 +184,7 @@ Check the status of an async report and get the download URL when ready.
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
+  -H "$SKILL_HEADER" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
 ```
 

@@ -85,7 +85,7 @@ Create a new ad set within a campaign.
 - `bid_strategy` (string, required) — Plain string enum: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. **Not an object.**
 - `bid_micro_amount` (int64, required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 bid cap = `15000000`
 - `promotion` (object, optional) — Promotion configuration
-- `frequency_caps` (array, optional) — Array of `{frequency_unit, frequency_period, max_impressions}` objects
+- `frequency_caps` (array, optional, max 6) — Array of `FrequencyCap` objects: `{frequency_unit, frequency_period, max_impressions}`
 - `pacing` (string, optional) — PACING_EVEN or PACING_ACCELERATED
 - `delivery` (string, optional) — ON or OFF
 - `mobile_app_id` (uuid, optional) — For app install campaigns
@@ -155,6 +155,8 @@ Create a new ad within an ad set.
   - `key` (string, required) — e.g. `SHOP_NOW`, `LEARN_MORE`, `LISTEN_NOW`
   - `clickthrough_url` (string, required) — Landing page URL
   - `language` (string, optional, default `ENGLISH`)
+- `start_time` (ISO 8601 datetime, optional, nullable) — Override the ad set's start time
+- `end_time` (ISO 8601 datetime, optional, nullable) — Override the ad set's end time
 - `delivery` (string, optional) — ON or OFF
 - `third_party_tracking` (array, optional, max 11) — Third-party tracking URLs
 
@@ -475,18 +477,22 @@ Note: `field_value` is a **float** (e.g., `15234.0`, `0.0`), not a string. Aggre
 ### GET /ad_accounts/{ad_account_id}/insight_reports
 Get audience insight breakdowns.
 
+Insight data becomes available after an ad has delivered enough activity to meet reporting thresholds. If a request returns a 422 with an insufficient-data error code, poll no more than once per day. Stop retrying approximately two weeks after the ad's end date.
+
 **Query Parameters:**
 - `insight_dimension` (string) — ACT_AND_SET, AGE, AUDIENCE, CITY, COUNTRY, FORMAT, GENDER, GENRE, INTERESTS, METRO, PLACEMENT, PLATFORM, PODCAST_EPISODE_TOPIC, REGION, TONE
 - `fields` (array) — **Uses `fields`, NOT `report_fields`.** Repeated parameter format.
   Insight reports do not allow `E_CPCL`, `FREQUENCY`, `OFF_SPOTIFY_IMPRESSIONS`, `PAID_LISTENS_FREQUENCY`, `SKIPS`, `SPEND`, `STARTS`, or `UNMUTES`.
-- `entity_ids` (array of uuid, optional) — Insight reports currently support one ID at a time.
-- `entity_ids_type` (string, required when `entity_ids` is set) — Use `AD_SET` for insight reports.
-- `statuses` (array, optional) — Filter by ad set status.
-- `entity_status_type` (string, required when statuses are set) — Use `AD_SET` for insight reports.
+- `entity_ids` (array of uuid, optional) — Only one ID at a time is supported.
+- `entity_ids_type` (string, required when `entity_ids` is set) — `AD_SET` or `CAMPAIGN`.
+- `statuses` (array, optional) — Filter by entity status.
+- `entity_status_type` (string, required when statuses are set) — Must match `entity_ids_type`.
 
 Do not send `entity_type`, `report_start`, `report_end`, `granularity`, or `limit` on insight reports. `entity_type=AD_SET` does not substitute for `entity_ids_type=AD_SET`. Do not use dimensions such as `LOCATION`, `GEO`, `DMA`, `STATE`, `ZIP`, `POSTAL_CODE`, `MARKET`, `DEVICE`, `OS`, `ARTIST`, `AGE_RANGE`, or `CITY_NAME`.
 
 **Response:** 200 — `AudienceInsightResponse`
+
+**Error:** 422 — Insufficient data. The entity does not meet the minimum thresholds for an insight report. Error codes: `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_IMPRESSIONS`, `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_REACH`, `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_LISTENERS`.
 
 ### POST /ad_accounts/{ad_account_id}/async_reports
 Create an asynchronous CSV report.
@@ -829,4 +835,5 @@ Common HTTP status codes:
 - 400 — Bad request (validation error)
 - 403 — Forbidden (insufficient permissions)
 - 404 — Resource not found
+- 422 — Unprocessable entity (e.g., insight reports with insufficient data)
 - 500 — Internal server error
