@@ -15,7 +15,7 @@ The Spotify Ads API v3 enables programmatic management of advertising campaigns 
 
 ## Authentication
 
-All requests require a Bearer token and the SDK tracking header:
+All requests require a Bearer token and tracking headers:
 
 ```
 Authorization: Bearer <access_token>
@@ -23,12 +23,12 @@ X-Spotify-Ads-Sdk: <sdk-product>/<version>
 X-Spotify-Ads-Skill: <skill-name>
 ```
 
-Use the active platform SDK product and plugin version:
-- Codex: read `.codex-plugin/plugin.json`, set `SDK_PRODUCT="codex-plugin"`.
-- Claude: read `.claude-plugin/plugin.json`, set `SDK_PRODUCT="claude-code-plugin"`.
-- Antigravity: read `plugin.json` (plugin root), set `SDK_PRODUCT="antigravity-cli-plugin"`.
+The request wrapper script (`scripts/api-request.sh`) injects these headers automatically. Skills define a local `api()` function that delegates to the wrapper:
 
-Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: <skill-name>"` (where `<skill-name>` is the directory name of the active skill, e.g. `campaigns`, `dashboard`, `report`). Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
+```
 
 To set up authentication, run the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity), which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
@@ -145,27 +145,38 @@ create drafts → edit → validate → publish.
 
 ## Making API Calls
 
-Read the user's plugin settings from the active platform settings file created by the configure skill:
-- Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-- Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-- Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
+All skills use the request wrapper script (`scripts/api-request.sh`) which handles settings discovery, authentication, and tracking headers automatically:
 
-Use the settings file to get:
-- `access_token` — Bearer token for authentication
-- `ad_account_id` — Default ad account ID
-- `auto_execute` — Whether to execute API calls automatically or present them first (default: false)
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 
-If the settings file does not exist, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
+# GET
+api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 
-Construct curl commands using the appropriate base URL. Example:
+# POST with JSON body
+api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"..."}'
+
+# Retrieve settings values for use outside API calls
+eval $(api --env)
+```
+
+The wrapper reads the user's plugin settings from the active platform settings file (with platform-ordered fallback), reads the plugin version from the platform manifest, and injects `Authorization`, `X-Spotify-Ads-Sdk`, and `X-Spotify-Ads-Skill` headers. It appends `\nHTTP_STATUS:<code>` to every response. Paths use `{ad_account_id}` as a placeholder (auto-substituted from settings).
+
+If the settings file does not exist, the wrapper exits with an error. Instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
+
+<details>
+<summary>Raw curl equivalent (for debugging or non-standard requests)</summary>
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
+  -H "X-Spotify-Ads-Sdk: <sdk-product>/<version>" \
+  -H "X-Spotify-Ads-Skill: <skill-name>" \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50"
 ```
+
+</details>
 
 For error response format and common HTTP status codes, see `references/endpoints.md` (Error Responses section).
 
