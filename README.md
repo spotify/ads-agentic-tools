@@ -1,12 +1,12 @@
 # Spotify Ads Agentic Tools
 
-A Codex, Claude Code, and Gemini CLI plugin package that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
+A Codex, Claude Code, and Antigravity CLI plugin package that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
 
 Check out our post on the [Spotify Engineering Blog](https://engineering.atspotify.com/2026/5/spotify-ads-api-claude-plugins).
 
 ## Prerequisites
 
-- Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), or [Gemini CLI](https://geminicli.com/)
+- Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), or [Antigravity CLI](https://antigravity.google/)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
 - Python 3.8+ (for automated OAuth flow; optional — manual flow available as fallback)
@@ -31,13 +31,13 @@ Restart Codex after adding the marketplace. Then open the plugin directory in th
 
 Use `codex plugin marketplace upgrade` later to refresh installed marketplace sources.
 
-### Gemini CLI
+### Antigravity CLI
 
 ```bash
-gemini extensions install https://github.com/spotify/ads-agentic-tools
+agy plugin install https://github.com/spotify/ads-agentic-tools
 ```
 
-Restart Gemini CLI, then verify with `/extensions`. On Gemini, skills activate automatically from natural language (or browse them with `/skills list`); run `/configure` for first-time setup instead of `/spotify-ads-api:configure`. Note: automatic OAuth token refresh uses the macOS Keychain, so auto-refresh is macOS-only.
+Restart Antigravity CLI, then verify with `/plugins`. On Antigravity, skills activate automatically from natural language (or browse them with `/skills list`); run `/configure` for first-time setup instead of `/spotify-ads-api:configure`. Note: automatic OAuth token refresh uses the macOS Keychain, so auto-refresh is macOS-only.
 
 ## Install from source
 
@@ -66,14 +66,14 @@ Use a source checkout for local development or testing unreleased changes.
    alias claude-ads='claude --plugin-dir /path/to/ads-agentic-tools'
    ```
 
-4. For Gemini CLI, link the checkout as a local extension:
+4. For Antigravity CLI, link the checkout as a local plugin:
    ```bash
-   gemini extensions link "$(pwd)"
+   agy plugin link "$(pwd)"
    ```
 
-   The link is a symlink, so source changes are picked up on the next Gemini CLI restart.
+   The link is a symlink, so source changes are picked up on the next Antigravity CLI restart.
 
-The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Gemini CLI has no marketplace file — it installs directly from the repository using the root `gemini-extension.json` manifest. Keep all three manifests in sync when changing plugin metadata.
+The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Antigravity CLI has no marketplace file — it installs directly from the repository using the root `plugin.json` manifest. Keep all three manifests in sync when changing plugin metadata.
 
 ## Configure
 
@@ -87,7 +87,7 @@ The repository includes platform-specific marketplace metadata: `.agents/plugins
    ```
    /spotify-ads-api:configure
    ```
-   (On Gemini CLI, run `/configure` instead — the skill names below all apply, but the slash-command prefix is Claude Code/Codex syntax.)
+   (On Antigravity CLI, run `/configure` instead — the skill names below all apply, but the slash-command prefix is Claude Code/Codex syntax.)
    This opens your browser for Spotify authorization, then saves your tokens locally with automatic refresh.
 
 3. Create your first campaign:
@@ -110,7 +110,7 @@ Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained acce
 
 ## Available Skills
 
-Skill names below use Claude Code/Codex slash-command syntax. On Gemini CLI, the same skills activate automatically from natural language (browse them with `/skills list`), and setup is `/configure`.
+Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI, the same skills activate automatically from natural language (browse them with `/skills list`), and setup is `/configure`.
 
 | Skill | Description |
 |-------|-------------|
@@ -148,7 +148,7 @@ The plugin includes an agent that interprets natural language requests automatic
 
 ## Configuration Reference
 
-Settings are stored in `.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, and `.gemini/spotify-ads-api.local.md` on Gemini. Each platform falls back to the other settings files if its preferred file does not exist. All three paths are gitignored.
+Settings are stored in `.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, and `.agents/spotify-ads-api.local.md` on Antigravity. Each platform falls back to the other settings files if its preferred file does not exist. All three paths are gitignored.
 
 | Field | Description | Default |
 |-------|-------------|---------|
@@ -178,8 +178,8 @@ Your targeting is too narrow for the selected ad format. Try broadening the age 
 **"Asset stuck in PROCESSING"**
 Large files may take longer to transcode. Check status with `/spotify-ads-api:assets get <id>`. If status is REJECTED, the file may not meet format requirements.
 
-**Skill not activating on Gemini CLI**
-Run `/skills list` to confirm the extension's skills loaded, and `/extensions` to confirm the extension is enabled. Restart Gemini CLI after installing or linking.
+**Skill not activating on Antigravity CLI**
+Run `/skills list` to confirm the plugin's skills loaded, and `/plugins` to confirm the plugin is enabled. Restart Antigravity CLI after installing or linking.
 
 ## License
 

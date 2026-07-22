@@ -1,9 +1,11 @@
 #!/bin/bash
 set -uo pipefail
 
-# Spotify Ads API pre-tool hook (PreToolUse on Claude/Codex, BeforeTool on Gemini)
+# Spotify Ads API pre-tool hook (PreToolUse on Claude/Codex/Antigravity)
 #
-# Auto-refreshes expired OAuth tokens before API calls
+# Auto-refreshes expired OAuth tokens before API calls.
+# Claude/Codex payload: .tool_input.command; supports command rewriting.
+# Antigravity payload: .toolCall.args.CommandLine; decision allow/deny only (no rewrite).
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PLUGIN_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
@@ -27,34 +29,25 @@ if ! command -v jq &>/dev/null; then
   exit 0
 fi
 
-# Detect platform: Gemini fires this as a BeforeTool hook (and sets no
-# *_PROJECT_DIR env vars); Claude/Codex fire it as PreToolUse
-hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // ""')
-if [ "$hook_event" = "BeforeTool" ]; then
-  PLATFORM="gemini"
-elif [ -n "${CODEX_PROJECT_DIR:-}" ]; then
+# Detect platform from env vars; Antigravity sets none of the known
+# *_PROJECT_DIR vars, so it falls through to the default.
+if [ -n "${CODEX_PROJECT_DIR:-}" ]; then
   PLATFORM="codex"
 elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
   PLATFORM="claude"
 else
-  PLATFORM="codex"
+  PLATFORM="antigravity"
 fi
 
 PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
-if [ "$PLATFORM" = "gemini" ]; then
-  stdin_cwd=$(printf '%s' "$input" | jq -r '.cwd // ""')
-  if [ -n "$stdin_cwd" ]; then
-    PROJECT_DIR="$stdin_cwd"
-  fi
-fi
 
 find_settings_file() {
   local order dir candidate
 
   case "$PLATFORM" in
-    gemini) order=".gemini .claude .codex" ;;
-    claude) order=".claude .codex .gemini" ;;
-    *)      order=".codex .claude .gemini" ;;
+    antigravity) order=".agents .claude .codex" ;;
+    claude) order=".claude .codex .agents" ;;
+    *)      order=".codex .claude .agents" ;;
   esac
 
   for dir in $order; do
@@ -66,8 +59,17 @@ find_settings_file() {
   done
 }
 
-# Extract the bash command from tool input
-command=$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // .input.command // .input.cmd // ""')
+# Extract the command from tool input (different field paths per platform)
+# Claude/Codex: .tool_input.command
+# Antigravity:  .toolCall.args.CommandLine
+command=$(printf '%s' "$input" | jq -r '
+  .tool_input.command //
+  .tool_input.cmd //
+  .input.command //
+  .input.cmd //
+  .toolCall.args.CommandLine //
+  .toolCall.args.command //
+  ""')
 if [[ -z "$command" ]] || [[ "$command" != *"api-partner.spotify.com"* ]]; then
   exit 0
 fi
@@ -108,7 +110,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
 
   if [ "$needs_refresh" = true ]; then
     if [ -z "$refresh_token" ] || [ -z "$client_id" ] || [ -z "$client_secret" ]; then
-      system_message="Spotify API token may be expired but no refresh credentials are configured. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Gemini) to set up OAuth."
+      system_message="Spotify API token may be expired but no refresh credentials are configured. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to set up OAuth."
     else
       REFRESH_SCRIPT="${PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
       if refresh_result=$(python3 "$REFRESH_SCRIPT" \
@@ -139,52 +141,46 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           if [ -n "$access_token" ]; then
             modified_command="${modified_command//$access_token/$new_token}"
           fi
-          system_message="Spotify API token was expired and has been refreshed automatically."
+          system_message="Spotify API token was expired and has been refreshed automatically. Re-read the access_token from the settings file before retrying."
         fi
       else
-        system_message="Failed to refresh Spotify API token. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Gemini) to re-authenticate."
+        system_message="Failed to refresh Spotify API token. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to re-authenticate."
       fi
     fi
   fi
 fi
 
 # --- Emit output ---
-# Gemini merges hookSpecificOutput.tool_input into the model's tool args;
-# Claude/Codex expect permissionDecision/updatedInput instead.
-if [[ "$modified_command" != "$command" ]]; then
-  if [ "$PLATFORM" = "gemini" ]; then
+# Claude/Codex: permissionDecision + updatedInput to rewrite the command.
+# Antigravity: decision + reason (no command rewriting support).
+if [ "$PLATFORM" = "antigravity" ]; then
+  if [ -n "$system_message" ]; then
+    jq -n --arg msg "$system_message" '{
+      "decision": "allow",
+      "reason": $msg
+    }' 2>/dev/null
+  fi
+else
+  if [[ "$modified_command" != "$command" ]]; then
     if [ -n "$system_message" ]; then
       jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
         "hookSpecificOutput": {
-          "tool_input": {"command": $cmd}
+          "permissionDecision": "allow",
+          "updatedInput": {"command": $cmd}
         },
         "systemMessage": $msg
       }' 2>/dev/null
     else
       jq -n --arg cmd "$modified_command" '{
         "hookSpecificOutput": {
-          "tool_input": {"command": $cmd}
+          "permissionDecision": "allow",
+          "updatedInput": {"command": $cmd}
         }
       }' 2>/dev/null
     fi
   elif [ -n "$system_message" ]; then
-    jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
-      "hookSpecificOutput": {
-        "permissionDecision": "allow",
-        "updatedInput": {"command": $cmd}
-      },
-      "systemMessage": $msg
-    }' 2>/dev/null
-  else
-    jq -n --arg cmd "$modified_command" '{
-      "hookSpecificOutput": {
-        "permissionDecision": "allow",
-        "updatedInput": {"command": $cmd}
-      }
-    }' 2>/dev/null
+    jq -n --arg msg "$system_message" '{"systemMessage": $msg}' 2>/dev/null
   fi
-elif [ -n "$system_message" ]; then
-  jq -n --arg msg "$system_message" '{"systemMessage": $msg}' 2>/dev/null
 fi
 
 exit 0

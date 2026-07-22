@@ -9,13 +9,13 @@
 **Variables used in curl examples below:**
 - `$TOKEN` — OAuth access token from settings
 - `$BASE_URL` — `https://api-partner.spotify.com/ads/v3`
-- `$SDK_HEADER` — `X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION`, where `SDK_PRODUCT` is `codex-plugin` on Codex, `claude-code-plugin` on Claude, and `gemini-cli-extension` on Gemini
+- `$SDK_HEADER` — `X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION`, where `SDK_PRODUCT` is `codex-plugin` on Codex, `claude-code-plugin` on Claude, and `antigravity-cli-plugin` on Antigravity
 
 ---
 
 ## Scenario 1: Configure OAuth
 
-**Prompt:** `/spotify-ads-api:configure` (`/configure` on Gemini)
+**Prompt:** `/spotify-ads-api:configure` (`/configure` on Antigravity)
 
 **Quirks tested:** OAuth flow, settings file creation, token validation
 
@@ -24,7 +24,7 @@
 2. Runs `oauth-flow.py` to open browser and complete authorization
 3. Parses JSON output with `access_token`, `refresh_token`, `expires_in`
 4. Prompts for `ad_account_id`, `auto_execute`
-5. Writes the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.gemini/spotify-ads-api.local.md` on Gemini) with all fields
+5. Writes the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity) with all fields
 6. Verifies token with test API call
 
 **Success criteria:**
@@ -328,11 +328,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Quirks tested:** Auto-refresh hook, token update, retry with new token
 
 **Setup:**
-Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.gemini/spotify-ads-api.local.md` on Gemini) and set `token_expires_at` to `2026-02-01T00:00:00Z` (in the past). Ensure `refresh_token`, `client_id`, and `client_secret` are populated.
+Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity) and set `token_expires_at` to `2026-02-01T00:00:00Z` (in the past). Ensure `refresh_token`, `client_id`, and `client_secret` are populated.
 
 **Expected behavior:**
 1. User runs a command (e.g., "Show me all campaigns")
-2. The pre-tool hook (`PreToolUse` on Claude/Codex, `BeforeTool` on Gemini) detects the curl targets `api-partner.spotify.com`
+2. The pre-tool hook (`PreToolUse` on Claude/Codex/Antigravity) detects the curl targets `api-partner.spotify.com`
 3. Hook reads settings, sees `token_expires_at` is in the past
 4. Hook runs `refresh-token.py` with stored credentials
 5. Hook updates settings file with new `access_token` and `token_expires_at`

@@ -8,7 +8,7 @@ Look for issues labeled [`good first issue`](https://github.com/spotify/ads-agen
 
 ## Building the Project
 
-This is a Codex, Claude Code, and Gemini CLI plugin package made mostly of markdown files. There is no build step, no package manager, and no compiled code.
+This is a Codex, Claude Code, and Antigravity CLI plugin package made mostly of markdown files. There is no build step, no package manager, and no compiled code.
 
 To run the plugin locally:
 
@@ -29,16 +29,16 @@ To run the plugin locally:
    claude --plugin-dir /path/to/ads-agentic-tools
    ```
 
-   For Gemini CLI:
+   For Antigravity CLI:
    ```bash
-   gemini extensions link /path/to/ads-agentic-tools
+   agy plugin link /path/to/ads-agentic-tools
    ```
 
 3. Configure credentials:
    ```
    /spotify-ads-api:configure
    ```
-   (`/configure` on Gemini CLI)
+   (`/configure` on Antigravity)
 
 ## Workflow
 
@@ -57,10 +57,10 @@ We follow the [GitHub Flow Workflow](https://guides.github.com/introduction/flow
 
 There is no automated test suite. Before submitting a pull request:
 
-- Verify your changes work against the Spotify Ads API on at least one supported platform (Codex, Claude Code, or Gemini CLI)
+- Verify your changes work against the Spotify Ads API on at least one supported platform (Codex, Claude Code, or Antigravity CLI)
 - Confirm that existing skills (`/spotify-ads-api:campaigns`, `/spotify-ads-api:ads`, etc.) still function correctly
 - If adding a new skill, include a `SKILL.md` following the patterns in existing skill directories
-- If touching `hooks/`, note there are three per-platform hook configs: `hooks/gemini-hooks.json` (Gemini, `BeforeTool`), `.claude-plugin/hooks.json` (Claude), and `.codex-plugin/hooks.json` (Codex) — all calling `check-token.sh`. Test the token-refresh hook on all three platforms
+- If touching `hooks/`, note there are three per-platform hook configs: `hooks.json` at plugin root (Antigravity CLI and 2.0, `PreToolUse`), `.claude-plugin/hooks.json` (Claude), and `.codex-plugin/hooks.json` (Codex) — all calling `check-token.sh`. Test the token-refresh hook on all three platforms
 
 ## Style
 

@@ -53,12 +53,12 @@ You are a Spotify Ads API specialist that translates natural language advertisin
 
 **Startup Process:**
 1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-   - Gemini: prefer `.gemini/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. If no settings file exists, inform the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini) and stop
+   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
+   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
+   - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
+2. If no settings file exists, inform the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) and stop
 3. Base URL: `https://api-partner.spotify.com/ads/v3`
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: request-builder"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests
+4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: request-builder"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests
 
 **Request Building Process:**
 1. Analyze the user's natural language request
@@ -179,7 +179,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 Always check the `HTTP_STATUS:` line first before interpreting the response.
 
 **Error Handling:**
-- If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id in settings, client_secret in keychain), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini) to re-authenticate.
+- If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id in settings, client_secret in keychain), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) to re-authenticate.
 - If the API returns other errors, read the error message and explain what went wrong in plain language
 - Suggest fixes for common errors (missing fields, budget too low, targeting too narrow, etc.)
 - Never retry automatically on 4xx errors — explain the issue to the user
