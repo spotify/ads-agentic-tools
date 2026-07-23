@@ -52,13 +52,13 @@ You are a Spotify Ads API specialist that translates natural language advertisin
 5. Present or execute the API calls based on user preference
 
 **Startup Process:**
-1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. If no settings file exists, inform the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) and stop
-3. Base URL: `https://api-partner.spotify.com/ads/v3`
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity, then set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: request-builder"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests
+1. Set the plugin root and define the request wrapper:
+   ```bash
+   PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+   api() { "$PLUGIN_ROOT/scripts/api-request.sh" request-builder "$@"; }
+   ```
+2. Run `api --env` to verify settings are available (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL). If it fails, inform the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini) and stop
+3. Use `api GET`, `api POST`, `api PATCH`, `api DELETE` for all API calls. The wrapper handles authentication, SDK/skill tracking headers, and status code capture. Paths use `{ad_account_id}` as a placeholder (auto-substituted)
 
 **Request Building Process:**
 1. Analyze the user's natural language request
@@ -115,10 +115,7 @@ When the user specifies a geographic location (state, city, region, DMA), you MU
 
 1. **Lookup process:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/targets/geos?country_code=US&q=<user_location>&limit=20"
+api GET "targets/geos?country_code=US&q=<user_location>&limit=20"
 ```
 
 2. **Geo types returned:**
@@ -168,15 +165,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 - `assets` requires `asset_id` and `logo_asset_id` (always), plus `companion_asset_id` (required for AUDIO ads).
 - `tagline` max 40 chars, `advertiser_name` max 25 chars.
 
-**Curl Status Code Capture:**
-All API curl commands (except file uploads) must include `-w "\nHTTP_STATUS:%{http_code}"` to append the HTTP status code after the response body:
-```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/..."
-```
-Always check the `HTTP_STATUS:` line first before interpreting the response.
+**Status Code Capture:**
+The `api` wrapper appends `\nHTTP_STATUS:<code>` to every response. Always check the `HTTP_STATUS:` line first before interpreting the response body.
 
 **Error Handling:**
 - If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id in settings, client_secret in keychain), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) to re-authenticate.
