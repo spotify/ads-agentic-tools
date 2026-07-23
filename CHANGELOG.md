@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.7.0] - 2026-07-21
+## [1.7.0] - 2026-07-23
 
 ### Added
 - Antigravity CLI and Antigravity 2.0 support, including the root `plugin.json` manifest, `ANTIGRAVITY.md` context file, auto-discovered root `hooks.json`, and `.agents/spotify-ads-api.local.md` settings path
+- Shared `scripts/api-request.sh` request wrapper for settings discovery, authentication, ad account substitution, HTTP status capture, and deterministic SDK and skill telemetry headers
 - `X-Spotify-Ads-Skill` attribution on every Spotify Ads API request across all skills and the request-builder agent, enabling per-skill invocation and error-rate reporting
 - Complete third-party tracking event documentation, including impression, click, quartile, completion, and viewability trackers
 - Campaign-level audience insight reports in addition to ad-set insights
@@ -12,6 +13,7 @@
 
 ### Changed
 - Replaced Gemini CLI integration with Antigravity: `gemini-extension.json` became `plugin.json`, `GEMINI.md` became `ANTIGRAVITY.md`, `.gemini/` settings moved to `.agents/`, and the SDK product identifier changed to `antigravity-cli-plugin`
+- Replaced duplicated settings and curl boilerplate across all 14 skills and the request-builder agent with the shared API request wrapper
 - Migrated Antigravity token refresh from Gemini's `BeforeTool` contract to Antigravity's `PreToolUse` contract and documented its allow/deny behavior
 - Moved Claude and Codex hook declarations into their platform manifest directories and gave Codex a dedicated hook config, preventing cross-platform hook auto-discovery and marketplace installation failures introduced before 1.6.1
 - Increased the documented maximum number of frequency caps per ad set from 3 to 6
@@ -21,6 +23,8 @@
 
 ### Fixed
 - Corrected third-party tracking payloads to use `measurement_event` instead of `type`; examples now set `IMPRESSION` and `CLICKED` explicitly so click trackers are not silently treated as impression trackers
+- Prevented malformed or duplicated `X-Spotify-Ads-Sdk` and `X-Spotify-Ads-Skill` headers by constructing them centrally in the request wrapper
+- Fixed `--env` passthrough when skills invoke the request wrapper through their local `api` helper
 - Fixed Antigravity hook discovery and output formatting for both Antigravity CLI and Antigravity 2.0
 - Fixed token-refresh path resolution for installed Claude Code, Codex, and Antigravity plugins
 - Clarified that insight reports should be polled no more than daily after insufficient-data responses and abandoned roughly two weeks after an ad flight ends
