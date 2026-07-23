@@ -11,14 +11,14 @@ Upload, list, retrieve, and archive creative assets (audio, video, images) for u
 
 ## Setup
 
-1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. Base URL: `https://api-partner.spotify.com/ads/v3`
-3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: assets"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+Set the plugin root and define the request wrapper:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" assets "$@"; }
+```
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Parsing Arguments
 
@@ -55,17 +55,15 @@ Use AskUserQuestion to ask for the asset name (2-120 characters). Default to the
 #### Step 3: Create asset metadata
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"asset_type":"AUDIO","name":"my-creative"}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"
+api POST "ad_accounts/{ad_account_id}/assets" \
+  '{"asset_type":"AUDIO","name":"my-creative"}'
 ```
 
 Extract `id` from the response.
 
 #### Step 4: Upload the file
+
+> File uploads use raw curl (not the `api` wrapper) because they use multipart form data. Run `eval $(api --env)` before upload calls to set `TOKEN`, `AD_ACCOUNT_ID`, `SDK_HEADER`, and `BASE_URL`, and set `SKILL_HEADER="X-Spotify-Ads-Skill: assets"`.
 
 First, check the file size:
 
@@ -132,10 +130,7 @@ rm /tmp/chunk_*
 After upload, poll `GET /assets/{id}` until status changes from `PROCESSING` to `READY` or `REJECTED`. Poll every 3 seconds, max 60 seconds.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
+api GET "ad_accounts/{ad_account_id}/assets/$ASSET_ID"
 ```
 
 Check the `status` field in the response. If still `PROCESSING`, wait 3 seconds and retry.
@@ -161,10 +156,7 @@ If the asset was REJECTED, explain that the file may not meet format requirement
 List assets in the account, optionally filtered by type.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?asset_types=AUDIO&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/assets?asset_types=AUDIO&limit=50&sort_direction=DESC"
 ```
 
 If no type filter is provided, omit the `asset_types` parameter to list all assets.
@@ -188,10 +180,7 @@ If `continuation_token` is present in the response, note that more assets exist.
 Get full details of a specific asset.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID"
+api GET "ad_accounts/{ad_account_id}/assets/$ASSET_ID"
 ```
 
 Display all fields in readable format:
@@ -206,12 +195,8 @@ Display all fields in readable format:
 Archive or unarchive an asset using the bulk action endpoint.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"action":"ARCHIVE","ids":["<asset_id>"]}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets"
+api PATCH "ad_accounts/{ad_account_id}/assets" \
+  '{"action":"ARCHIVE","ids":["<asset_id>"]}'
 ```
 
 For unarchive, use `"action":"UNARCHIVE"`.

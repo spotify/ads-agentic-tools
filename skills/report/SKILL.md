@@ -11,14 +11,14 @@ Pull reporting data from the Spotify Ads API. Read settings from the active plat
 
 ## Setup
 
-1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. Base URL: `https://api-partner.spotify.com/ads/v3`
-3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: report"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+Set the plugin root and define the request wrapper:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" report "$@"; }
+```
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Operations
 
@@ -49,10 +49,7 @@ Prompt for:
 - Do not guess conversion metric names. Valid aggregate conversion-style fields include `PAGE_VIEWS`, `LEADS`, `ADD_TO_CART`, `PURCHASES`, `REVENUE`, `RETURN_ON_AD_SPEND`, `AVERAGE_ORDER_VALUE`, `START_CHECKOUT`, and `SIGN_UPS`.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&\
 granularity=LIFETIME&\
@@ -77,10 +74,7 @@ Prompt for:
 - **report_start** / **report_end** (required for DAY, optional for LIFETIME)
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports/totals?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports/totals?\
 entity_type=AD_SET&\
 entity_ids=$ID1&entity_ids=$ID2&\
 granularity=LIFETIME&\
@@ -112,10 +106,7 @@ Prompt for:
 - For geo breakdowns, map user language to valid dimensions: country -> `COUNTRY`, region/state -> `REGION`, metro/DMA -> `METRO`, city -> `CITY`.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/insight_reports?\
+api GET "ad_accounts/{ad_account_id}/insight_reports?\
 insight_dimension=GENDER&\
 fields=IMPRESSIONS&fields=CLICKS&fields=CTR&\
 entity_ids=$ENTITY_IDS&\
@@ -161,19 +152,15 @@ Prompt for:
 - If `granularity=DAY`, include `report_start`; use UTC midnight timestamps for date boundaries.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/async_reports" \
+  '{
     "name": "...",
     "granularity": "DAY",
     "dimensions": ["CAMPAIGN_NAME", "AD_SET_NAME"],
     "metrics": ["IMPRESSIONS_ON_SPOTIFY", "SPEND", "CLICKS"],
     "report_start": "2025-01-01T00:00:00Z",
     "report_end": "2025-01-31T00:00:00Z"
-  }' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/async_reports"
+  }'
 ```
 
 After creating, show the report ID and suggest checking status with `async-status`.
@@ -182,10 +169,7 @@ After creating, show the report ID and suggest checking status with `async-statu
 Check the status of an async report and get the download URL when ready.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
+api GET "ad_accounts/{ad_account_id}/async_reports/$REPORT_ID"
 ```
 
 If complete, display the download URL. If still processing, report the status and suggest checking again later.

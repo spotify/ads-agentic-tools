@@ -11,14 +11,14 @@ Apply batch changes to multiple entities in a single workflow. All operations fo
 
 ## Setup
 
-1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. Base URL: `https://api-partner.spotify.com/ads/v3`
-3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: bulk"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+Set the plugin root and define the request wrapper:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" bulk "$@"; }
+```
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Parsing Arguments
 
@@ -96,10 +96,7 @@ Pause multiple active ad sets or campaigns.
 #### List candidates
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?statuses=ACTIVE&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ad_sets?statuses=ACTIVE&limit=50&sort_direction=DESC"
 ```
 
 To filter by campaign: add `&campaign_ids=$CAMPAIGN_ID`.
@@ -107,10 +104,7 @@ To filter by campaign: add `&campaign_ids=$CAMPAIGN_ID`.
 To pause campaigns instead of ad sets, ask the user first, then:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?statuses=ACTIVE&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/campaigns?statuses=ACTIVE&limit=50&sort_direction=DESC"
 ```
 
 #### Apply
@@ -118,12 +112,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 For each selected ad set:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"PAUSED"}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID"
+api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+  '{"status":"PAUSED"}'
 ```
 
 For campaigns, use the campaigns endpoint instead.
@@ -139,10 +129,7 @@ Resume paused ad sets or campaigns.
 #### List candidates
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?statuses=PAUSED&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ad_sets?statuses=PAUSED&limit=50&sort_direction=DESC"
 ```
 
 #### Apply
@@ -150,12 +137,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 For each selected ad set:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"ACTIVE"}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID"
+api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+  '{"status":"ACTIVE"}'
 ```
 
 ---
@@ -167,10 +150,7 @@ Update budgets across multiple ad sets.
 #### List candidates
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
 ```
 
 Present the table with current budget amounts (convert `micro_amount` ÷ 1,000,000 to dollars) and budget type (DAILY/LIFETIME).
@@ -201,12 +181,8 @@ Proceed with these changes?
 For each selected ad set:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"budget":{"micro_amount":<NEW_MICRO_AMOUNT>,"type":"<DAILY|LIFETIME>"}}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID"
+api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+  '{"budget":{"micro_amount":<NEW_MICRO_AMOUNT>,"type":"<DAILY|LIFETIME>"}}'
 ```
 
 Always convert dollar amounts to micro-amounts by multiplying by 1,000,000.
@@ -220,10 +196,7 @@ Toggle ad delivery ON or OFF across multiple ads.
 #### List candidates
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ads?limit=50&sort_direction=DESC"
 ```
 
 To filter by campaign or ad set: add `&campaign_ids=$CAMPAIGN_ID` or `&ad_set_ids=$AD_SET_ID`.
@@ -239,12 +212,8 @@ Ask the user: toggle all selected to ON, or toggle all to OFF?
 For each selected ad:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"delivery":"ON"}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID"
+api PATCH "ad_accounts/{ad_account_id}/ads/$AD_ID" \
+  '{"delivery":"ON"}'
 ```
 
 Skip ads already in the target delivery state.
@@ -265,10 +234,7 @@ Fetch non-archived entities of the selected type:
 
 ```bash
 # For ad sets:
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?statuses=ACTIVE&statuses=PAUSED&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ad_sets?statuses=ACTIVE&statuses=PAUSED&limit=50&sort_direction=DESC"
 ```
 
 #### Confirm with warning
@@ -280,12 +246,8 @@ Before applying, warn: "Archiving is effectively permanent. Archived entities ca
 For each selected entity:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"ARCHIVED"}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID"
+api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+  '{"status":"ARCHIVED"}'
 ```
 
 ---
@@ -304,10 +266,7 @@ This means creative swaps produce new ad IDs, new approval cycles, and reset del
 #### Step 1: List ads
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ads?limit=50&sort_direction=DESC"
 ```
 
 Present table showing ad name, current asset, ad set, delivery status.
@@ -315,10 +274,7 @@ Present table showing ad name, current asset, ad set, delivery status.
 #### Step 2: List available assets
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?statuses=READY&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/assets?statuses=READY&limit=50&sort_direction=DESC"
 ```
 
 Present table of available assets filtered to READY status.
@@ -332,20 +288,14 @@ Ask the user to select which ads to update and which new asset to use. The new a
 **Read the existing ad:**
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID"
+api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 ```
 
 **Create the replacement ad** with the same fields but new asset_id:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/ads" \
+  '{
     "name": "<same_name>",
     "ad_set_id": "<same_ad_set_id>",
     "tagline": "<same_tagline>",
@@ -361,8 +311,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
     },
     "third_party_tracking": <same_third_party_tracking_if_present>,
     "delivery": "<same_delivery>"
-  }' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads"
+  }'
 ```
 
 Only include `third_party_tracking` when it exists on the source ad. If tracking cannot be copied, ask the user before archiving the original ad.
@@ -370,12 +319,8 @@ Only include `third_party_tracking` when it exists on the source ad. If tracking
 **Archive the old ad:**
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"ARCHIVED"}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$OLD_AD_ID"
+api PATCH "ad_accounts/{ad_account_id}/ads/$OLD_AD_ID" \
+  '{"status":"ARCHIVED"}'
 ```
 
 #### Results table

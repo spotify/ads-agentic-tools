@@ -46,13 +46,13 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - Run `POST /estimates/bid` when bid guidance is needed or the user has not supplied a bid cap. This is also a **top-level endpoint** requiring: `asset_format`, `objective`, `bid_strategy`, `currency`, and `targets`.
 
 5. Apply execution conventions.
-   - Read settings from the active platform settings file:
-     - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-     - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-     - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-   - Base URL: `https://api-partner.spotify.com/ads/v3`.
-   - Include `Authorization: Bearer $TOKEN`, `X-Spotify-Ads-Sdk: <sdk-product>/<plugin-version>`, and `X-Spotify-Ads-Skill: campaign-strategy` on API calls.
-   - Include `-w "\nHTTP_STATUS:%{http_code}"` on all API curl commands except file uploads.
+   - Set the plugin root and define the request wrapper:
+     ```bash
+     PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+     api() { "$PLUGIN_ROOT/scripts/api-request.sh" campaign-strategy "$@"; }
+     ```
+   - Use `api GET`, `api POST`, etc. for all API calls. The wrapper handles authentication, SDK/skill headers, and status code capture.
+   - To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
    - Treat `POST /estimates/audience` and `POST /estimates/bid` as non-mutating planning calls. Do not run entity-creation POSTs in this skill unless the user explicitly asks.
 
 ## Output

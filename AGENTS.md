@@ -25,6 +25,8 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/clone/` — Clone campaigns or ad sets by reading the source hierarchy and recreating entities with modifications
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
+- **Scripts** (`scripts/`) — Shared shell scripts used by skills and agents:
+  - `scripts/api-request.sh` — Request wrapper that handles settings discovery, authentication, SDK/skill tracking headers, and curl execution. Skills define a local `api()` function that delegates to this script: `api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }`. Usage: `api <METHOD> <path> [json_body]` or `api --env` for settings. Paths use `{ad_account_id}` as a placeholder (auto-substituted from settings).
 - **Hooks** — Per-platform hook configs invoking `hooks/check-token.sh` to automatically refresh expired OAuth tokens before Spotify API calls. `hooks.json` at the plugin root contains the Antigravity `PreToolUse` event, auto-discovered by both Antigravity CLI (`agy plugin install`) and Antigravity 2.0 (`.agents/plugins/` workspace discovery). `.claude-plugin/hooks.json` and `.codex-plugin/hooks.json` contain the Claude/Codex `PreToolUse` event, declared via the `hooks` field in each platform's `plugin.json`. Note: the hook payload and response formats differ across platforms — Claude/Codex use `.tool_input.command` and support command rewriting via `updatedInput`, while Antigravity uses `.toolCall.args.CommandLine` and only supports allow/deny with `decision`/`reason` (the hook refreshes the token in the settings file and tells the agent to re-read it).
 - **Commands** (`commands/configure.toml`) — An Antigravity CLI custom command exposing `/configure` as an explicit entry point to the configure skill. Other skills auto-activate on Antigravity via its native Agent Skills support.
 - **Settings** (`.codex/spotify-ads-api.local.md`, `.claude/spotify-ads-api.local.md`, or `.agents/spotify-ads-api.local.md`, with each platform preferring its own file and falling back to the other two) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
@@ -55,8 +57,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Report field name** is `fields`, not `report_fields`.
 - **No DELETE** on campaigns/ad sets/ads — use status changes (ARCHIVED, PAUSED).
 - **Base URL**: `https://api-partner.spotify.com/ads/v3`.
-- **Tracking header**: Every API request must include the SDK tracking header. On Codex, read the `version` from `.codex-plugin/plugin.json` and set `SDK_HEADER="X-Spotify-Ads-Sdk: codex-plugin/$PLUGIN_VERSION"`. On Claude, read `.claude-plugin/plugin.json` and use `claude-code-plugin/$PLUGIN_VERSION`. On Antigravity, read `plugin.json` (plugin root) and use `antigravity-cli-plugin/$PLUGIN_VERSION`. Include `-H "$SDK_HEADER"` on all curl commands.
-- **Skill attribution header**: Every API request must also include `X-Spotify-Ads-Skill: <skill-name>`, where `<skill-name>` is the directory name of the active skill (e.g. `campaigns`, `dashboard`, `report`) or `request-builder` for the agent. Set `SKILL_HEADER="X-Spotify-Ads-Skill: <skill-name>"` and include `-H "$SKILL_HEADER"` on all curl commands. This enables per-skill invocation counts and error rates in API logs.
+- **Tracking headers**: The request wrapper (`scripts/api-request.sh`) injects `X-Spotify-Ads-Sdk: <sdk-product>/<version>` and `X-Spotify-Ads-Skill: <skill-name>` on every API call. Skills never construct these headers manually — the wrapper reads the plugin version from the platform manifest and takes the skill name as its first argument. This eliminates malformed-header errors seen in production logs (e.g., doubled `X-Spotify-Ads-Sdk: X-Spotify-Ads-Sdk: ...`).
 - **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
 
@@ -83,16 +84,17 @@ Key draft conventions:
 
 ## Execution Pattern
 
-All skills follow the same pattern: read settings file -> construct curl command with base URL `https://api-partner.spotify.com/ads/v3` -> if `auto_execute` is false, show curl and confirm before executing -> format and display response. This pattern is duplicated across skills rather than abstracted, so changes to the execution flow must be applied to each skill individually.
-
-**Curl status code capture**: All API curl commands (except file uploads) must use `-w "\nHTTP_STATUS:%{http_code}"` to append the HTTP status code to the response. This makes success/failure unambiguous:
+All skills use the request wrapper script (`scripts/api-request.sh`) to make API calls. Each skill defines a local `api()` function:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/..."
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
+
+api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
+api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"..."}'
 ```
+
+The wrapper handles settings discovery (platform-ordered fallback), authentication, SDK/skill tracking headers, and `\nHTTP_STATUS:<code>` capture. If `auto_execute` is false, the skill presents the command and asks for confirmation before executing. Exceptions (asset file uploads, OAuth token exchange) use raw curl — see the relevant skill for details.
 
 After execution, check the `HTTP_STATUS:` line first:
 - **2xx**: Request succeeded — parse and display the response body.

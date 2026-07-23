@@ -11,14 +11,14 @@ Export campaign hierarchies to CSV for offline review, combining entity data wit
 
 ## Setup
 
-1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.agents/spotify-ads-api.local.md`.
-   - Antigravity: prefer `.agents/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. Base URL: `https://api-partner.spotify.com/ads/v3`
-3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity).
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `plugin.json` (plugin root) on Antigravity.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `antigravity-cli-plugin` on Antigravity. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and `SKILL_HEADER="X-Spotify-Ads-Skill: export"`. Include `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on all API requests.
+Set the plugin root and define the request wrapper:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" export "$@"; }
+```
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Parsing Arguments
 
@@ -46,28 +46,19 @@ Fetch all entity data with full pagination. Unlike other skills that show the fi
 ### Fetch campaigns
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns?limit=50&offset=0"
+api GET "ad_accounts/{ad_account_id}/campaigns?limit=50&offset=0"
 ```
 
 Check `paging.total_results` in the response. If `total_results > 50`, make additional requests incrementing `offset` by 50 until all campaigns are fetched. For a single-campaign export, use:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 ```
 
 ### Fetch ad sets
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets?limit=50&offset=0"
+api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&offset=0"
 ```
 
 For a single campaign: add `&campaign_ids=$CAMPAIGN_ID`. Paginate with `offset` until all ad sets are fetched.
@@ -75,10 +66,7 @@ For a single campaign: add `&campaign_ids=$CAMPAIGN_ID`. Paginate with `offset` 
 ### Fetch ads
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads?limit=50&offset=0"
+api GET "ad_accounts/{ad_account_id}/ads?limit=50&offset=0"
 ```
 
 For a single campaign: add `&campaign_ids=$CAMPAIGN_ID`. Paginate with `offset` until all ads are fetched.
@@ -92,10 +80,7 @@ When metrics are included, fetch aggregate reports at each entity level. For a s
 ### Campaign-level metrics
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=CTR&fields=COMPLETES&\
 granularity=LIFETIME&\
@@ -110,10 +95,7 @@ Paginate with `continuation_token` if present in the response.
 ### Ad set-level metrics
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports?\
 entity_type=AD_SET&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=COMPLETES&fields=COMPLETION_RATE&\
 granularity=LIFETIME&\
@@ -127,10 +109,7 @@ For a single-campaign export, add `&entity_ids=$CAMPAIGN_ID&entity_ids_type=CAMP
 ### Ad-level metrics
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "$SKILL_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports?\
 entity_type=AD&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&\
 granularity=LIFETIME&\
