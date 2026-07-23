@@ -94,7 +94,7 @@ esac
 SDK_HEADER="X-Spotify-Ads-Sdk: ${SDK_PRODUCT}/${PLUGIN_VERSION}"
 
 # --- --env mode: print settings and exit ---
-if [ "${1:-}" = "--env" ]; then
+if [ "${1:-}" = "--env" ] || [ "${2:-}" = "--env" ]; then
   printf 'TOKEN=%s\n' "$TOKEN"
   printf 'AD_ACCOUNT_ID=%s\n' "$AD_ACCOUNT_ID"
   printf 'AUTO_EXECUTE=%s\n' "${AUTO_EXECUTE:-false}"
