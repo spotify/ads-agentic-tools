@@ -324,6 +324,16 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID"
 ```
 
+**You must fetch ad product rules before creating the replacement ad — do not skip this step:**
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+
+If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate the replacement ad fields against the returned rules. Do not execute the create request until this step has completed.
+
 **Create the replacement ad** with the same fields but new asset_id:
 
 ```bash

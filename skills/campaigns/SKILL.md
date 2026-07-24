@@ -40,6 +40,16 @@ Prompt the user for required fields:
 - **name** (string, 2-200 chars)
 - **objective** (REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS)
 
+**Before creating, you must fetch the ad product catalog — do not skip this step:**
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+
+If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not execute the create request until this step has completed.
+
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \

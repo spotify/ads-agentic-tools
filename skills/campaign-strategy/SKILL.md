@@ -39,6 +39,7 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - Choose CTA and landing URL based on the page and asset. Use `LEARN_MORE` when conversion intent is informational or regulated.
 
 4. Validate API targetability.
+   - **You must fetch the ad product catalog from `GET /ad_product_catalog` — do not skip this step.** If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all planned campaign, ad set, and ad field values against the returned rules before presenting the strategy.
    - Fetch valid ad categories from `GET /ad_categories`; use the closest exact category code.
    - Look up every requested geo with `GET /targets/geos?country_code=<code>&q=<query>&limit=20`; never fall back to country-only without saying so.
    - Use only targeting dimensions available in the Ads API. If recommending interests, genres, artists, playlists, or languages, validate them with the matching target endpoint before presenting IDs. **Only `/targets/geos` accepts `limit`/`offset` parameters.** All other target endpoints (`/targets/genres`, `/targets/interests`, `/targets/artists`, `/targets/playlists`, `/targets/languages`) accept only `q` and/or `ids` — passing `limit` will cause a 400 error.

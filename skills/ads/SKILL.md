@@ -38,6 +38,16 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
 
 ### `ad-sets create`
+**Before prompting for fields, you must fetch the ad product catalog — do not skip this step:**
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+
+If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not execute the create request until this step has completed.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **campaign_id** (uuid — suggest listing campaigns first)
@@ -221,6 +231,16 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 Format as table: ID | Name | Ad Set ID | Status | Delivery
 
 ### `ads create`
+**Before prompting for fields, you must fetch the ad product catalog — do not skip this step:**
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+
+If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all field values against the returned rules. Do not execute the create request until this step has completed.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **ad_set_id** (uuid — suggest listing ad sets first)

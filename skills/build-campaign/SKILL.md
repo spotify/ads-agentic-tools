@@ -111,7 +111,19 @@ Also show a table with all field values for each entity. Ask the user to confirm
 If the ad category was not specified, ask the user to select one using AskUserQuestion.
 You can fetch valid categories from `GET /ad_categories` to present options.
 
-## Step 2.5: Validate Audience Size
+## Step 2.5: Fetch Ad Product Rules (Required)
+
+**This step is mandatory — do not skip it.** After the user confirms the plan but before executing any API calls, always fetch the ad product catalog:
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+
+If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all planned campaign, ad set, and ad field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not proceed to Step 2.6 until this step has completed.
+
+## Step 2.6: Validate Audience Size
 
 After the user confirms the plan but before executing API calls, run an audience estimate for each ad set's targeting:
 

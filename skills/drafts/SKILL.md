@@ -69,6 +69,18 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?limit=50&sort_direction=DESC"
 ```
 
+#### Step 3.5: Fetch Ad Product Rules (Required)
+
+**This step is mandatory — do not skip it.** Always fetch the ad product catalog before creating any entities:
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+
+If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all planned campaign, ad set, and ad field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not proceed to Step 4 until this step has completed.
+
 #### Step 4: Create Draft Entities Sequentially
 
 **4a. Create Draft Campaign:**

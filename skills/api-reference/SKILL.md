@@ -138,6 +138,7 @@ create drafts → edit → validate → publish.
 - `GET /businesses/{id}` — Get business by ID
 - `GET /targets/artists` — Search artist targets
 - `GET /ad_categories` — List ad categories
+- `GET /ad_product_catalog` — Get validation rules for all externally available ad products (AUCTION, CONTENT, FPMNG). Fetch before creating or updating campaigns, ad sets, and ads to understand constraints and cross-field rules. When `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules.
 - `POST /estimates/audience` — Estimate audience size for targeting parameters (recommended before creating ad sets to validate reach)
 - `POST /estimates/bid` — Get bid recommendations
 - `POST /ad_accounts/{id}/reserved_prices` — Get pricing for reserved ad products (fCPM)

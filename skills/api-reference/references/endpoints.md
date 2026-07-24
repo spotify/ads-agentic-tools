@@ -684,6 +684,17 @@ Create a new ad account under a business.
 
 ---
 
+## Ad Product Catalog
+
+### GET /ad_product_catalog
+Returns the validation rules for all externally available ad products (AUCTION, CONTENT, FPMNG). Fetch this before creating or updating campaigns, ad sets, and ads to understand what values, constraints, and cross-field rules apply to each ad product.
+
+When a campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
+
+**Response:** 200 — Ad product catalog with validation rules per product type.
+
+---
+
 ## Estimates
 
 **Important:** These are top-level endpoints — they are NOT nested under `/ad_accounts/{ad_account_id}/`. The `ad_account_id` is passed in the request body instead.
