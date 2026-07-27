@@ -19,6 +19,10 @@ Check out our post on the [Spotify Engineering Blog](https://engineering.atspoti
 claude plugin i spotify-ads-api
 ```
 
+The plugin is installed from the [Official Anthropic marketplace](https://claude.com/plugins), which has auto-update enabled by default. Claude Code checks for plugin updates in the background after each session starts and applies them automatically. New versions take effect on your next launch (or run `/reload-plugins` to pick them up in the current session).
+
+If you have auto-update disabled for the Official Anthropic marketplace, you will need to update the plugin manually. See the Anthropic instructions on [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins) for instructions on managing marketplace updates.
+
 ### Codex
 
 Add the Spotify Ads API plugin marketplace:
