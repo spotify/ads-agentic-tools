@@ -85,6 +85,8 @@ If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply
 
 **4a. Create Draft Campaign:**
 
+Before executing, validate the campaign fields against the ad product catalog rules from Step 3.5. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Do not execute until validated.
+
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
@@ -96,6 +98,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 Extract the draft campaign `id` from the response. The response includes an initial `draft_hierarchy_version`, but do not rely on that value after creating child draft ad sets or ads because any hierarchy edit can increment the version.
 
 **4b. Create Draft Ad Sets** (using `campaign_id` = draft campaign ID from 4a):
+
+Before executing, validate all ad set fields against the ad product catalog rules from Step 3.5. Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -119,6 +123,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 Extract each draft ad set `id`.
 
 **4c. Create Draft Ads** (using `ad_set_id` = draft ad set ID from 4b):
+
+Before executing, validate all ad fields against the ad product catalog rules from Step 3.5. Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \

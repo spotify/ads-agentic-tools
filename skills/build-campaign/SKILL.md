@@ -194,6 +194,8 @@ Execute each step in order, passing IDs forward from each response.
 
 ### 4a. Create Campaign
 
+Before executing, validate the campaign fields against the ad product catalog rules from Step 2.5. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Do not execute until validated.
+
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
@@ -206,7 +208,7 @@ Extract the campaign `id` from the response.
 
 ### 4b. Create Ad Sets (using campaign_id from 4a)
 
-For each ad set:
+For each ad set, validate all ad set fields against the ad product catalog rules from Step 2.5 before executing. Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -238,7 +240,7 @@ Extract each ad set `id` for use in ad creation.
 
 ### 4c. Create Ads (using ad_set_id from 4b)
 
-For each ad:
+For each ad, validate all ad fields against the ad product catalog rules from Step 2.5 before executing. Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \

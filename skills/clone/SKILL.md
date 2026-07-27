@@ -176,6 +176,8 @@ Create entities in dependency order, passing IDs forward.
 
 #### 6a. Create campaign
 
+Before executing, validate the campaign fields against the ad product catalog rules from Step 5.5. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Do not execute until validated.
+
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
@@ -188,7 +190,7 @@ Extract the new campaign `id` from the response. If this fails, stop — no depe
 
 #### 6b. Create ad sets (using new campaign_id)
 
-For each source ad set (excluding any the user filtered out):
+For each source ad set (excluding any the user filtered out), validate all ad set fields against the ad product catalog rules from Step 5.5 before executing. Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -217,7 +219,7 @@ If an ad set creation fails, log the error and skip its ads. Continue with remai
 
 #### 6c. Create ads (using new ad_set_ids)
 
-For each source ad (excluding ARCHIVED/REJECTED), mapped to the correct new ad set:
+For each source ad (excluding ARCHIVED/REJECTED), validate all ad fields against the ad product catalog rules from Step 5.5 before executing. Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
