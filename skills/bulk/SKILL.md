@@ -190,6 +190,23 @@ Budget changes (+20%):
 Proceed with these changes?
 ```
 
+#### Validate against ad product catalog
+
+**Before applying budget updates, you must validate — do not skip this step:**
+1. For each selected ad set, fetch the parent campaign to determine its `ad_product` (if not already known from the listing step):
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+```
+2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the new budget values. Do not execute until validated.
+
 #### Apply
 
 For each selected ad set:
@@ -324,15 +341,21 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID"
 ```
 
-**You must fetch ad product rules before creating the replacement ad — do not skip this step:**
+**You must validate against the ad product catalog before creating the replacement ad — do not skip this step:**
 
+1. Fetch the parent campaign to determine its `ad_product`: get the ad set's `campaign_id` (from the ad set fetch), then fetch the campaign:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+```
+2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-
-If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate the replacement ad fields against the returned rules. Do not execute the create request until this step has completed.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the replacement ad fields against the returned rules. Do not execute the create request until validated.
 
 **Create the replacement ad** with the same fields but new asset_id:
 

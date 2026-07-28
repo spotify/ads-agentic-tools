@@ -160,15 +160,21 @@ Ask for confirmation before executing.
 
 ### Step 5.5: Fetch Ad Product Rules (Required)
 
-**This step is mandatory — do not skip it.** Always fetch the ad product catalog before creating entities:
+**This step is mandatory — do not skip it.** Before creating entities:
 
+1. Fetch the source campaign to determine its `ad_product`:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$SOURCE_CAMPAIGN_ID"
+```
+2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-
-If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all cloned entity values (including any user modifications) against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not proceed to Step 6 until this step has completed.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. Validate all cloned entity values (including any user modifications) against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not proceed to Step 6 until this step has completed.
 
 ### Step 6: Execute Sequentially
 
@@ -176,7 +182,7 @@ Create entities in dependency order, passing IDs forward.
 
 #### 6a. Create campaign
 
-Before executing, validate the campaign fields against the ad product catalog rules from Step 5.5. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Do not execute until validated.
+Before executing, validate the campaign fields against the ad product catalog rules from Step 5.5. Use the source campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -190,7 +196,7 @@ Extract the new campaign `id` from the response. If this fails, stop — no depe
 
 #### 6b. Create ad sets (using new campaign_id)
 
-For each source ad set (excluding any the user filtered out), validate all ad set fields against the ad product catalog rules from Step 5.5 before executing. Do not execute until validated.
+For each source ad set (excluding any the user filtered out), validate all ad set fields against the ad product catalog rules from Step 5.5. Use the source campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -219,7 +225,7 @@ If an ad set creation fails, log the error and skip its ads. Continue with remai
 
 #### 6c. Create ads (using new ad_set_ids)
 
-For each source ad (excluding ARCHIVED/REJECTED), validate all ad fields against the ad product catalog rules from Step 5.5 before executing. Do not execute until validated.
+For each source ad (excluding ARCHIVED/REJECTED), validate all ad fields against the ad product catalog rules from Step 5.5. Use the source campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \

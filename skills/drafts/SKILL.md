@@ -71,21 +71,23 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 
 #### Step 3.5: Fetch Ad Product Rules (Required)
 
-**This step is mandatory — do not skip it.** Always fetch the ad product catalog before creating any entities:
+**This step is mandatory — do not skip it.** Before creating any entities:
 
+1. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
 
-If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all planned campaign, ad set, and ad field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not proceed to Step 4 until this step has completed.
+2. Determine the campaign's `ad_product` from the planned campaign fields. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
+3. Validate all planned campaign, ad set, and ad field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not proceed to Step 4 until this step has completed.
 
 #### Step 4: Create Draft Entities Sequentially
 
 **4a. Create Draft Campaign:**
 
-Before executing, validate the campaign fields against the ad product catalog rules from Step 3.5. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Do not execute until validated.
+Before executing, validate the campaign fields against the ad product catalog rules from Step 3.5. Use the campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -99,7 +101,7 @@ Extract the draft campaign `id` from the response. The response includes an init
 
 **4b. Create Draft Ad Sets** (using `campaign_id` = draft campaign ID from 4a):
 
-Before executing, validate all ad set fields against the ad product catalog rules from Step 3.5. Do not execute until validated.
+Before executing, validate all ad set fields against the ad product catalog rules from Step 3.5. Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -124,7 +126,7 @@ Extract each draft ad set `id`.
 
 **4c. Create Draft Ads** (using `ad_set_id` = draft ad set ID from 4b):
 
-Before executing, validate all ad fields against the ad product catalog rules from Step 3.5. Do not execute until validated.
+Before executing, validate all ad fields against the ad product catalog rules from Step 3.5. Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -270,6 +272,15 @@ Display all fields in a readable format. Note that `draft_hierarchy_version` is 
 ### `edit <campaign|ad-set|ad> <draft_id>` — Update a Draft
 
 Use the entity type from the command to select the endpoint, then prompt the user for fields to update. The same field validations as create apply.
+
+**Ad Product Validation (Required — do not skip):** Before executing any draft update, fetch the parent draft campaign to determine its `ad_product`, then fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session). If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values against the returned rules. Do not execute until validated.
+
+For draft ad set or ad edits, fetch the parent draft campaign using the draft ad set's `campaign_id`:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+```
 
 **Update draft campaign:**
 ```bash

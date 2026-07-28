@@ -38,15 +38,21 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
 
 ### `ad-sets create`
-**Before prompting for fields, you must fetch the ad product catalog — do not skip this step:**
+**Before prompting for fields, you must validate against the ad product catalog — do not skip this step:**
 
+1. Fetch the parent campaign to determine its `ad_product`:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+```
+2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-
-If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not execute the create request until this step has completed.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate all field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not execute the create request until validated.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -218,6 +224,22 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```
 
 ### `ad-sets update <id>`
+
+**Before updating, you must validate against the ad product catalog — do not skip this step:**
+1. Fetch the ad set to get its `campaign_id`, then fetch the parent campaign to determine its `ad_product`:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+```
+2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values. Do not execute until validated.
+
 Prompt for fields to update (min 1). Same fields as create, all optional.
 
 ## Ad Operations
@@ -231,15 +253,21 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 Format as table: ID | Name | Ad Set ID | Status | Delivery
 
 ### `ads create`
-**Before prompting for fields, you must fetch the ad product catalog — do not skip this step:**
+**Before prompting for fields, you must validate against the ad product catalog — do not skip this step:**
 
+1. Fetch the parent campaign to determine its `ad_product`: get the ad set's `campaign_id` (from the user or by fetching the ad set), then fetch the campaign:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+```
+2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-
-If the campaign's `ad_product` is `UNSET` or `UNKNOWN` (or not specified), apply the `AUCTION` ad product rules. Validate all field values against the returned rules. Do not execute the create request until this step has completed.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate all field values against the returned rules. Do not execute the create request until validated.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -271,6 +299,22 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```
 
 ### `ads update <id>`
+
+**Before updating, you must validate against the ad product catalog — do not skip this step:**
+1. Fetch the ad to get its `ad_set_id`, then fetch the ad set to get `campaign_id`, then fetch the parent campaign to determine its `ad_product`:
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+```
+2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
+  -H "$SDK_HEADER" \
+  "$BASE_URL/ad_product_catalog"
+```
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values. Do not execute until validated.
+
 Updateable fields: `call_to_action`, `delivery`, `status`.
 
 ## Execution Behavior

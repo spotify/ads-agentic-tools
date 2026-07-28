@@ -687,9 +687,9 @@ Create a new ad account under a business.
 ## Ad Product Catalog
 
 ### GET /ad_product_catalog
-Returns the validation rules for all externally available ad products (AUCTION, CONTENT, FPMNG). Fetch this before creating or updating campaigns, ad sets, and ads to understand what values, constraints, and cross-field rules apply to each ad product.
+Returns the validation rules for all externally available ad products (AUCTION, CONTENT, FPMNG). Fetch this before creating or updating campaigns, ad sets, and ads to understand what values, constraints, and cross-field rules apply to each ad product. Cache the response for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again.
 
-When a campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
+For ad set and ad operations, fetch the parent campaign first to determine its `ad_product`. When `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
 
 **Response:** 200 — Ad product catalog with validation rules per product type.
 
