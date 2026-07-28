@@ -48,7 +48,17 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-2. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. Validate all field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not execute the create request until validated.
+2. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. Validate all field values against the returned rules.
+
+**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
+Display a ✅/❌ validation summary for every campaign field checked against the product rules:
+```
+Ad Product Catalog Validation (product: AUCTION)
+Campaign:
+  ✅ objective: REACH (allowed: REACH, IMPRESSIONS, CLICKS, ...)
+  ✅ status: ACTIVE (allowed: ACTIVE, PAUSED)
+```
+If any field shows ❌, warn the user and suggest corrections. Do NOT execute the POST until every field shows ✅.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -87,7 +97,10 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values. Do not execute until validated.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values.
+
+**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
+Display a ✅/❌ validation summary for every updated campaign field checked against the product rules. Do NOT execute the PATCH until every field shows ✅.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \

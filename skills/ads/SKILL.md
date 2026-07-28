@@ -52,7 +52,19 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate all field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not execute the create request until validated.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate all field values against the returned rules.
+
+**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
+Display a ✅/❌ validation summary for every ad set field checked against the product rules:
+```
+Ad Product Catalog Validation (product: AUCTION)
+Ad Set "...":
+  ✅ asset_format: AUDIO (allowed: AUDIO, VIDEO, IMAGE, CATALOG)
+  ✅ bid_strategy: MAX_BID (allowed: MAX_BID, COST_PER_RESULT, AUTOBID, UNSET)
+  ✅ budget.type: DAILY (allowed: DAILY, LIFETIME)
+  ...
+```
+If any field shows ❌, warn the user and suggest corrections. Do NOT execute the POST until every field shows ✅.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -238,7 +250,10 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values. Do not execute until validated.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values.
+
+**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
+Display a ✅/❌ validation summary for every updated ad set field checked against the product rules. Do NOT execute the PATCH until every field shows ✅.
 
 Prompt for fields to update (min 1). Same fields as create, all optional.
 
@@ -267,7 +282,19 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate all field values against the returned rules. Do not execute the create request until validated.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate all field values against the returned rules.
+
+**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
+Display a ✅/❌ validation summary for every ad field checked against the product rules:
+```
+Ad Product Catalog Validation (product: AUCTION)
+Ad "...":
+  ✅ assets.asset_id: present, status READY
+  ✅ assets.companion_asset_id: present (required for AUDIO)
+  ✅ call_to_action.key: LEARN_MORE
+  ...
+```
+If any field shows ❌, warn the user and suggest corrections. Do NOT execute the POST until every field shows ✅.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -313,7 +340,10 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values. Do not execute until validated.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values.
+
+**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
+Display a ✅/❌ validation summary for every updated ad field checked against the product rules. Do NOT execute the PATCH until every field shows ✅.
 
 Updateable fields: `call_to_action`, `delivery`, `status`.
 

@@ -123,7 +123,32 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```
 
 2. Determine the campaign's `ad_product` from the planned campaign fields. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
-3. Validate all planned campaign, ad set, and ad field values against the returned rules. If any values violate the rules, warn the user and suggest corrections. Do not proceed to Step 2.6 until this step has completed.
+3. Validate all planned campaign, ad set, and ad field values against the returned rules.
+
+**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
+Display a validation summary to the user with every field checked against the product rules. Use this format:
+
+```
+Ad Product Catalog Validation (product: AUCTION)
+
+Campaign:
+  ✅ objective: REACH (allowed: REACH, IMPRESSIONS, CLICKS, ...)
+  ✅ status: ACTIVE (allowed: ACTIVE, PAUSED)
+
+Ad Set "...":
+  ✅ asset_format: AUDIO (allowed: AUDIO, VIDEO, IMAGE, CATALOG)
+  ✅ bid_strategy: MAX_BID (allowed: MAX_BID, COST_PER_RESULT, AUTOBID, UNSET)
+  ✅ budget.type: DAILY (allowed: DAILY, LIFETIME)
+  ...
+  ❌ targets.platforms: [MOBILE] (allowed: ANDROID, DESKTOP, IOS) ← FIX REQUIRED
+
+Ad "...":
+  ✅ assets.asset_id: present, status READY
+  ✅ assets.companion_asset_id: present (required for AUDIO)
+  ...
+```
+
+If any field shows ❌, warn the user and suggest corrections. Do NOT proceed to Step 2.6 or any API calls until every field shows ✅. Fetching the catalog is not the same as completing validation — the checkpoint is the printed summary above.
 
 ## Step 2.6: Validate Audience Size
 
@@ -196,7 +221,7 @@ Execute each step in order, passing IDs forward from each response.
 
 ### 4a. Create Campaign
 
-Before executing, validate the campaign fields against the ad product catalog rules from Step 2.5. Use the campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute until validated.
+**⛔ CHECKPOINT — Print a ✅/❌ validation summary for the campaign fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute the POST until every field shows ✅.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -210,7 +235,7 @@ Extract the campaign `id` from the response.
 
 ### 4b. Create Ad Sets (using campaign_id from 4a)
 
-For each ad set, validate all ad set fields against the ad product catalog rules from Step 2.5. Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
+**⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad set's fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -242,7 +267,7 @@ Extract each ad set `id` for use in ad creation.
 
 ### 4c. Create Ads (using ad_set_id from 4b)
 
-For each ad, validate all ad fields against the ad product catalog rules from Step 2.5. Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
+**⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad's fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
