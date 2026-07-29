@@ -58,7 +58,7 @@ Campaign:
   ✅ objective: REACH (allowed: REACH, IMPRESSIONS, CLICKS, ...)
   ✅ status: ACTIVE (allowed: ACTIVE, PAUSED)
 ```
-If any field shows ❌, warn the user and suggest corrections. Do NOT execute the POST until every field shows ✅.
+If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the POST until every field shows ✅.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
@@ -100,7 +100,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values.
 
 **⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a ✅/❌ validation summary for every updated campaign field checked against the product rules. Do NOT execute the PATCH until every field shows ✅.
+Display a ✅/❌ validation summary for every updated campaign field checked against the product rules. If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \

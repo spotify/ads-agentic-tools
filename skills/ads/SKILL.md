@@ -64,7 +64,7 @@ Ad Set "...":
   ✅ budget.type: DAILY (allowed: DAILY, LIFETIME)
   ...
 ```
-If any field shows ❌, warn the user and suggest corrections. Do NOT execute the POST until every field shows ✅.
+If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the POST until every field shows ✅.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -253,7 +253,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values.
 
 **⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a ✅/❌ validation summary for every updated ad set field checked against the product rules. Do NOT execute the PATCH until every field shows ✅.
+Display a ✅/❌ validation summary for every updated ad set field checked against the product rules. If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
 
 Prompt for fields to update (min 1). Same fields as create, all optional.
 
@@ -294,7 +294,7 @@ Ad "...":
   ✅ call_to_action.key: LEARN_MORE
   ...
 ```
-If any field shows ❌, warn the user and suggest corrections. Do NOT execute the POST until every field shows ✅.
+If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the POST until every field shows ✅.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -343,7 +343,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values.
 
 **⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a ✅/❌ validation summary for every updated ad field checked against the product rules. Do NOT execute the PATCH until every field shows ✅.
+Display a ✅/❌ validation summary for every updated ad field checked against the product rules. If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
 
 Updateable fields: `call_to_action`, `delivery`, `status`.
 

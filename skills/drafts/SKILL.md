@@ -106,7 +106,7 @@ Ad "...":
   ...
 ```
 
-If any field shows ❌, warn the user and suggest corrections. Do NOT proceed to Step 4 or any API calls until every field shows ✅. Fetching the catalog is not the same as completing validation — the checkpoint is the printed summary above.
+If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT proceed to Step 4 or any API calls until every field shows ✅. Fetching the catalog is not the same as completing validation — the checkpoint is the printed summary above.
 
 #### Step 4: Create Draft Entities Sequentially
 
@@ -298,7 +298,7 @@ Display all fields in a readable format. Note that `draft_hierarchy_version` is 
 
 Use the entity type from the command to select the endpoint, then prompt the user for fields to update. The same field validations as create apply.
 
-**⛔ Ad Product Validation CHECKPOINT (Required — do not skip):** Before executing any draft update, fetch the parent draft campaign to determine its `ad_product`, then fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session). If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values against the returned rules and print a ✅/❌ validation summary for each changed field (same format as Step 3.5). Do NOT execute the PATCH until every field shows ✅.
+**⛔ Ad Product Validation CHECKPOINT (Required — do not skip):** Before executing any draft update, fetch the parent draft campaign to determine its `ad_product`, then fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session). If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values against the returned rules and print a ✅/❌ validation summary for each changed field (same format as Step 3.5). If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
 
 For draft ad set or ad edits, fetch the parent draft campaign using the draft ad set's `campaign_id`:
 ```bash

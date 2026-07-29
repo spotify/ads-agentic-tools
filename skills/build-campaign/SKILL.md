@@ -148,7 +148,7 @@ Ad "...":
   ...
 ```
 
-If any field shows ❌, warn the user and suggest corrections. Do NOT proceed to Step 2.6 or any API calls until every field shows ✅. Fetching the catalog is not the same as completing validation — the checkpoint is the printed summary above.
+If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT proceed to Step 2.6 or any API calls until every field shows ✅. Fetching the catalog is not the same as completing validation — the checkpoint is the printed summary above.
 
 ## Step 2.6: Validate Audience Size
 
