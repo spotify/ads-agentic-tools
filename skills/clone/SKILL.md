@@ -174,7 +174,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. Validate all cloned entity values (including any user modifications) against the returned rules. If any values violate the rules, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not proceed to Step 6 until this step has completed.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For cloned entity creation, apply `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate all cloned entity values (including any user modifications) against the returned rules. If any values violate the rules, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not proceed to Step 6 until this step has completed.
 
 ### Step 6: Execute Sequentially
 

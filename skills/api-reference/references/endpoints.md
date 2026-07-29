@@ -693,6 +693,66 @@ For ad set and ad operations, fetch the parent campaign first to determine its `
 
 **Response:** 200 — Ad product catalog with validation rules per product type.
 
+**Response structure:**
+
+Rules are separated by operation. Use `"create"` rules for POST requests, `"update"` rules for PATCH requests, and `"both"` rules for all requests.
+
+```json
+{
+  "description": "Ad product validation rules that layer on top of the OpenAPI spec...",
+  "ad_products": {
+    "AUCTION": {
+      "display_name": "...",
+      "description": "...",
+      "campaign": {
+        "create": {
+          "allowed_values": { "field": ["VALUE1", "VALUE2"] },
+          "required_fields": ["field: explanation"],
+          "cross_field_rules": ["When X: Y must be Z"]
+        },
+        "update": {
+          "allowed_values": { "status": ["ACTIVE", "PAUSED"] },
+          "restrictions": ["field: cannot change after creation"]
+        },
+        "both": {
+          "constraints": ["end_time must be within 365 days of start_time"],
+          "cross_field_rules": ["When X: Y"]
+        }
+      },
+      "ad_set": {
+        "create": {
+          "allowed_values": { "...": "..." },
+          "required_fields": ["..."],
+          "forbidden_fields": ["..."],
+          "cross_field_rules": ["..."]
+        },
+        "update": {
+          "allowed_values": { "...": "..." },
+          "restrictions": ["..."],
+          "cross_field_rules": ["..."]
+        },
+        "both": {
+          "frequency_caps": { "max_impressions": { "DAY": 5, "WEEK": 35, "MONTH": 50 } },
+          "constraints": ["..."],
+          "cross_field_rules": ["..."]
+        }
+      },
+      "ad": {
+        "create": { "...": "..." },
+        "update": { "...": "..." },
+        "both": { "...": "..." }
+      }
+    }
+  }
+}
+```
+
+**How to apply rules:**
+- For a **POST** (create): check `create.allowed_values`, `create.required_fields`, `create.forbidden_fields`, `create.cross_field_rules`, plus everything in `both`.
+- For a **PATCH** (update): check `update.allowed_values`, `update.restrictions`, `update.cross_field_rules`, plus everything in `both`.
+- Match the entity type to the correct key: `campaign`, `ad_set`, or `ad`.
+- Select the ad product entry using the campaign's `ad_product` field (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified).
+
 ---
 
 ## Estimates

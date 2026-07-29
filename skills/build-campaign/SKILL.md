@@ -123,7 +123,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```
 
 2. Determine the campaign's `ad_product` from the planned campaign fields. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
-3. Validate all planned campaign, ad set, and ad field values against the returned rules.
+3. The catalog response contains rules separated by operation under each entity type (`campaign`, `ad_set`, `ad`). For entity creation, apply `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. See the api-reference endpoint docs for the full response structure.
+4. Validate all planned campaign, ad set, and ad field values against the returned rules.
 
 **⛔ CHECKPOINT — Do not proceed until this validation is printed.**
 Display a validation summary to the user with every field checked against the product rules. Use this format:

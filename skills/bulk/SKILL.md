@@ -205,7 +205,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the new budget values. If any values violate the rules, present a recommended fix and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not execute until validated.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. For budget updates, apply `ad_set.update` rules plus `ad_set.both` rules — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the new budget values. If any values violate the rules, present a recommended fix and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not execute until validated.
 
 #### Apply
 
@@ -355,7 +355,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   "$BASE_URL/ad_product_catalog"
 ```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the replacement ad fields against the returned rules. If any values violate the rules, present a recommended fix and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not execute the create request until validated.
+3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. For ad creation, apply `ad.create` rules plus `ad.both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate the replacement ad fields against the returned rules. If any values violate the rules, present a recommended fix and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not execute the create request until validated.
 
 **Create the replacement ad** with the same fields but new asset_id:
 

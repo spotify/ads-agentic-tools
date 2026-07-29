@@ -81,7 +81,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 ```
 
 2. Determine the campaign's `ad_product` from the planned campaign fields. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
-3. Validate all planned campaign, ad set, and ad field values against the returned rules.
+3. The catalog response contains rules separated by operation under each entity type (`campaign`, `ad_set`, `ad`). For draft creation, apply `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. See the api-reference endpoint docs for the full response structure.
+4. Validate all planned campaign, ad set, and ad field values against the returned rules.
 
 **⛔ CHECKPOINT — Do not proceed until this validation is printed.**
 Display a validation summary to the user with every field checked against the product rules. Use this format:
@@ -298,7 +299,7 @@ Display all fields in a readable format. Note that `draft_hierarchy_version` is 
 
 Use the entity type from the command to select the endpoint, then prompt the user for fields to update. The same field validations as create apply.
 
-**⛔ Ad Product Validation CHECKPOINT (Required — do not skip):** Before executing any draft update, fetch the parent draft campaign to determine its `ad_product`, then fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session). If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. Validate the updated field values against the returned rules and print a ✅/❌ validation summary for each changed field (same format as Step 3.5). If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
+**⛔ Ad Product Validation CHECKPOINT (Required — do not skip):** Before executing any draft update, fetch the parent draft campaign to determine its `ad_product`, then fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session). If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. For draft updates, apply `update` rules plus `both` rules for the matching entity type (`campaign`, `ad_set`, or `ad`) — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the updated field values against the returned rules and print a ✅/❌ validation summary for each changed field (same format as Step 3.5). If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
 
 For draft ad set or ad edits, fetch the parent draft campaign using the draft ad set's `campaign_id`:
 ```bash
