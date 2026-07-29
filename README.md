@@ -125,6 +125,9 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | `/spotify-ads-api:build-campaign` | Create a full campaign hierarchy from a plain-text description |
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
 | `/spotify-ads-api:assets` | Upload, list, and manage creative assets |
+| `/spotify-ads-api:audiences` | Upload customer lists and manage custom, engagement, event, and lookalike audiences |
+| `/spotify-ads-api:measurement-setup` | Configure Pixel, CAPI, mobile apps, datasets, sharing, tokens, and diagnostics |
+| `/spotify-ads-api:account-admin` | Discover businesses/ad accounts and manage members, roles, invitations, and account details |
 | `/spotify-ads-api:dashboard` | Quick performance overview of active campaigns |
 | `/spotify-ads-api:monitor` | Diagnose pacing, delivery, stalled campaigns, and underdelivery issues |
 | `/spotify-ads-api:export` | Export campaign hierarchy, targeting, budget, and optional metrics to CSV |
@@ -143,6 +146,9 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Build me a complete audio campaign targeting US listeners aged 25-44"
 - "Plan the best Spotify campaign structure for this product page"
 - "Use these creative assets to recommend targeting and ad sets"
+- "Upload this customer list and create a custom audience"
+- "Set up a CAPI integration and verify that events are arriving"
+- "Audit the members and roles on my ad account"
 - "Clone last quarter's campaign and move the dates to next month"
 - "Export all campaigns with metrics for the last 30 days"
 - "Check which active campaigns are underpacing"

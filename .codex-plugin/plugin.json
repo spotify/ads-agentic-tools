@@ -1,6 +1,6 @@
 {
   "name": "spotify-ads-api",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Manage Spotify ad campaigns with natural language. Create campaigns, ad sets, ads, pull reports, and handle OAuth — all through conversation.",
   "author": {
     "name": "Alex Murphy"
@@ -22,7 +22,9 @@
     "defaultPrompt": [
       "Configure my Spotify Ads API credentials.",
       "Show me a dashboard of my active Spotify ad campaigns.",
-      "Create a new Spotify ad campaign targeting US listeners."
+      "Create a new Spotify ad campaign targeting US listeners.",
+      "Upload a customer list and create a Spotify Ads audience.",
+      "Audit the members and roles on my Spotify ad account."
     ]
   }
 }
