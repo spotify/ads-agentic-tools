@@ -24,7 +24,8 @@
       "Show me a dashboard of my active Spotify ad campaigns.",
       "Create a new Spotify ad campaign targeting US listeners.",
       "Upload a customer list and create a Spotify Ads audience.",
-      "Audit the members and roles on my Spotify ad account."
+      "Audit the members and roles on my Spotify ad account.",
+      "Debug why my Spotify Pixel or CAPI events are missing."
     ]
   }
 }

@@ -126,7 +126,8 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
 | `/spotify-ads-api:assets` | Upload, list, and manage creative assets |
 | `/spotify-ads-api:audiences` | Upload customer lists and manage custom, engagement, event, and lookalike audiences |
-| `/spotify-ads-api:measurement-setup` | Configure Pixel, CAPI, mobile apps, datasets, sharing, tokens, and diagnostics |
+| `/spotify-ads-api:measurement-setup` | Design and configure Pixel, CAPI, datasets, event mapping, advanced matching, mobile apps, and sharing |
+| `/spotify-ads-api:measurement-debug` | Diagnose missing, stale, duplicated, mismatched, or unattributed Pixel/CAPI events |
 | `/spotify-ads-api:account-admin` | Discover businesses/ad accounts and manage members, roles, invitations, and account details |
 | `/spotify-ads-api:dashboard` | Quick performance overview of active campaigns |
 | `/spotify-ads-api:monitor` | Diagnose pacing, delivery, stalled campaigns, and underdelivery issues |
@@ -147,7 +148,8 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Plan the best Spotify campaign structure for this product page"
 - "Use these creative assets to recommend targeting and ad sets"
 - "Upload this customer list and create a custom audience"
-- "Set up a CAPI integration and verify that events are arriving"
+- "Design a Pixel and CAPI setup for purchases with cross-source deduplication"
+- "Debug why CAPI purchases stopped arriving yesterday"
 - "Audit the members and roles on my ad account"
 - "Clone last quarter's campaign and move the dates to next month"
 - "Export all campaigns with metrics for the last 30 days"
