@@ -38,10 +38,24 @@ api POST "ad_accounts/{ad_account_id}/audiences/upload_url"
 ```
 
 3. Capture both returned `id` and `upload_url`.
-4. Upload the file directly to the signed URL with raw curl. Do not add Ads API authorization or tracking headers to the signed URL:
+4. Upload the file to the signed URL using GCS resumable upload. Do not add Ads API authorization or tracking headers to the signed URL. This is a two-step process:
 
 ```bash
-curl -sS -X PUT --upload-file "<file_path>" "<upload_url>"
+# Step A: Initiate the resumable upload (POST) and capture the session URI from the Location header
+set -o pipefail
+SESSION_URL=$(curl -sS --fail-with-body -D - -o /dev/null -X POST \
+  -H "x-goog-resumable: start" \
+  -H "Content-Type: text/csv" \
+  -H "Content-Length: 0" \
+  "<upload_url>" | grep -i "^location:" | tr -d '\r' | sed 's/^[Ll]ocation: *//')
+
+if [ -z "$SESSION_URL" ]; then
+  echo "Upload initiation did not return a session URI" >&2
+  exit 1
+fi
+
+# Step B: Upload the file data to the session URI (PUT)
+curl -sS --fail-with-body -X PUT --upload-file "<file_path>" "$SESSION_URL"
 ```
 
 5. Create the audience using the returned ID:
@@ -60,7 +74,7 @@ Do not automatically retry the upload or create request. If either result is amb
 
 ### Replace a customer-list file
 
-Request `POST ad_accounts/{ad_account_id}/audiences/upload_url/{audience_id}`, then upload to the returned signed URL. Replacing audience data is destructive: show the audience ID, name, and file path and require explicit confirmation immediately before requesting the replacement URL.
+Request `POST ad_accounts/{ad_account_id}/audiences/upload_url/{audience_id}`, then upload to the returned signed URL using the same two-step GCS resumable upload flow as above (POST to initiate, then PUT to the session URI). Replacing audience data is destructive: show the audience ID, name, and file path and require explicit confirmation immediately before requesting the replacement URL.
 
 ### Create event or engagement audiences
 
