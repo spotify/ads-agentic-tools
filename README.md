@@ -137,26 +137,16 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 
 ## Natural Language Examples
 
-The plugin includes an agent that interprets natural language requests automatically:
+Ask for an outcome in ordinary language; you do not need to know endpoint names or request schemas. For example:
 
-- "Create a campaign called Summer Sale with a reach objective"
-- "Set up an audio ad targeting 18-34 year olds in the US with $50/day budget"
-- "Show me impressions, spend, and clicks for all campaigns last month"
-- "Pause the Summer Sale campaign"
-- "Generate a CSV report of daily spend by campaign for January"
-- "Build me a complete audio campaign targeting US listeners aged 25-44"
-- "Plan the best Spotify campaign structure for this product page"
-- "Use these creative assets to recommend targeting and ad sets"
-- "Upload this customer list and create a custom audience"
-- "Design a Pixel and CAPI setup for purchases with cross-source deduplication"
-- "Debug why CAPI purchases stopped arriving yesterday"
-- "Audit the members and roles on my ad account"
-- "Clone last quarter's campaign and move the dates to next month"
-- "Export all campaigns with metrics for the last 30 days"
-- "Check which active campaigns are underpacing"
-- "Pause all active ad sets in the Summer Sale campaign"
-- "Upload my-audio.mp3 as a creative asset"
-- "How are my campaigns performing?"
+- **Plan and build:** “Recommend a Spotify campaign plan for this product page and a $5,000 budget.” or “Build an audio campaign for US listeners ages 25–44 and keep it as a validated draft.”
+- **Operate at scale:** “Pause every active ad set in my summer campaign.” or “Clone last quarter’s campaign for next month.”
+- **Measure performance:** “How are my active campaigns doing?” or “Export my campaign hierarchy and last-30-day metrics to CSV.”
+- **Manage creative and audiences:** “Upload this MP3 as an audio creative.” or “Upload this customer list and create a custom audience.”
+- **Set up and debug conversion tracking:** “Design Pixel and CAPI purchase tracking with deduplication.” or “Why did CAPI purchases stop arriving yesterday?”
+- **Administer access:** “Audit who can access my ad account and which roles they have.”
+
+Contributors and internal testers can use the fuller [prompt catalog](tests/prompt-catalog.md), which pairs a natural user example with a behavioral probe for every skill. The [test scenarios](tests/test-scenarios.md) cover exact routing, schema, safety, and recovery expectations.
 
 ## Configuration Reference
 

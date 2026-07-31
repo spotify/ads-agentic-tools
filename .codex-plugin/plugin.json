@@ -22,10 +22,11 @@
     "defaultPrompt": [
       "Configure my Spotify Ads API credentials.",
       "Show me a dashboard of my active Spotify ad campaigns.",
-      "Create a new Spotify ad campaign targeting US listeners.",
+      "Plan a Spotify campaign for this product page and budget.",
+      "Build an audio campaign targeting US listeners and keep it as a validated draft.",
       "Upload a customer list and create a Spotify Ads audience.",
-      "Audit the members and roles on my Spotify ad account.",
-      "Debug why my Spotify Pixel or CAPI events are missing."
+      "Debug why my Spotify Pixel or CAPI events are missing.",
+      "Audit who can access my Spotify ad account and which roles they have."
     ]
   }
 }
