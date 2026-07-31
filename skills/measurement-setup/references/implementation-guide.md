@@ -47,7 +47,7 @@ Pixel supports these documented parameters where relevant:
 
 Revenue reporting such as attributed revenue, AOV, ROAS, and CAC requires appropriate revenue events with both value and currency. Do not confuse Pixel's `value` with CAPI's `event_details.amount`.
 
-Direct CAPI `event_details` may include `currency`, `amount`, `content_category`, and `content_name`. It is optional, but include accurate currency and amount for purchase/revenue analysis.
+Direct CAPI `event_details` may include `currency`, `amount`, `content_category`, and `content_name`. It is optional, but include accurate currency and amount for purchase/revenue analysis. The `content_category` value must correspond to Google's Product Taxonomy; free-form strings are rejected with a 400 error. Omit the field if a valid taxonomy value is not available.
 
 ## Direct CAPI contract
 
@@ -78,8 +78,7 @@ Shape:
       "event_details": {
         "currency": "USD",
         "amount": 100.0,
-        "content_category": "example",
-        "content_name": "example"
+        "content_name": "Premium subscription"
       },
       "event_source_url": "https://example.com/confirmation",
       "action_source": "WEB",

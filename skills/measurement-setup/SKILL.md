@@ -49,7 +49,7 @@ Do not invent mappings. Document what each custom slot means because `CUSTOM_EVE
 1. Inventory existing Pixels, CAPI integrations, mobile apps, and datasets.
 2. Agree on the event matrix and source topology.
 3. Reuse compatible resources; create only what is missing.
-4. Create or select the dataset and attach integration IDs.
+4. Create integrations in the correct order: Pixel first (auto-creates a dataset), then CAPI with `dataset_id` pointing to the Pixel's dataset. See "Pixel + CAPI in one dataset" under Datasets.
 5. Share the dataset or mobile app with the intended ad account.
 6. Give the implementation owner source-specific code/payload requirements.
 7. After implementation, wait at least 20 minutes before treating missing diagnostics as a failure; then use `measurement-debug`.
@@ -59,7 +59,7 @@ Never promise attribution, optimization, or reporting merely because ingestion i
 ## Pixel resources
 
 ```bash
-api GET "businesses/<business_id>/pixels?include_events=true&limit=50&offset=0"
+api GET "businesses/<business_id>/pixels?include_events=true"
 api POST "businesses/<business_id>/pixels" \
   '{"name":"Web Pixel","domain":"https://example.com","aam_opt_in":true,"aam_fields":["EMAIL","PHONE"]}'
 api GET "businesses/<business_id>/pixels/<pixel_id>"
@@ -73,6 +73,8 @@ The API creates and configures the Pixel resource; it does not install JavaScrip
 - Web GTM: Custom HTML tags, with the base code present whenever an event fires.
 - Base code records page views. Additional events require their own trigger.
 - Do not advise simultaneous direct and tag-manager installation.
+
+The Pixel list endpoint (`GET pixels`) may return 403 for some businesses. If it does, fall back to checking the `pixel` field on individual dataset responses (`GET datasets/<dataset_id>`) to verify Pixel configuration.
 
 Pixel events are read-only. The API does not expose Pixel deletion or arbitrary custom-event creation. Event activity is total received site activity, not attributed campaign results.
 
@@ -88,6 +90,8 @@ api GET "businesses/<business_id>/capi/<capi_connection_id>"
 api PATCH "businesses/<business_id>/capi/<capi_connection_id>" \
   '{"name":"Updated Conversions"}'
 ```
+
+The `dataset_id` field is optional. Omitting it auto-creates a new dataset for the CAPI connection. To add CAPI to an existing dataset (e.g. one that already contains a Pixel), pass that dataset's ID explicitly.
 
 Create, list, or revoke tokens:
 
@@ -111,7 +115,7 @@ Security and execution rules:
 ## Datasets and sharing
 
 ```bash
-api GET "businesses/<business_id>/datasets?limit=50&offset=0"
+api GET "businesses/<business_id>/datasets"
 api POST "businesses/<business_id>/datasets" \
   '{"name":"US Web Conversions","integration_ids":["<integration_id>"]}'
 api GET "businesses/<business_id>/datasets/<dataset_id>"
@@ -121,9 +125,25 @@ api POST "businesses/<business_id>/datasets/<dataset_id>/ad_accounts/<ad_account
 api DELETE "businesses/<business_id>/datasets/<dataset_id>/ad_accounts/<ad_account_id>"
 ```
 
+The `GET datasets` endpoint does not accept `limit` or `offset` parameters.
+
 A dataset combines Pixel and CAPI sources and enables cross-source deduplication. It is recommended when both sources report the same outcomes, but is not required for a single source.
 
-Removing an integration moves it into a new dataset:
+### Pixel + CAPI in one dataset
+
+When both Pixel and CAPI are needed, create them in this order to ensure proper dataset routing:
+
+1. Create the Pixel first — it auto-creates a dataset with a valid `dataset_id` link.
+2. Create the CAPI connection with `dataset_id` set to the Pixel's auto-created dataset ID.
+3. Share the dataset with the ad account.
+
+Do **not** create both integrations independently and then use `POST datasets` with both `integration_ids` to combine them. This can leave the Pixel's internal `dataset_id` as `null`, causing the ingestion pipeline to receive Pixel events but fail to route them to the dataset for diagnostics or attribution.
+
+If integrations were already created independently and need to stay in separate datasets, that is acceptable — deduplication is only needed when the same real-world event is sent by both sources.
+
+### Removing an integration
+
+Removing an integration moves it into a new auto-created dataset:
 
 ```bash
 api DELETE "businesses/<business_id>/datasets/<dataset_id>/integrations/<integration_id>"

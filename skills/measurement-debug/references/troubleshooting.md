@@ -53,6 +53,14 @@ For the same real-world event:
 
 Different events must not reuse one ID. Similar aggregate volumes alone do not prove duplication; compare source counts and implementation ID generation.
 
+## Dataset routing
+
+An integration can appear in a dataset's response (e.g. the `pixel` or `capi_integration` field) while its own `dataset_id` field is `null`. This happens when `POST datasets` is used with multiple `integration_ids` to combine integrations that were already assigned to separate auto-created datasets. The CAPI integration's `dataset_id` is typically updated correctly, but the Pixel's may be left as `null`.
+
+When `dataset_id` is `null`, the ingestion pipeline receives events (confirmed by browser network requests reaching `pixels.spotify.com`) but cannot route them to the dataset for diagnostics or attribution. The Pixel datasource will be absent from the diagnostics response entirely.
+
+To fix: remove the affected integration from the dataset (`DELETE datasets/<id>/integrations/<integration_id>`). This moves it to a new auto-created dataset with a proper `dataset_id` link. Then share the new dataset with the ad account. To avoid this issue in the first place, create the Pixel first (it auto-creates a dataset), then create the CAPI connection with `dataset_id` set to the Pixel's dataset.
+
 ## Diagnostics interpretation
 
 Dataset diagnostics contain datasources with:

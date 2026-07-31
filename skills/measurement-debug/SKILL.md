@@ -33,18 +33,21 @@ Do not ask for CAPI tokens, raw email/phone, cookies, device IDs, IP addresses, 
 ### 1. Resolve topology
 
 ```bash
-api GET "businesses/<business_id>/pixels?include_events=true&limit=50&offset=0"
+api GET "businesses/<business_id>/pixels?include_events=true"
 api GET "businesses/<business_id>/capi/<capi_connection_id>"
 api GET "businesses/<business_id>/capi/<capi_connection_id>/tokens"
-api GET "businesses/<business_id>/datasets?limit=50&offset=0"
+api GET "businesses/<business_id>/datasets"
 api GET "businesses/<business_id>/datasets/<dataset_id>"
 api GET "businesses/<business_id>/ad_accounts/<ad_account_id>/datasets"
 ```
+
+The `GET datasets` endpoint does not accept `limit` or `offset` parameters. The `GET pixels` endpoint may return 403 for some businesses; if so, check the `pixel` field on individual dataset responses instead.
 
 Verify that:
 
 - the expected integration is in the expected dataset
 - the dataset is shared to the intended ad account
+- each integration's `dataset_id` field points to the correct dataset (a `null` value means events are ingested but not routed — see isolation table)
 - Pixel domain and CAPI connection ID match the intended environment/business
 - the token ID exists on the same CAPI connection; never display token values
 - dataset flags such as `is_receiving_events` and `is_receiving_lead_events` fit the symptom
@@ -72,6 +75,7 @@ Receipt diagnostics answer “did Spotify receive events?” They do not prove t
 | Diagnostics present, campaign metrics absent | selection/attribution | dataset shared and selected; date/window/privacy/report fields |
 | Wrong site/account receives data | topology/config | domain, business, dataset membership, connection ID |
 | Events stopped suddenly | deployment/credential | release time, GTM publish, token revocation, CSP/infrastructure change |
+| Integration in dataset but `dataset_id` null | dataset routing | integration was moved via `POST datasets` with multiple `integration_ids`; events are ingested but not routed — fix by removing the integration and re-adding it to a properly-linked dataset |
 
 ### 4. Inspect implementation evidence
 
