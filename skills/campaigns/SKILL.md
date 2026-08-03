@@ -42,9 +42,7 @@ Prompt the user for required fields:
 
 1. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_product_catalog"
+api GET "ad_product_catalog"
 ```
 2. If the campaign's `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. The catalog response contains rules separated by operation (`create`, `update`, `both`) under each entity type. For campaign creation, apply `create` rules plus `both` rules — check `allowed_values`, `required_fields`, and `cross_field_rules`. Validate all field values against the returned rules.
 
@@ -80,15 +78,11 @@ Prompt the user for fields to update (at least 1 required):
 **Before updating, you must validate against the ad product catalog — do not skip this step:**
 1. Fetch the campaign to determine its `ad_product`:
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 ```
 2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_product_catalog"
+api GET "ad_product_catalog"
 ```
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. For campaign updates, apply `update` rules plus `both` rules — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the updated field values.
 

@@ -73,9 +73,7 @@ api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 
 1. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_product_catalog"
+api GET "ad_product_catalog"
 ```
 
 2. Determine the campaign's `ad_product` from the planned campaign fields. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
@@ -279,9 +277,7 @@ Use the entity type from the command to select the endpoint, then prompt the use
 
 For draft ad set or ad edits, fetch the parent draft campaign using the draft ad set's `campaign_id`:
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 **Update draft campaign:**

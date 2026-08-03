@@ -40,15 +40,11 @@ Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
 
 1. Fetch the parent campaign to determine its `ad_product`:
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 ```
 2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_product_catalog"
+api GET "ad_product_catalog"
 ```
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For creation, apply the entity's `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate all field values against the returned rules.
 
@@ -226,15 +222,11 @@ api GET "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID"
 **Before updating, you must validate against the ad product catalog — do not skip this step:**
 1. Fetch the ad set to get its `campaign_id`, then fetch the parent campaign to determine its `ad_product`:
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 ```
 2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_product_catalog"
+api GET "ad_product_catalog"
 ```
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For updates, apply the entity's `update` rules plus `both` rules — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the updated field values.
 
@@ -256,15 +248,11 @@ Format as table: ID | Name | Ad Set ID | Status | Delivery
 
 1. Fetch the parent campaign to determine its `ad_product`: get the ad set's `campaign_id` (from the user or by fetching the ad set), then fetch the campaign:
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 ```
 2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_product_catalog"
+api GET "ad_product_catalog"
 ```
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For creation, apply the entity's `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate all field values against the returned rules.
 
@@ -320,15 +308,11 @@ api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 **Before updating, you must validate against the ad product catalog — do not skip this step:**
 1. Fetch the ad to get its `ad_set_id`, then fetch the ad set to get `campaign_id`, then fetch the parent campaign to determine its `ad_product`:
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 ```
 2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_product_catalog"
+api GET "ad_product_catalog"
 ```
 3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For updates, apply the entity's `update` rules plus `both` rules — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the updated field values.
 
