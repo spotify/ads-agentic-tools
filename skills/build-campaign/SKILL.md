@@ -27,14 +27,14 @@ Only use the direct creation flow below if the user explicitly asks to skip draf
 
 ## Setup
 
-1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-   - Gemini: prefer `.gemini/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. Base URL: `https://api-partner.spotify.com/ads/v3`
-3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+Set the plugin root and define the request wrapper:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" build-campaign "$@"; }
+```
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Step 1: Parse the Campaign Description
 
@@ -156,10 +156,8 @@ If any field shows ❌, present a recommended fix for each failing field and ask
 After the user confirms the plan but before executing API calls, run an audience estimate for each ad set's targeting:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "estimates/audience" \
+  '{
     "ad_account_id": "<AD_ACCOUNT_ID>",
     "start_date": "<start_time>",
     "asset_format": "<AUDIO|VIDEO|IMAGE|CATALOG>",
@@ -168,8 +166,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
     "bid_micro_amount": <bid>,
     "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
     "targets": { <same targets object as the ad set> }
-  }' \
-  "https://api-partner.spotify.com/ads/v3/estimates/audience"
+  }'
 ```
 
 **Important:** This endpoint is NOT scoped under `/ad_accounts/{id}/` — it's at the top level: `POST /estimates/audience`. Use the base URL directly followed by `/estimates/audience`.
@@ -206,9 +203,7 @@ Run the estimate for each ad set in the plan before proceeding to Step 3.
 For each ad, fetch available assets from the account:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 ```
 
 Present audio/video assets and image assets separately in tables, and ask the user to pick:
@@ -225,11 +220,8 @@ Execute each step in order, passing IDs forward from each response.
 **⛔ CHECKPOINT — Print a ✅/❌ validation summary for the campaign fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute the POST until every field shows ✅.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"...","objective":"..."}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns"
+api POST "ad_accounts/{ad_account_id}/campaigns" \
+  '{"name":"...","objective":"..."}'
 ```
 
 Extract the campaign `id` from the response.
@@ -239,10 +231,8 @@ Extract the campaign `id` from the response.
 **⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad set's fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/ad_sets" \
+  '{
     "name": "...",
     "campaign_id": "<from step 4a>",
     "start_time": "...",
@@ -260,8 +250,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
     "bid_micro_amount": ...,
     "pacing": "PACING_EVEN",
     "delivery": "ON"
-  }' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets"
+  }'
 ```
 
 Extract each ad set `id` for use in ad creation.
@@ -271,10 +260,8 @@ Extract each ad set `id` for use in ad creation.
 **⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad's fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/ads" \
+  '{
     "name": "...",
     "ad_set_id": "<from step 4b>",
     "tagline": "...",
@@ -289,8 +276,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
       "clickthrough_url": "https://..."
     },
     "delivery": "ON"
-  }' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads"
+  }'
 ```
 
 ## Step 5: Summary

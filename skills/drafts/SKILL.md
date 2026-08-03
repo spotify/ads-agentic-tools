@@ -22,14 +22,14 @@ The alternative (direct entity creation via `/campaigns`, `/ad_sets`, `/ads`) va
 
 ## Setup
 
-1. Read `access_token`, `ad_account_id`, and `auto_execute` from the active platform settings file:
-   - Codex: prefer `.codex/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-   - Claude: prefer `.claude/spotify-ads-api.local.md`, then fall back to `.codex/spotify-ads-api.local.md`, then `.gemini/spotify-ads-api.local.md`.
-   - Gemini: prefer `.gemini/spotify-ads-api.local.md`, then fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
-2. Base URL: `https://api-partner.spotify.com/ads/v3`
-3. If no settings file exists, instruct the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini).
-4. Read the active platform manifest for the plugin `version`: `.codex-plugin/plugin.json` on Codex, `.claude-plugin/plugin.json` on Claude, or `gemini-extension.json` (extension root) on Gemini.
-5. Set `SDK_PRODUCT` to `codex-plugin` on Codex, `claude-code-plugin` on Claude, or `gemini-cli-extension` on Gemini. Set `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"` and include `-H "$SDK_HEADER"` on all API requests.
+Set the plugin root and define the request wrapper:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" drafts "$@"; }
+```
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Operations
 
@@ -64,9 +64,7 @@ Ask the user to confirm or adjust before creating drafts.
 Fetch available assets from the account and present them for selection, just like the `build-campaign` skill:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets?limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 ```
 
 #### Step 3.5: Fetch Ad Product Rules (Required)
@@ -116,11 +114,8 @@ If any field shows ❌, present a recommended fix for each failing field and ask
 **⛔ CHECKPOINT — Print a ✅/❌ validation summary for the campaign fields against the ad product catalog rules from Step 3.5 before executing.** Use the campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute the POST until every field shows ✅.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"...","objective":"..."}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns"
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
+  '{"name":"...","objective":"..."}'
 ```
 
 Extract the draft campaign `id` from the response. The response includes an initial `draft_hierarchy_version`, but do not rely on that value after creating child draft ad sets or ads because any hierarchy edit can increment the version.
@@ -130,10 +125,8 @@ Extract the draft campaign `id` from the response. The response includes an init
 **⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad set's fields against the ad product catalog rules from Step 3.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
+  '{
     "campaign_id": "<draft_campaign_id from step 4a>",
     "name": "...",
     "start_time": "...",
@@ -144,8 +137,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
     "targets": { ... },
     "bid_strategy": "MAX_BID",
     "bid_micro_amount": ...
-  }' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets"
+  }'
 ```
 
 Extract each draft ad set `id`.
@@ -155,10 +147,8 @@ Extract each draft ad set `id`.
 **⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad's fields against the ad product catalog rules from Step 3.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/drafts/ads" \
+  '{
     "ad_set_id": "<draft_ad_set_id from step 4b>",
     "name": "...",
     "tagline": "...",
@@ -171,9 +161,12 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
     "call_to_action": {
       "key": "SHOP_NOW",
       "clickthrough_url": "https://..."
-    }
-  }' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads"
+    },
+    "third_party_tracking": [
+      {"measurement_event": "IMPRESSION", "measurement_partner": "DCM", "url": "https://...trackimp/..."},
+      {"measurement_event": "CLICKED", "measurement_partner": "DCM", "url": "https://...trackclk/..."}
+    ]
+  }'
 ```
 
 #### Step 5: Validate the Draft
@@ -181,17 +174,12 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN
 After all draft entities are created, fetch the draft campaign again to get the current `draft_hierarchy_version`, then automatically run validation. Do not reuse a version captured before child draft ad sets or ads were created.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"action":"VALIDATE","draft_hierarchy_version":<version>}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
+  '{"action":"VALIDATE","draft_hierarchy_version":<version>}'
 ```
 
 The `draft_hierarchy_version` must match the current value from the draft campaign response.
@@ -233,9 +221,7 @@ List draft entities. Argument specifies which type: `campaigns`, `ad-sets`, or `
 
 **List draft campaigns:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns?limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns?limit=50&sort_direction=DESC"
 ```
 
 Format as table: Draft ID | Name | Status | Objective | Version | Created
@@ -244,9 +230,7 @@ Optional filters use the actual query parameter names: `campaign_ids` (repeated 
 
 **List draft ad sets:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets?limit=50"
+api GET "ad_accounts/{ad_account_id}/drafts/ad_sets?limit=50"
 ```
 
 Format as table: Draft ID | Name | Campaign ID | Status | Format | Budget
@@ -255,9 +239,7 @@ Optional filters: `campaign_ids` (repeated param), `statuses` (repeated param).
 
 **List draft ads:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads?limit=50"
+api GET "ad_accounts/{ad_account_id}/drafts/ads?limit=50"
 ```
 
 Format as table: Draft ID | Name | Ad Set ID | Status
@@ -272,23 +254,17 @@ Use the entity type from the command to select the endpoint. If the user supplie
 
 **Draft campaign:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 **Draft ad set:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets/$DRAFT_AD_SET_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/ad_sets/$DRAFT_AD_SET_ID"
 ```
 
 **Draft ad:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads/$DRAFT_AD_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/ads/$DRAFT_AD_ID"
 ```
 
 Display all fields in a readable format. Note that `draft_hierarchy_version` is only populated on campaign drafts; ad set and ad drafts return `null` for this field.
@@ -310,33 +286,24 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
 
 **Update draft campaign:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"...","objective":"..."}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api PATCH "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
+  '{"name":"...","objective":"..."}'
 ```
 
 Updatable campaign fields: `name`, `purchase_order`, `objective`, `delivery_goal_group`, `status`.
 
 **Update draft ad set:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{...}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets/$DRAFT_AD_SET_ID"
+api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$DRAFT_AD_SET_ID" \
+  '{...}'
 ```
 
 Updatable ad set fields: `name`, `start_time`, `end_time`, `budget`, `bid_micro_amount`, `bid_strategy`, `targets`, `pacing`, `asset_format`, `category`, `frequency_caps`, `cost_model`, `delivery_goal`, `promotion`, `video_delivery_formats`, `status`.
 
 **Update draft ad:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{...}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads/$DRAFT_AD_ID"
+api PATCH "ad_accounts/{ad_account_id}/drafts/ads/$DRAFT_AD_ID" \
+  '{...}'
 ```
 
 Updatable ad fields: `name`, `advertiser_name`, `tagline`, `assets`, `asset_format`, `call_to_action`, `third_party_tracking`, `placements`, `weight`, `status`.
@@ -350,19 +317,14 @@ After updating, display the updated draft. For campaign drafts, note the new `dr
 Dry-run the publish to check for errors across the entire hierarchy (campaign + all ad sets + all ads):
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"action":"VALIDATE","draft_hierarchy_version":<version>}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
+  '{"action":"VALIDATE","draft_hierarchy_version":<version>}'
 ```
 
 First, fetch the draft campaign to get the current `draft_hierarchy_version`:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 **Handling the response:**
@@ -405,19 +367,14 @@ Publish the entire draft hierarchy (campaign + ad sets + ads) as live entities. 
 #### Step 1: Fetch the draft campaign to get `draft_hierarchy_version`
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 #### Step 2: Run validation first
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"action":"VALIDATE","draft_hierarchy_version":<version>}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
+  '{"action":"VALIDATE","draft_hierarchy_version":<version>}'
 ```
 
 If validation errors exist, display them and stop. Do not publish with validation errors.
@@ -441,17 +398,12 @@ This will create live entities. Proceed?
 Fetch the draft campaign again immediately before publishing. If the `draft_hierarchy_version` differs from the version that just passed validation, re-run validation before publishing.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{"action":"PUBLISH","draft_hierarchy_version":<version>}' \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
+  '{"action":"PUBLISH","draft_hierarchy_version":<version>}'
 ```
 
 Display the published campaign details from the response. Published entities retain the same IDs they had as drafts.
@@ -464,23 +416,17 @@ Use the entity type from the command to select the endpoint. If the user supplie
 
 **Delete draft campaign** (also removes associated draft ad sets and ads):
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X DELETE -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
+api DELETE "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 **Delete draft ad set:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X DELETE -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets/$DRAFT_AD_SET_ID"
+api DELETE "ad_accounts/{ad_account_id}/drafts/ad_sets/$DRAFT_AD_SET_ID"
 ```
 
 **Delete draft ad:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X DELETE -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/drafts/ads/$DRAFT_AD_ID"
+api DELETE "ad_accounts/{ad_account_id}/drafts/ads/$DRAFT_AD_ID"
 ```
 
 Expect a `204 No Content` response on success.
@@ -493,23 +439,17 @@ Create a draft copy of an existing live campaign, ad set, or ad for editing. Use
 
 **Draft from published campaign:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/campaigns/$CAMPAIGN_ID/drafts"
+api POST "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID/drafts"
 ```
 
 **Draft from published ad set:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ad_sets/$AD_SET_ID/drafts"
+api POST "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID/drafts"
 ```
 
 **Draft from published ad:**
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "$SDK_HEADER" \
-  "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/ads/$AD_ID/drafts"
+api POST "ad_accounts/{ad_account_id}/ads/$AD_ID/drafts"
 ```
 
 The draft-from-published response reuses the **same ID** as the live entity (not a new UUID). The status becomes `ACTIVE_RESTRICTED`.
@@ -534,10 +474,11 @@ Unlike direct entity creation, draft creation accepts incomplete data — requir
 5. **`end_time`** is required when budget type is `LIFETIME`
 6. **`companion_asset_id`** is required for AUDIO format ads at publish/validation time, but can be omitted when creating draft ads
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
-8. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
-9. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the **draft campaign** immediately before calling publish/validate; never reuse a version captured before child drafts or edits. This field is only populated on draft campaign responses; ad set and ad draft responses return `null`. The version on the campaign increments when any entity in the hierarchy is created or edited
-10. **Draft ad set `campaign_id`** must reference the **draft campaign ID**, not a published campaign ID
-11. **Draft ad `ad_set_id`** must reference a **draft ad set ID**, not a published ad set ID
+8. **`third_party_tracking`** uses field `measurement_event` (NOT `type`) to distinguish tracker categories. Valid values: `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, `VIEWABLE_IMPRESSION`. **If `measurement_event` is omitted, it defaults to IMPRESSION** — always set it explicitly. Use `CLICKED` for click trackers and `IMPRESSION` for impression trackers.
+9. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
+10. **`draft_hierarchy_version`** is required when publishing or validating — always fetch the current version from the **draft campaign** immediately before calling publish/validate; never reuse a version captured before child drafts or edits. This field is only populated on draft campaign responses; ad set and ad draft responses return `null`. The version on the campaign increments when any entity in the hierarchy is created or edited
+11. **Draft ad set `campaign_id`** must reference the **draft campaign ID**, not a published campaign ID
+12. **Draft ad `ad_set_id`** must reference a **draft ad set ID**, not a published ad set ID
 
 ## Execution Behavior
 

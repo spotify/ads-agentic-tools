@@ -12,7 +12,7 @@ auto_execute: false
 
 Local configuration for the spotify-ads-api plugin. Store this file at
 `.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md`
-on Claude, or `.gemini/spotify-ads-api.local.md` on Gemini.
+on Claude, or `.agents/spotify-ads-api.local.md` on Antigravity.
 Do not commit this file to version control.
 Client secret is stored in the macOS Keychain, not in this file.
 

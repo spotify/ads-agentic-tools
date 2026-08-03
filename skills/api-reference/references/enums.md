@@ -97,6 +97,29 @@
 
 ---
 
+## Third-Party Tracking Enums
+
+### MeasurementEvent
+Used in the `measurement_event` field on `third_party_tracking` entries (on ads and ad drafts). **Always set explicitly** — if omitted, defaults to `IMPRESSION`, which silently misclassifies click trackers.
+
+- `IMPRESSION` — Standard impression pixel
+- `CLICKED` — Click tracker (use for DCM click URLs, `trackclk` pixels, etc.)
+- `VIEWABLE_IMPRESSION` — Viewable impression (MRC standard)
+- `START` — Playback start
+- `FIRST_QUARTILE` — 25% playback
+- `MIDPOINT` — 50% playback
+- `THIRD_QUARTILE` — 75% playback
+- `COMPLETE` — 100% playback (completion pixel)
+
+### MeasurementPartner
+- `DCM` — DoubleClick Campaign Manager (Google)
+- `IAS` — Integral Ad Science (viewability only — `measurement_event` is ignored)
+- `MOAT` — MOAT by Oracle (viewability only — `measurement_event` is ignored)
+- `DOUBLEVERIFY` — DoubleVerify (uses `dv_client_code` instead of `url`)
+- `UNSET` — Generic / other partner
+
+---
+
 ## Asset Enums
 
 ### AssetType

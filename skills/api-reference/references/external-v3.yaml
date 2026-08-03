@@ -4514,12 +4514,18 @@ paths:
       description: |
         Returns ad campaign metrics broken out by audience (i.e., targeting) insights based on
         requested fields and dimensions.
+
+        Insight data becomes available after an ad has delivered enough activity to meet the
+        applicable reporting threshold. If a request returns a `422` response with one of the
+        insufficient-data error codes, poll no more than once per day. When deciding how long to
+        retry, account for the ad's flight dates. Stop retrying approximately two weeks after the
+        ad's end date because additional data is unlikely to be collected after that point.
       operationId: getAudienceInsightReport
       parameters:
         - $ref: '#/components/parameters/ad_account_id'
         - $ref: '#/components/parameters/insight_dimension'
         - $ref: '#/components/parameters/report_fields'
-        - $ref: '#/components/parameters/entity_ids'
+        - $ref: '#/components/parameters/insight_report_entity_ids'
         - $ref: '#/components/parameters/entity_ids_type'
         - $ref: '#/components/parameters/entity_status_type'
         - $ref: '#/components/parameters/entity_statuses'
@@ -4532,6 +4538,17 @@ paths:
                 $ref: '#/components/schemas/AudienceInsightResponse'
         '400':
           description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: |
+            The ad set does not meet the minimum data thresholds required to generate an
+            audience insight report. The `errorCodes` field identifies the unmet threshold:
+            `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_IMPRESSIONS`,
+            `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_REACH`, or
+            `ILLEGAL.INSIGHT_REPORT.INSUFFICIENT_LISTENERS`.
           content:
             application/json:
               schema:
@@ -5329,7 +5346,7 @@ components:
         Specify maximum impressions per user over a given period of time. Will default to
         the maximum (5 per day, 35 per week, 50 per month) if not specified in the CREATE
         request, OR if an empty array [] is sent in the PATCH request.
-      maxItems: 3
+      maxItems: 6
       uniqueItems: true
       items:
         $ref: '#/components/schemas/FrequencyCap'
@@ -6160,6 +6177,7 @@ components:
       example:
         name: Updated Ad Set
     BaseResponseProperties:
+      type: object
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -6168,6 +6186,7 @@ components:
         updated_at:
           $ref: '#/components/schemas/UpdatedAt'
     AdSetDraftCreateOnlyProperties:
+      type: object
       properties:
         campaign_id:
           $ref: '#/components/schemas/Uuid'
@@ -6249,6 +6268,7 @@ components:
       maxLength: 100
       example: E_CPC
     AdSetDraftUpdateRequest:
+      type: object
       properties:
         name:
           $ref: '#/components/schemas/DraftAdSetName'
@@ -6321,10 +6341,12 @@ components:
           items:
             $ref: '#/components/schemas/SlotPosition'
     AdSetDraftCreateRequest:
+      type: object
       allOf:
         - $ref: '#/components/schemas/AdSetDraftCreateOnlyProperties'
         - $ref: '#/components/schemas/AdSetDraftUpdateRequest'
     AdSetDraft:
+      type: object
       properties:
         status:
           $ref: '#/components/schemas/AdSetStatus'
@@ -6826,9 +6848,21 @@ components:
         name:
           $ref: '#/components/schemas/AdName'
         start_time:
-          $ref: '#/components/schemas/EventTime'
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            Time should be in ISO 8601 format using
+            Coordinated Universal Time (UTC) with a zero offset: YYYY-MM-DDTHH:MM:SSZ
+          example: '2023-09-23T04:56:07Z'
         end_time:
-          $ref: '#/components/schemas/EventTime'
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            Time should be in ISO 8601 format using
+            Coordinated Universal Time (UTC) with a zero offset: YYYY-MM-DDTHH:MM:SSZ
+          example: '2023-09-23T04:56:07Z'
         tagline:
           $ref: '#/components/schemas/AdTagline'
         third_party_tracking:
@@ -6986,6 +7020,7 @@ components:
         tagline: Good Food for Good Dogs
         advertiser_name: Heart Dance Recordings
     UpdateAdRequest:
+      type: object
       allOf:
         - $ref: '#/components/schemas/BaseRequestAdEntity'
         - type: object
@@ -6996,6 +7031,7 @@ components:
               $ref: '#/components/schemas/Delivery'
           minProperties: 1
     AdDraftCreateOnlyProperties:
+      type: object
       properties:
         ad_set_id:
           $ref: '#/components/schemas/Uuid'
@@ -7104,6 +7140,7 @@ components:
       description: The weight of the ad.
       example: 10
     AdDraftUpdateRequest:
+      type: object
       properties:
         name:
           $ref: '#/components/schemas/DraftAdName'
@@ -7135,10 +7172,12 @@ components:
         status:
           $ref: '#/components/schemas/AdStatus'
     AdDraftCreateRequest:
+      type: object
       allOf:
         - $ref: '#/components/schemas/AdDraftCreateOnlyProperties'
         - $ref: '#/components/schemas/AdDraftUpdateRequest'
     AdDraft:
+      type: object
       properties:
         status:
           $ref: '#/components/schemas/AdStatus'
@@ -8230,14 +8269,12 @@ components:
       description: Salesforce sales order code.
       example: SO-765621
     CampaignDraftRequestProperties:
+      type: object
       properties:
         name:
           $ref: '#/components/schemas/DraftCampaignName'
         purchase_order:
           $ref: '#/components/schemas/DraftCampaignPurchaseOrder'
-        restricted_ad_category:
-          deprecated: true
-          description: Deprecated. The auto/restricted ad category feature has been removed; this field is accepted for backwards compatibility but ignored by the server.
         objective:
           $ref: '#/components/schemas/OptimizationPrefsDraftValues'
         channel:
@@ -8262,6 +8299,7 @@ components:
       description: The version of the draft hierarchy.
       example: 1
     CampaignDraftResponseProperties:
+      type: object
       properties:
         media_plan_id:
           type: string
@@ -8288,6 +8326,7 @@ components:
           $ref: '#/components/schemas/DraftHierarchyVersion'
           readOnly: true
     CampaignDraft:
+      type: object
       allOf:
         - $ref: '#/components/schemas/BaseResponseProperties'
         - $ref: '#/components/schemas/CampaignDraftRequestProperties'
@@ -8782,7 +8821,7 @@ components:
       description: The unique identifier provided by Android.
       example: com.example.myapp
       minLength: 2
-      maxLength: 255
+      maxLength: 512
     AppleAppUrl:
       type: string
       description: The Apple App Store URL for the mobile app.
@@ -11004,13 +11043,9 @@ components:
           format: uuid
       description: |
         A list of one or more campaign, ad set, or ad IDs by which to filter
-        reporting. If this field is set, the entity_ids_type field is required.
+        aggregate reporting. If this field is set, the entity_ids_type field is required.
 
-        Aggregate Report:
-        - A maximum of 50 entities can be requested.
-
-        Insight Report:
-        - Only one ID at a time is currently supported.
+        A maximum of 50 entities can be requested.
 
         Restrictions:
         1. This parameter is not valid for AD_ACCOUNT entity_type requests, since the ID is derived from the ad_account_id.
@@ -11025,8 +11060,8 @@ components:
         $ref: '#/components/schemas/EntityDimensionType'
       description: |
         The entity type of IDs contained in the entity_ids field. If entity_ids is
-        set, this field is required. Furthermore, the only acceptable value for insight
-        reports is AD_SET.
+        set, this field is required. Furthermore, the only acceptable values for insight
+        reports are AD_SET and CAMPAIGN.
 
         When using a granularity that is not LIFETIME, entity id types must match the type of the entity requested
 
@@ -11088,6 +11123,26 @@ components:
         A reporting dimension for insight breakdowns. This field is required if
         continuation_token is not set.
       example: GENRE
+    insight_report_entity_ids:
+      name: entity_ids
+      in: query
+      required: false
+      x-spotify-include-in-example: true
+      schema:
+        type: array
+        default: []
+        minItems: 1
+        maxItems: 1
+        items:
+          type: string
+          format: uuid
+      description: |
+        A single campaign or ad set ID by which to filter insight reporting. If this
+        field is set, the entity_ids_type field is required.
+
+        Only one ID at a time is currently supported.
+      example:
+        - 9a7b6c5d-4e3f-4b21-8c99-bf1c2a3d4e5f
     report_id:
       name: report_id
       in: path

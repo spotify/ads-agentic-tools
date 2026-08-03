@@ -1,6 +1,6 @@
 # Example: Full Campaign Setup Flow
 
-**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`, where `SDK_PRODUCT` is `codex-plugin` on Codex, `claude-code-plugin` on Claude, and `gemini-cli-extension` on Gemini.
+**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`, where `SDK_PRODUCT` is `codex-plugin` on Codex, `claude-code-plugin` on Claude, and `antigravity-cli-plugin` on Antigravity.
 
 This example shows the complete sequence of API calls to create a campaign, ad set, and ad.
 
@@ -164,6 +164,7 @@ These are non-obvious requirements discovered through real API testing:
 - **`assets.companion_asset_id` is required** for AUDIO format ad sets.
 - **`assets.asset_id` and `assets.logo_asset_id` are always required**.
 - `tagline` max length is 40 chars; `advertiser_name` max length is 25 chars.
+- **`third_party_tracking` uses `measurement_event`** (NOT `type`) to distinguish tracker categories. Always set `measurement_event` explicitly — if omitted, it defaults to `IMPRESSION`. Use `CLICKED` for click trackers. Valid values: `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, `VIEWABLE_IMPRESSION`.
 
 ### General
 - All budgets and bids use **micro-amounts** — multiply dollar values by 1,000,000.
