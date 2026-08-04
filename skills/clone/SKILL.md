@@ -121,7 +121,7 @@ api POST "estimates/audience" \
     "objective": "<campaign_objective>",
     "bid_strategy": "<MAX_BID|COST_PER_RESULT|AUTOBID|UNSET>",
     "bid_micro_amount": <bid>,
-    "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "USD"},
+    "budget": {"micro_amount": <budget>, "type": "<DAILY|LIFETIME>", "currency": "<ad account billing currency>"},
     "targets": { <SAME_OR_MODIFIED_TARGETS> }
   }'
 ```

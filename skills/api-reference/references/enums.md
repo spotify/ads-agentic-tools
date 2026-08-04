@@ -84,11 +84,14 @@
 ## Ad Enums
 
 ### AdStatus
+- `ACTIVE`
 - `APPROVED`
 - `ARCHIVED`
+- `FAILED`
 - `PENDING`
 - `PENDING_APPROVAL`
 - `REJECTED`
+- `UNRECOGNIZED`
 
 ### Placement
 - `MUSIC`
@@ -321,3 +324,21 @@ Used with the `fields` query parameter on aggregate and insight report endpoints
 - `MALE`
 - `FEMALE`
 - `NON_BINARY`
+
+---
+
+## Experiment Enums
+
+### ActiveExperiment
+- `CLS` — Competitive Lift Study
+- `SBL` — Sales-Based Lift
+- `AB_TEST` — A/B Test
+
+---
+
+## Measurement Enums
+
+### AttributionWindow
+Attribution window for conversion metrics.
+- `IMPRESSION_30_DAY` — 30-day post-impression attribution (default)
+- `IMPRESSION_7_DAY` — 7-day post-impression attribution

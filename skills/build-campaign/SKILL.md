@@ -57,7 +57,7 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | name | yes | — | 2-200 chars |
 | start_time | yes | — | ISO 8601 UTC |
 | end_time | required if LIFETIME | — | ISO 8601 UTC |
-| budget.micro_amount | yes | — | Dollar amount x 1,000,000 |
+| budget.micro_amount | yes | — | Amount (in ad account's billing currency) x 1,000,000 |
 | budget.type | yes | DAILY | `DAILY` or `LIFETIME` |
 | asset_format | yes | AUDIO | `AUDIO`, `VIDEO`, `IMAGE`, or `CATALOG` |
 | category | yes | — | Valid `ADV_X_Y` code (fetch from `GET /ad_categories` if needed) |
@@ -77,7 +77,7 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 - Do not send `cost_model`, `skippable`, `is_skippable`, or `ad_platforms` in ad set create payloads.
 - Only use `ANDROID`, `DESKTOP`, and `IOS` in `targets.platforms`; never use `WEB`, `MOBILE`, or `CONNECTED_DEVICE`.
 - Use `min >= 18` for age ranges unless the user explicitly confirms a market/category that allows minors.
-- When geo refinements are present (`city_ids`, `dma_ids`, `postal_code_ids`, `region_ids`), include `country_code` in the same `geo_targets` object.
+- When geo refinements are present (`city_ids`, `postal_code_ids`, `region_ids`), include `country_code` in the same `geo_targets` object.
 - If `bid_strategy=UNSET`, omit `bid_micro_amount` unless the API response or user-provided source explicitly requires it.
 
 ### Ad-level fields (one or more per ad set)
@@ -85,13 +85,13 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | Field | Required | Notes |
 |-------|----------|-------|
 | name | yes | 2-200 chars |
-| tagline | yes | 2-40 chars |
+| tagline | yes (optional for drafts) | 2-40 chars |
 | advertiser_name | yes | 2-25 chars |
-| assets.asset_id | yes | UUID — prompt user to select |
+| assets.asset_id | yes (optional for drafts) | UUID — prompt user to select |
 | assets.logo_asset_id | yes | UUID — prompt user to select |
 | assets.companion_asset_id | yes (audio) | UUID — required for AUDIO format ads |
 | call_to_action.key | yes | e.g. `SHOP_NOW`, `LEARN_MORE`, `LISTEN_NOW`, `SIGN_UP` |
-| call_to_action.clickthrough_url | yes | Landing page URL |
+| call_to_action.clickthrough_url | yes (optional for drafts) | Landing page URL |
 | delivery | no | `ON` (default) or `OFF` |
 
 ## Step 2: Confirm the Parsed Plan
@@ -142,7 +142,7 @@ Audience Estimate for "Ad Set A":
   Likely to deliver budget: Yes
 ```
 
-Convert any CPM micro-amounts to dollars for display.
+Convert any CPM micro-amounts to the ad account's billing currency for display.
 
 **If the audience is too small** (very low `projected_unique_users` or the API returns a 400 error indicating audience too small), warn the user and suggest:
 - Broadening the age range
@@ -268,5 +268,5 @@ These are non-obvious API requirements that MUST be followed:
 5. **`end_time`** is required when budget type is `LIFETIME`
 6. **`companion_asset_id`** is required when creating ads for AUDIO ad sets
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
-8. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
+8. Budget amounts must be in **micro-units** (multiply amount by 1,000,000)
 9. **Min audience thresholds** apply — VIDEO format may require broader targeting than AUDIO. If you get a "Min audience threshold was not met" error, suggest expanding the age range or switching format.
