@@ -59,6 +59,17 @@ find_settings_file() {
   done
 }
 
+find_python() {
+  local cmd
+  for cmd in python3 python py; do
+    if command -v "$cmd" &>/dev/null; then
+      printf '%s\n' "$cmd"
+      return
+    fi
+  done
+}
+PYTHON="$(find_python || true)"
+
 # Extract the command from tool input (different field paths per platform)
 # Claude/Codex: .tool_input.command
 # Antigravity:  .toolCall.args.CommandLine
@@ -91,7 +102,11 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
   token_expires_at=$(get_setting "token_expires_at")
   refresh_token=$(get_setting "refresh_token")
   client_id=$(get_setting "client_id")
-  client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w 2>/dev/null || echo "")
+  if [ -n "$PYTHON" ]; then
+    client_secret=$($PYTHON "$PLUGIN_ROOT/scripts/credential-helper.py" get 2>/dev/null || echo "")
+  else
+    client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w 2>/dev/null || echo "")
+  fi
 
   # Determine if token needs refresh
   needs_refresh=false
@@ -113,7 +128,9 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
       system_message="Spotify API token may be expired but no refresh credentials are configured. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to set up OAuth."
     else
       REFRESH_SCRIPT="${PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
-      if refresh_result=$(python3 "$REFRESH_SCRIPT" \
+      if [ -z "$PYTHON" ]; then
+        system_message="Python is required for token refresh but was not found. Install Python 3.8+ and ensure python3, python, or py is in your PATH."
+      elif refresh_result=$($PYTHON "$REFRESH_SCRIPT" \
         --client-id "$client_id" \
         --client-secret "$client_secret" \
         --refresh-token "$refresh_token" 2>/dev/null); then
