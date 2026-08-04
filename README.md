@@ -133,6 +133,7 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | `/spotify-ads-api:export` | Export campaign hierarchy, targeting, budget, and optional metrics to CSV |
 | `/spotify-ads-api:bulk` | Apply batch pause, resume, budget, delivery, archive, and creative-swap workflows |
 | `/spotify-ads-api:clone` | Clone campaigns or ad sets with optional date, budget, name, or targeting changes |
+| `/spotify-ads-api:change-history` | View a timeline of changes — who changed what, when, and how |
 
 ## Natural Language Examples
 
@@ -152,6 +153,9 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Pause all active ad sets in the Summer Sale campaign"
 - "Upload my-audio.mp3 as a creative asset"
 - "How are my campaigns performing?"
+- "What changed in my ad account this week?"
+- "Show me all budget changes in the last 7 days"
+- "Who changed the Summer Sale campaign?"
 
 ## Configuration Reference
 

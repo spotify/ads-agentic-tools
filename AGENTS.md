@@ -23,6 +23,7 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/export/` — Denormalized CSV exports of campaigns, ad sets, ads, targeting, budgets, and optional metrics
   - `skills/bulk/` — Batch pause, resume, budget, delivery, archive, and creative-swap workflows
   - `skills/clone/` — Clone campaigns or ad sets by reading the source hierarchy and recreating entities with modifications
+  - `skills/change-history/` — View a timeline of changes made to campaigns, ad sets, creatives, and other entities. Supports filtering by entity type, actor, change category, and date range (180-day retention).
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Scripts** (`scripts/`) — Shared shell scripts used by skills and agents:

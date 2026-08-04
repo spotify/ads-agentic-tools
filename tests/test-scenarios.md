@@ -799,3 +799,37 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 - Fix uses PATCH on `/drafts/ads/<id>` (not creating a new draft ad)
 - Re-validation uses fresh `draft_hierarchy_version` from the draft campaign (not the version from before the edit; `draft_hierarchy_version` is `null` on ad drafts)
 - Full cycle: create → validate (fail @ 400) → edit → validate (pass @ 200) → offer publish
+
+---
+
+## Scenario 22: Change History
+
+**Prompt:** "Show me all budget changes in the last 7 days"
+
+**Quirks tested:** change_category filter, date range calculation, timeline display, before/after field diffs
+
+**Expected behavior:**
+1. Agent calculates `created_gte` as 7 days ago in ISO 8601
+2. Constructs GET with `change_category=BUDGET` and `created_gte` filter
+3. Formats response as timeline: Timestamp | Entity Type | Entity Name | Operation | Actor | Changes
+
+**Expected curl:**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/change_history?\
+change_category=BUDGET&\
+created_gte=2026-07-28T00:00:00Z&\
+limit=50&\
+sort_direction=DESC"
+```
+
+**Success criteria:**
+- Endpoint is `/ad_accounts/{id}/change_history` (underscore, not hyphen)
+- `change_category` uses valid enum: `BUDGET` (not `CREATED` — that is an `operation`, not a category)
+- Date range correctly calculated from "last 7 days"
+- Before/after values displayed for CHANGED operations (e.g., budget was $50/day → $75/day)
+- Micro-amount budget values converted to dollars for display
+- Actor name shown (not just principal_id)
+- Returns 200 with change records or empty array
+- If empty, displays "No budget changes found in the last 7 days"

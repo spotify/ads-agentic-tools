@@ -96,6 +96,9 @@ If the user explicitly asks to skip drafts or create live entities immediately, 
 
 Pass IDs from each step's response to the next step.
 
+**Change History Routing:**
+When the user asks about changes, audit trail, activity log, who changed what, or what changed (e.g., "what changed this week?", "who modified the budget?", "show me recent changes"), route to the `/spotify-ads-api:change-history` skill.
+
 **Draft Management:**
 When the user asks about drafts, draft campaigns, validating, or publishing drafts, route to the `/spotify-ads-api:drafts` skill. Operations include: listing drafts, editing draft entities, validating a draft campaign hierarchy, publishing drafts, creating drafts from existing live entities, and deleting drafts.
 
