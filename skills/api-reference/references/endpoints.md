@@ -831,6 +831,54 @@ All endpoints return errors in this format:
 }
 ```
 
+## Change History
+
+### GET /ad_accounts/{ad_account_id}/change_history
+Retrieve a paginated timeline of changes made to campaigns, ad sets, creatives, and other entities within an ad account. Rolling 180-day retention window.
+
+**Path Parameters:**
+- `ad_account_id` (uuid, required) — Ad account identifier
+
+**Query Parameters:**
+- `entity_type` (string) — Filter by entity: CAMPAIGN, AD_SET, AD_ACCOUNT, BUSINESS, CREATIVE
+- `entity_ids` (array of uuid) — Filter by specific entity IDs
+- `entity_name` (string) — Case-insensitive substring match (2-255 chars); requires `entity_type`
+- `change_ids` (array of uuid) — Fetch specific change records by ID
+- `actor_ids` (array of string) — Filter by who made the change
+- `principal_type` (string) — USER, SERVICE
+- `change_category` (string) — STATUS, BUDGET, TARGETING, CREATIVE, SCHEDULING, SETTINGS, BILLING
+- `created_gte` (datetime) — Changes on or after this timestamp (default: 30 days ago; clamped to 180-day floor)
+- `created_lte` (datetime) — Changes on or before this timestamp
+- `limit` (integer) — 1-50 (default: 50)
+- `offset` (integer) — Pagination offset (default: 0)
+- `sort_direction` (string) — ASC, DESC (default: DESC)
+- `sort_field` (string) — TIMESTAMP, ENTITY_TYPE, PRINCIPAL_TYPE (default: TIMESTAMP)
+
+**Response:** 200 — `ChangeHistoryResponse`
+- `paging` — `{ page_size, total_results, offset, current_page }`
+- `change_history` — Array of change records:
+  - `change_id` (uuid)
+  - `timestamp` (datetime)
+  - `entity_type` (string) — CAMPAIGN, AD_SET, AD_ACCOUNT, BUSINESS, CREATIVE
+  - `entity_id` (uuid)
+  - `entity_name` (string)
+  - `operation` (string) — CREATED, CHANGED, REMOVED
+  - `actor` — `{ principal_id, principal_type, name, email, category }`
+    - `category`: ADVERTISER_USER, SUPPORT, API_INTEGRATION, SYSTEM, UNKNOWN
+  - `changes` — Array of field-level changes:
+    - `field_type` (string) — Internal field identifier
+    - `display_label` (string) — Human-readable field name
+    - `change_category` (string) — STATUS, BUDGET, TARGETING, CREATIVE, SCHEDULING, SETTINGS, BILLING
+    - `before` (object, nullable) — Previous value
+    - `after` (object, nullable) — New value
+
+**Notes:**
+- BILLING category visible only to admin roles (ad-account-admin or business-admin)
+- `entity_name` filter requires `entity_type` to be set
+- Each row represents a single logical change event — an actor's save on one entity
+
+---
+
 Common HTTP status codes:
 - 400 — Bad request (validation error)
 - 403 — Forbidden (insufficient permissions)
