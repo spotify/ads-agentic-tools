@@ -81,11 +81,13 @@ The repository includes platform-specific marketplace metadata: `.agents/plugins
 
 ## Configure
 
-1. **Create a Spotify Developer app:**
+1. Create a Spotify Developer app:
    - Go to [developer.spotify.com](https://developer.spotify.com/) and log in
-   - Click **Create App** and give it a name (e.g. "Ads Agentic Tools")
-   - Under **Redirect URIs**, add: `http://127.0.0.1:8080/callback`
-   - Save the changes and note your **Client ID** and **Client Secret**
+   - Click **Create App**
+   - Enter a name (e.g. "Ads Agentic Tools") and a simple description
+   - Under **Redirect URIs**, enter `http://127.0.0.1:8080/callback` and remember to click **Add**
+   - Under **Which API/SDKs are you planning to use?**, check **Ads API**
+   - Save the app and note your **Client ID** and **Client Secret**
    - Open [https://adsmanager.spotify.com/api-terms](https://adsmanager.spotify.com/api-terms) and make sure the ad account you want to use is selected. Accept the terms to authorize your client id to access your ad account through Ads API.
 
 2. Configure OAuth credentials:
