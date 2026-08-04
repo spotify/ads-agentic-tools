@@ -167,7 +167,7 @@ These are non-obvious requirements discovered through real API testing:
 - **`third_party_tracking` uses `measurement_event`** (NOT `type`) to distinguish tracker categories. Always set `measurement_event` explicitly — if omitted, it defaults to `IMPRESSION`. Use `CLICKED` for click trackers. Valid values: `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, `VIEWABLE_IMPRESSION`.
 
 ### General
-- All budgets and bids use **micro-amounts** — multiply dollar values by 1,000,000.
+- All budgets and bids use **micro-amounts** — multiply values by 1,000,000.
 - Using a `campaign_id` that doesn't belong to the same `ad_account_id` will fail.
 - Setting `end_time` before `start_time` will fail.
 
