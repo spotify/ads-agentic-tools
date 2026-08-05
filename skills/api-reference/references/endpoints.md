@@ -10,7 +10,8 @@ Create a new campaign.
 
 **Request Body:** `CreateCampaignRequest`
 - `name` (string, 2-200 chars, required)
-- `objective` (string, required) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS
+- `objective` (string, required but **deprecated** — will be removed in v4) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS
+- `delivery_goal_group` (string, optional) — AWARENESS, WEBSITE_TRAFFIC, APP_PROMOTION, ENGAGEMENT_ON_SPOTIFY, LEAD_GEN. Replaces `objective` — set alongside it for forward compatibility.
 - `purchase_order` (string, optional)
 - `measurement_partner` (string, optional)
 
@@ -210,8 +211,8 @@ Create a draft campaign.
 **Request Body:** `CampaignDraftRequestProperties`
 - `name` (string, max 200 chars)
 - `purchase_order` (string, max 45 chars, optional)
-- `objective` (string, optional) — REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, PODCAST_STREAMS
-- `delivery_goal_group` (string, optional) — AWARENESS, CONSIDERATION
+- `delivery_goal_group` (string, recommended) — AWARENESS, WEBSITE_TRAFFIC, APP_PROMOTION, ENGAGEMENT_ON_SPOTIFY, LEAD_GEN. **Use this instead of `objective`.**
+- `objective` (string, **deprecated**) — REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, PODCAST_STREAMS. Deprecated: use `delivery_goal_group` instead.
 - `status` (string, optional)
 
 **Response:** 200 — `CampaignDraft` (includes `id`, `draft_hierarchy_version`)
