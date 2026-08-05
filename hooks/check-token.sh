@@ -129,7 +129,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           update_setting() {
             local key="$1" val="$2" file="$3"
             local tmp="${file}.tmp.$$"
-            awk -v k="$key" -v v="$val" 'BEGIN{found=0} {if ($0 ~ "^"k": " && !found) {print k": \""v"\""; found=1} else print}' "$file" > "$tmp" && mv "$tmp" "$file"
+            AWK_KEY="$key" AWK_VAL="$val" awk 'BEGIN{k=ENVIRON["AWK_KEY"]; v=ENVIRON["AWK_VAL"]; found=0} {if ($0 ~ "^"k": " && !found) {print k": \""v"\""; found=1} else print}' "$file" > "$tmp" && mv "$tmp" "$file"
           }
 
           update_setting "access_token" "$new_token" "$SETTINGS_FILE"
