@@ -128,8 +128,8 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
 
           update_setting() {
             local key="$1" val="$2" file="$3"
-            sed -i '' "s|^${key}: .*|${key}: \"${val}\"|" "$file" 2>/dev/null || \
-            sed -i "s|^${key}: .*|${key}: \"${val}\"|" "$file"
+            local tmp="${file}.tmp.$$"
+            awk -v k="$key" -v v="$val" 'BEGIN{found=0} {if ($0 ~ "^"k": " && !found) {print k": \""v"\""; found=1} else print}' "$file" > "$tmp" && mv "$tmp" "$file"
           }
 
           update_setting "access_token" "$new_token" "$SETTINGS_FILE"
@@ -139,7 +139,9 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           fi
 
           if [ -n "$access_token" ]; then
-            modified_command="${modified_command//$access_token/$new_token}"
+            set -f
+            modified_command="${modified_command//"$access_token"/$new_token}"
+            set +f
           fi
           system_message="Spotify API token was expired and has been refreshed automatically. Re-read the access_token from the settings file before retrying."
         fi
