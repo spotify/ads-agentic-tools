@@ -126,6 +126,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           new_expires=$(date -u -v+"${expires_in}"S +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
                         date -u -d "+${expires_in} seconds" +"%Y-%m-%dT%H:%M:%SZ")
 
+          # Replace "key: ..." line in settings file via awk to avoid sed metacharacter injection
           update_setting() {
             local key="$1" val="$2" file="$3"
             local tmp="${file}.tmp.$$"
