@@ -200,9 +200,9 @@ Update an ad.
 
 ---
 
-## Drafts (Preferred for New Campaigns)
+## Drafts (Default for Campaign Hierarchy Writes)
 
-Draft entities are staging versions of campaigns, ad sets, and ads. Nothing goes live until you publish. The workflow: create drafts → edit → validate → publish.
+Draft entities are staging versions of campaigns, ad sets, and ads. Nothing goes live until you publish. Default campaign hierarchy writes to drafts unless the user explicitly requests a direct live operation. The workflow: create or reuse drafts → edit → validate → publish.
 
 ### POST /ad_accounts/{ad_account_id}/drafts/campaigns
 Create a draft campaign.

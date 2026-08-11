@@ -50,7 +50,7 @@ Business
 
 Every CRUD operation on campaigns, ad sets, ads, assets, and audiences is scoped under an **ad account ID**.
 
-**Draft workflow (preferred for new campaigns):** Create draft entities → validate the entire hierarchy → publish. See the Drafts endpoint group below.
+**Draft workflow (default for campaign hierarchy writes):** Create drafts for new entities or from published entities → edit → validate → publish only after explicit confirmation. Use this flow for campaign, ad set, and ad creation or modification unless the user explicitly requests a direct live write.
 
 For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately before the action and use its current `draft_hierarchy_version`. `PUBLISH` creates live entities and always requires explicit user confirmation, even when automatic execution is enabled.
 
@@ -61,7 +61,7 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - **IDs**: UUID format (e.g., `ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a`).
 - **Pagination**: All list endpoints support `limit` (1-50, default 50) and `offset` (default 0).
 - **Sorting**: Most list endpoints support `sort_direction` (ASC/DESC) and entity-specific sort fields.
-- **Updates use PATCH**: Partial updates with minimum 1 property required.
+- **Updates use PATCH**: Partial updates with minimum 1 property required. For campaign, ad set, and ad changes, PATCH the draft endpoint by default.
 - **No DELETE on live campaigns/ad sets/ads**: Use status changes (ARCHIVED, PAUSED) instead. Draft entities _can_ be deleted.
 
 ## Public Endpoint Groups
@@ -101,10 +101,12 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - `POST /ad_accounts/{id}/async_reports` — Create async CSV report
 - `GET /ad_accounts/{id}/async_reports/{report_id}` — Check async report status
 
-### Drafts (Preferred for New Campaigns)
+### Drafts (Default for Campaign Hierarchy Writes)
 
 Draft entities are staging versions that are not live until explicitly published. The full lifecycle:
 create drafts → edit → validate → publish.
+
+For changes to published campaigns, ad sets, or ads, first check whether a same-ID draft already exists. Reuse and disclose an existing draft rather than recreating or overwriting pending work. If none exists, use the create-from-published endpoint, PATCH the draft endpoint, and validate the parent draft campaign. A denied direct write does not by itself mean the credentials are read-only; draft staging may still be available.
 
 **Campaign drafts:**
 - `POST /ad_accounts/{id}/drafts/campaigns` — Create draft campaign
@@ -155,8 +157,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 # GET
 api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 
-# POST with JSON body
-api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"..."}'
+# Draft-first POST with JSON body
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"...","objective":"..."}'
 
 # Retrieve settings values for use outside API calls
 eval $(api --env)

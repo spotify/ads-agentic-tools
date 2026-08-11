@@ -36,7 +36,7 @@ Scenarios should be run sequentially, as some depend on entities created in prio
 | 5 | Create audio ad | Scenario 4 (ad set ID) + uploaded assets |
 | 6 | Full build-campaign (draft default) | Scenario 1 + uploaded assets |
 | 7 | Aggregate report | Scenario 1 + existing campaigns |
-| 8 | Pause campaign | Scenario 3 or 6 (campaign to pause) |
+| 8 | Pause campaign | Existing published campaign or Scenario 18 |
 | 9 | Async CSV report | Scenario 1 + existing campaigns |
 | 10 | Token refresh | Scenario 1 (OAuth credentials) |
 | 11 | Upload asset | Scenario 1 + local audio/video/image file |
@@ -48,8 +48,11 @@ Scenarios should be run sequentially, as some depend on entities created in prio
 | 17 | Validate a draft campaign | Scenario 15 (draft campaign ID) |
 | 18 | Publish a draft campaign | Scenario 17 (validated unpublished draft A) |
 | 19 | Delete a draft | Separate unpublished draft B from Scenario 15; do not reuse a draft published in Scenario 18 |
-| 20 | Create draft from published entity | Scenario 3-5 or 6 (live campaign, ad set, or ad ID) |
+| 20 | Create draft from published entity | Existing published entity or Scenario 18 |
 | 21 | Draft validation error recovery | Scenario 1 + uploaded assets (audio without companion) |
+| 22 | Change history | Scenario 1 |
+| 23 | Implicit draft tracking update | Existing published ads with tracking entries |
+| 24 | Direct write permission denial | Mock or real 403 response from an explicit direct write |
 
 ### Validation Checklist
 

@@ -122,8 +122,8 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | Skill | Description |
 |-------|-------------|
 | `/spotify-ads-api:configure` | Set up OAuth credentials, ad account, and preferences |
-| `/spotify-ads-api:campaigns` | List, create, get, or update campaigns |
-| `/spotify-ads-api:ads` | Manage ad sets and ads (list, create, get, update) |
+| `/spotify-ads-api:campaigns` | List or get campaigns; stage creates and updates through drafts by default |
+| `/spotify-ads-api:ads` | List or get ad sets and ads; stage creates and updates through drafts by default |
 | `/spotify-ads-api:campaign-strategy` | Plan API-ready campaign structure and targeting from a landing page, business brief, or creative assets |
 | `/spotify-ads-api:build-campaign` | Create a full campaign hierarchy from a plain-text description |
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
@@ -131,8 +131,8 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | `/spotify-ads-api:dashboard` | Quick performance overview of active campaigns |
 | `/spotify-ads-api:monitor` | Diagnose pacing, delivery, stalled campaigns, and underdelivery issues |
 | `/spotify-ads-api:export` | Export campaign hierarchy, targeting, budget, and optional metrics to CSV |
-| `/spotify-ads-api:bulk` | Apply batch pause, resume, budget, delivery, archive, and creative-swap workflows |
-| `/spotify-ads-api:clone` | Clone campaigns or ad sets with optional date, budget, name, or targeting changes |
+| `/spotify-ads-api:bulk` | Stage batch pause, resume, budget, delivery, archive, creative, and tracking workflows through drafts |
+| `/spotify-ads-api:clone` | Clone campaigns or ad sets as validated drafts with optional changes |
 | `/spotify-ads-api:change-history` | View a timeline of changes — who changed what, when, and how |
 
 ## Natural Language Examples
@@ -143,6 +143,8 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Set up an audio ad targeting 18-34 year olds in the US with $50/day budget"
 - "Show me impressions, spend, and clicks for all campaigns last month"
 - "Pause the Summer Sale campaign"
+
+Campaign, ad set, and ad creation or modification is staged through the draft workflow by default, including requests that do not use the word "draft." The plugin validates staged changes and publishes only after a separate request and explicit confirmation. Ask for an immediate or direct live change only when you intentionally want to bypass draft staging and your account permits published-entity writes.
 - "Generate a CSV report of daily spend by campaign for January"
 - "Build me a complete audio campaign targeting US listeners aged 25-44"
 - "Plan the best Spotify campaign structure for this product page"

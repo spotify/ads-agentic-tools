@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.8.0] - 2026-08-10
+
+### Changed
+- Made the draft workflow the default for every campaign, ad set, and ad creation or modification request, including natural-language edits that do not explicitly mention drafts
+- Added a `stage-edit` workflow that checks for existing same-ID drafts, creates drafts from published entities when needed, applies minimal draft patches, resolves the parent campaign, and validates staged changes
+- Updated campaign, ad, request-builder, bulk, clone, build-campaign, API reference, and README guidance so direct published writes require an explicit immediate/live request
+- Changed bulk status, budget, delivery, archive, creative, and tracking operations to stage changes through drafts and validate once per affected campaign
+- Bumped the Claude Code, Codex, and Antigravity manifests to 1.8.0
+
+### Fixed
+- Prevented ordinary update prompts from routing directly to published campaign, ad set, or ad endpoints that may reject direct-write permissions
+- Prevented direct-write permission errors from being misreported as proof that credentials are entirely read-only
+- Added regression scenarios for implicit draft tracking updates, existing draft preservation, grouped validation, explicit live-write opt-outs, and permission-denied fallback guidance
+
 ## [1.7.0] - 2026-07-23
 
 ### Added

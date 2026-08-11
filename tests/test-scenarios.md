@@ -1,6 +1,6 @@
 # Test Scenarios
 
-21 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors.
+24 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors.
 
 **Important:** All entity names (campaigns, ad sets, ads) must be prefixed with `[Test reject]` so they are automatically rejected by ad review and never serve live impressions.
 
@@ -65,12 +65,13 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
 
 **Prompt:** "Create a campaign called [Test reject] Q1 Brand Awareness with a reach objective"
 
-**Quirks tested:** POST body construction, objective enum, `[Test reject]` prefix for automatic ad review rejection
+**Quirks tested:** Draft-first creation, POST body construction, objective enum, `[Test reject]` prefix for automatic ad review rejection
 
 **Expected behavior:**
 1. Agent extracts: name="[Test reject] Q1 Brand Awareness", objective="REACH"
-2. Constructs POST request with JSON body
+2. Constructs a draft campaign POST request with JSON body
 3. Shows curl command for confirmation
+4. Reports the campaign as staged and does not publish it
 
 **Expected curl:**
 ```bash
@@ -78,14 +79,16 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
   -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"name":"[Test reject] Q1 Brand Awareness","objective":"REACH"}' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns"
 ```
 
 **Success criteria:**
 - Request body contains exactly `name` and `objective`
 - `name` starts with `[Test reject]`
 - Objective is uppercase enum value `REACH`
-- Returns 201 with campaign object including `id`
+- Returns a draft campaign object including `id` and `draft_hierarchy_version`
+- Does not call the published `/campaigns` creation endpoint
+- Does not publish without a separate request and explicit confirmation
 
 ---
 
@@ -94,6 +97,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Prompt:** "Create an ad set for that campaign targeting 18-34 year olds in the US on mobile and desktop with a $75/day budget and $20 bid cap"
 
 **Quirks tested:**
+- Draft ad set creation under the draft campaign from Scenario 3
 - Micro-amounts: $75 -> 75000000, $20 -> 20000000
 - `geo_targets` as flat object (NOT array)
 - `platforms`: ANDROID, DESKTOP, IOS (NOT "MOBILE")
@@ -131,7 +135,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
     "bid_strategy": "MAX_BID",
     "bid_micro_amount": 20000000
   }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ad_sets"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ad_sets"
 ```
 
 **Success criteria:**
@@ -142,6 +146,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 - `bid_micro_amount` is `20000000`, not `20`
 - `category` is present and matches `ADV_*` pattern
 - `placements` array is present
+- `campaign_id` references the draft campaign from Scenario 3
+- Does not call the published `/ad_sets` creation endpoint
 
 ---
 
@@ -150,6 +156,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Prompt:** "Create an audio ad for that ad set with a Shop Now button linking to example.com"
 
 **Quirks tested:**
+- Draft ad creation under the draft ad set from Scenario 4
 - `call_to_action` uses `key` (not `type`) and `clickthrough_url` (not `url`)
 - `companion_asset_id` required for AUDIO format
 - Asset selection flow
@@ -181,7 +188,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
     },
     "delivery": "ON"
   }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ads"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ads"
 ```
 
 **Success criteria:**
@@ -189,6 +196,9 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 - `call_to_action` has `clickthrough_url` field, NOT `url`
 - `companion_asset_id` is present in `assets`
 - All three asset IDs are populated
+- `ad_set_id` references the draft ad set from Scenario 4
+- Fetches the parent draft campaign's current hierarchy version and validates the hierarchy after the draft ad is complete
+- Does not publish without a separate request and explicit confirmation
 
 ---
 
@@ -220,7 +230,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 - Validation runs automatically after all drafts are created
 - If user requests publish, explicit confirmation is required even with `auto_execute: true`
 
-**Note:** If the user explicitly says "skip drafts" or "create live entities", the agent should use direct endpoints instead (legacy behavior).
+**Note:** If the user explicitly says "skip drafts" or "create live entities", the agent should use direct endpoints instead.
 
 ---
 
@@ -260,27 +270,36 @@ limit=50"
 
 **Prompt:** "Pause the [Test reject] Q1 Brand Awareness campaign"
 
-**Quirks tested:** No DELETE pattern (status change), PATCH not DELETE
+**Quirks tested:** Implicit draft routing for a status change; no live PATCH or DELETE
 
 **Expected behavior:**
 1. Agent searches for campaign by name (GET with filter or list and match)
-2. Constructs PATCH request with `{"status": "PAUSED"}`
-3. Does NOT attempt DELETE
+2. Checks for an existing same-ID campaign draft
+3. If none exists, creates one from the published campaign
+4. PATCHes the draft campaign with `{"status": "PAUSED"}`
+5. Fetches the current draft hierarchy version and validates the staged change
+6. Does not publish automatically
 
 **Expected curl:**
 ```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns/<campaign_id>/drafts"
+
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer <token>" \
   -H "$SDK_HEADER" \
   -H "Content-Type: application/json" \
   -d '{"status":"PAUSED"}' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/campaigns/<campaign_id>"
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns/<campaign_id>"
 ```
 
 **Success criteria:**
-- Uses PATCH method, NOT DELETE
+- Creates or reuses a same-ID draft before PATCH
+- PATCHes `/drafts/campaigns/<id>`, NOT `/campaigns/<id>`
 - Body contains `{"status": "PAUSED"}`
-- Does NOT try to call a DELETE endpoint
-- Returns 200 with updated campaign object
+- Does not try to call a DELETE endpoint
+- Validates the parent draft campaign and reports the pause as staged
+- Does not publish automatically
 
 ---
 
@@ -730,7 +749,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X DELETE -H "Authorization: Bearer <tok
 
 ## Scenario 20: Create Draft from Published Entity
 
-**Prompt:** "Create a draft from campaign <campaign_id> so I can make changes"
+**Prompt:** "Create a draft from campaign <published_campaign_id> so I can make changes"
 
 **Quirks tested:** `draft-from` endpoint path (entity ID in URL, not body), creates editable draft copy of live entity, parent draft campaign resolution for child drafts
 
@@ -833,3 +852,71 @@ sort_direction=DESC"
 - Actor name shown (not just principal_id)
 - Returns 200 with change records or empty array
 - If empty, displays "No budget changes found in the last 7 days"
+
+---
+
+## Scenario 23: Implicit Draft Tracking Update
+
+**Prompt:** "Update the third-party tracking on these five published ads: remove tracker X, add impression tracker Y, update click tracker Z, and remove unsupported macros."
+
+**Quirks tested:** Natural-language edit routing without the word "draft", same-ID draft reuse, complete tracking-array preservation, parent campaign grouping, batch validation
+
+**Expected behavior:**
+1. Agent reads each published ad and its current `third_party_tracking` array.
+2. For each ad, checks `GET /drafts/ads/<ad_id>` before creating anything.
+3. Reuses and discloses an existing draft, or calls `POST /ads/<ad_id>/drafts` only after a 404.
+4. Constructs the complete intended tracking array, preserving entries the user did not request to remove or replace.
+5. Sets `measurement_event` explicitly on every tracker, including `CLICKED` for the click tracker and `IMPRESSION` for impression trackers.
+6. PATCHes `/drafts/ads/<ad_id>`, never the published `/ads/<ad_id>` endpoint.
+7. Groups the draft ads by parent draft campaign and validates once per affected campaign using a freshly fetched `draft_hierarchy_version`.
+8. Reports the updates as staged and does not publish them.
+
+**Expected curl pattern for each ad:**
+
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ads/<ad_id>"
+
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/ads/<ad_id>/drafts"
+
+curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{"third_party_tracking":[...]}' \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ads/<ad_id>"
+```
+
+The create-from-published POST is omitted when the initial draft GET succeeds.
+
+**Success criteria:**
+- The prompt does not need to contain the word "draft".
+- No `PATCH /ads/<ad_id>` published endpoint is called.
+- Existing drafts are disclosed and preserved rather than overwritten.
+- Tracking entries use `measurement_event`, not `type`.
+- Validation runs once per affected parent campaign after all successful patches are staged.
+- Nothing is published without a separate request and explicit confirmation.
+
+---
+
+## Scenario 24: Direct Write Permission Denial
+
+**Prompt:** "Update published ad <ad_id> directly right now" followed by a direct-write HTTP 403 edit-permission response
+
+**Quirks tested:** Explicit live-write escape hatch, narrow permission-error interpretation, draft fallback offer
+
+**Expected behavior:**
+1. Because the user explicitly requested a direct published change, the agent may use the live endpoint.
+2. On HTTP 403, it does not retry the POST or PATCH.
+3. It says that direct editing of the published entity was denied.
+4. It does not claim that the credentials or account are entirely read-only.
+5. It offers to stage the same change through the draft workflow.
+6. It does not silently create a draft because the user explicitly requested an immediate live change.
+
+**Success criteria:**
+- No retry of the failed direct write.
+- No inference about specific organizational roles, user types, tools, or permission systems.
+- No recommendation to use a proprietary UI or ask a specially privileged user.
+- Draft staging is presented as the compatible alternative in generic, public-facing language.
