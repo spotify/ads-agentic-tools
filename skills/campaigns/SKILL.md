@@ -34,15 +34,17 @@ api GET "ad_accounts/{ad_account_id}/campaigns?limit=50&sort_direction=DESC"
 Format the output as a table: ID | Name | Status | Objective | Created
 
 ### `create`
-Prompt the user for required fields:
+Collect the campaign identity first:
 - **name** (string, 2-200 chars)
-- **objective** (REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS)
+- **ad_product** (optional: CONTENT or FPMNG; omit for the default AUCTION flow)
 
-Before the POST, read and follow
+Then read and follow
 `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
-catalog once for this operation and validate the final campaign body against
-`campaign.create` plus `campaign.both`. An omitted, `UNSET`, or `UNKNOWN`
-`ad_product` resolves to `AUCTION`. Do not add a separate validation confirmation.
+catalog once for this operation. Resolve the product, use
+`campaign.create.allowed_values.objective` to validate or complete the objective, and
+validate the final campaign body against `campaign.create` plus `campaign.both`. An
+omitted, `UNSET`, or `UNKNOWN` `ad_product` resolves to `AUCTION`. Do not add a
+separate validation confirmation.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/campaigns" \

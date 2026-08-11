@@ -47,6 +47,7 @@ use the defaults noted below. If a required field cannot be inferred, ask the us
 |-------|----------|---------|
 | name | yes | — |
 | objective | yes | REACH |
+| ad_product | no | UNSET (resolves to AUCTION) |
 
 Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`, `PODCAST_STREAMS`, `APP_INSTALLS`, `WEBSITE_VISITS`
 
@@ -103,7 +104,7 @@ applicable rules while constructing the plan. Do not display a per-field checkli
 
 ## Step 2: Confirm the Parsed Plan
 
-Before making any API calls, present the full parsed plan as a visual tree:
+Before making any mutating API calls, present the full parsed plan as a visual tree:
 
 ```
 Campaign: "My Campaign" (objective: REACH)
@@ -195,6 +196,9 @@ inferred.
 Execute each step in order, passing IDs forward from each response.
 
 ### 4a. Create Campaign
+
+Include `ad_product` when the resolved destination product is CONTENT or FPMNG. Omit it
+for the default AUCTION flow.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/campaigns" \

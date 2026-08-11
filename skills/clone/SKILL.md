@@ -168,6 +168,9 @@ Create entities in dependency order, passing IDs forward.
 
 #### 6a. Create campaign
 
+For a destination CONTENT or FPMNG campaign, include that explicit `ad_product` in the
+request. For the default AUCTION flow, omit `ad_product`.
+
 ```bash
 api POST "ad_accounts/{ad_account_id}/campaigns" \
   '{"name":"Summer Promo (Copy)","objective":"REACH"}'

@@ -45,6 +45,14 @@ Given a plain-text campaign description, create the full draft hierarchy: draft 
 
 Extract fields exactly as documented in the `build-campaign` skill. The same field requirements, defaults, and validation guardrails apply (micro-amounts, bid_strategy as plain string, geo_targets as flat object, platform enums, etc.).
 
+#### Step 1.5: Load Ad Product Rules
+
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this draft-build workflow, resolve the planned campaign product, and
+use the applicable rules while constructing the draft plan. Do not display a per-field
+checklist.
+
 #### Step 2: Confirm the Parsed Plan
 
 Present the plan as a visual tree, clearly labeled as **DRAFT**:
@@ -69,11 +77,9 @@ api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 
 #### Step 3.5: Validate Against Ad Product Rules
 
-Read and follow
-`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
-catalog once for this draft-build workflow, resolve the planned campaign product, and
-validate the complete draft hierarchy now that assets and dependent fields are known.
-Apply resolvable runtime checks as well as static rules.
+Using the catalog loaded in Step 1.5, validate the complete draft hierarchy now that
+assets and dependent fields are known. Apply resolvable runtime checks as well as
+static rules.
 
 Do not print per-field successes or add another confirmation. Add a compact validation
 status to the existing draft plan, and interrupt only for an explicit incompatible user

@@ -801,7 +801,7 @@ catalog violation.
 - Error display includes entity type (`AD`), entity ID, and descriptive message
 - Fix uses PATCH on `/drafts/ads/<id>` (not creating a new draft ad)
 - Re-validation uses fresh `draft_hierarchy_version` from the draft campaign (not the version from before the edit; `draft_hierarchy_version` is `null` on ad drafts)
-- Full cycle: create → validate (fail @ 400) → edit → validate (pass @ 200) → offer publish
+- Full cycle: load existing draft → validate (fail @ 400) → edit → validate (pass @ 200) → offer publish
 
 ---
 

@@ -62,6 +62,9 @@ Assemble all fields before validation.
   by cross-entity rules.
 - **Update:** fetch the current entity, deep-merge the proposed PATCH into it, and
   validate the resulting effective entity. Do not validate only the changed fields.
+- On update, apply rules conditioned on a value being new or changed only when the
+  PATCH actually changes that value. Do not reject a valid historical entity by
+  reapplying a creation-time future-date check to an unchanged start time.
 - Fetch enough parent context to evaluate catalog rules. Ad validation can require the
   parent ad set's format, platforms, and dates as well as the campaign objective or
   delivery goal group.
