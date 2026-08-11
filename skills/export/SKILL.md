@@ -139,9 +139,9 @@ The CSV is **denormalized** — one row per ad, with campaign and ad set data re
 
 ### Data transformations
 
-- **Budget/bid amounts**: Divide `micro_amount` by 1,000,000 to display in dollars (e.g., `50000000` → `50.00`).
-- **Metric SPEND**: Values from `aggregate_reports` are already in dollars — display directly.
-- **Geo targeting**: Flatten to `ad_set_geo_country` = country code string, `ad_set_geo_regions` = comma-separated region/DMA/city names if available (IDs if names are not in the response).
+- **Budget/bid amounts**: Divide `micro_amount` by 1,000,000 to display in the billing currency (e.g., `50000000` → `50.00`).
+- **Metric SPEND**: Values from `aggregate_reports` are already in the billing currency — display directly.
+- **Geo targeting**: Flatten to `ad_set_geo_country` = country code string, `ad_set_geo_regions` = comma-separated region/DMA/city names if available (IDs if names are not in the response). Note: DMA-level targeting (`dma_ids`) is no longer available for new ad sets, but older campaigns may still contain DMA data in their geo targets.
 - **Age ranges**: Extract first range's `min` and `max` into `ad_set_age_min` and `ad_set_age_max`.
 - **Arrays** (platforms, placements, genders): Join with commas (e.g., `"ANDROID,DESKTOP,IOS"`).
 - **CSV quoting**: Wrap values containing commas, quotes, or newlines in double quotes. Escape internal double quotes by doubling them (`""`).

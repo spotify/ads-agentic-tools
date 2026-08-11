@@ -56,7 +56,7 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 
 ## Key Conventions
 
-- **Budgets use micro-amounts**: Multiply dollar values by 1,000,000. A $50 budget = `50000000` micro-amount.
+- **Budgets use micro-amounts**: Multiply values by 1,000,000 (amounts are in the ad account's billing currency). A $50 budget = `50000000` micro-amount.
 - **Timestamps**: ISO 8601 in UTC (e.g., `2025-09-23T04:56:07Z`).
 - **IDs**: UUID format (e.g., `ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a`).
 - **Pagination**: All list endpoints support `limit` (1-50, default 50) and `offset` (default 0).
@@ -143,6 +143,7 @@ create drafts → edit → validate → publish.
 - `POST /estimates/audience` — Estimate audience size for targeting parameters (recommended before creating ad sets to validate reach)
 - `POST /estimates/bid` — Get bid recommendations
 - `POST /ad_accounts/{id}/reserved_prices` — Get pricing for reserved ad products (fCPM)
+- `GET /ad_accounts/{id}/experiment_availability` — Check which experiment types can be created
 
 ## Making API Calls
 

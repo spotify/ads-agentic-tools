@@ -168,7 +168,7 @@ Update budgets across multiple ad sets.
 api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
 ```
 
-Present the table with current budget amounts (convert `micro_amount` ÷ 1,000,000 to dollars) and budget type (DAILY/LIFETIME).
+Present the table with current budget amounts (convert `micro_amount` ÷ 1,000,000 to the ad account's billing currency) and budget type (DAILY/LIFETIME).
 
 #### Ask for budget change
 
@@ -200,7 +200,7 @@ api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
   '{"budget":{"micro_amount":<NEW_MICRO_AMOUNT>,"type":"<DAILY|LIFETIME>"}}'
 ```
 
-Always convert dollar amounts to micro-amounts by multiplying by 1,000,000.
+Always convert amounts to micro-amounts (multiply by 1,000,000).
 
 ---
 

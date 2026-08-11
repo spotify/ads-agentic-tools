@@ -172,7 +172,7 @@ Check the status of an async report and get the download URL when ready.
 api GET "ad_accounts/{ad_account_id}/async_reports/$REPORT_ID"
 ```
 
-If complete, display the download URL. If still processing, report the status and suggest checking again later.
+If complete, display the download URL. If still processing, report the status and suggest checking again later. If the status is `FAILED`, inform the user that report generation failed and suggest retrying by creating a new async report with `async-create`.
 
 ## Execution Behavior
 

@@ -47,7 +47,7 @@ Prompt for required fields:
 - **campaign_id** (uuid — suggest listing campaigns first)
 - **start_time** (ISO 8601 datetime)
 - **end_time** (ISO 8601 — **required if budget type is LIFETIME**)
-- **budget** — ask for dollar amount and type (DAILY/LIFETIME), convert to micro_amount
+- **budget** — ask for amount in the ad account's billing currency and type (DAILY/LIFETIME), convert to micro_amount
 - **asset_format** (AUDIO, VIDEO, IMAGE, CATALOG)
 - **category** (required — valid `ADV_X_Y` code, fetch from `GET /ad_categories` if needed)
 - **targets** — ask for targeting preferences:
@@ -57,9 +57,9 @@ Prompt for required fields:
   - Platforms (optional) → `"platforms": ["ANDROID", "DESKTOP", "IOS"]` (**NOT "MOBILE" or "CONNECTED_DEVICE"**)
   - Placements (required) → `"placements": ["MUSIC"]`
 - **bid_strategy** — plain string: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. Default to `MAX_BID`.
-- **bid_micro_amount** (required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — ask for the bid cap in dollars, convert to micro-amount. This is the maximum CPM the user is willing to pay. Example: "$15 bid cap" = `15000000`
+- **bid_micro_amount** (required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — ask for the bid cap in the ad account's billing currency, convert to micro-amount. This is the maximum CPM. Example: $15 USD = `15000000`, ¥160 JPY = `160000000`
 
-Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
+Important: Convert amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
 
 **Ad set validation guardrails before any POST:**
 - Never send zero or negative `budget.micro_amount`; ask for a positive budget and convert it to micro-units.
@@ -69,7 +69,7 @@ Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. 
 - Valid `targets.platforms` values are only `ANDROID`, `DESKTOP`, and `IOS`; never send `WEB`, `MOBILE`, `CONNECTED_DEVICE`, or `ad_platforms`.
 - Do not send `cost_model`, `skippable`, `is_skippable`, or `ad_platforms` in ad set create payloads.
 - Use age ranges with `min >= 18` unless the user has explicitly confirmed a market/category that allows minors.
-- If using `city_ids`, `dma_ids`, `postal_code_ids`, or `region_ids`, include the parent `country_code` in the same `geo_targets` object.
+- If using `city_ids`, `postal_code_ids`, or `region_ids`, include the parent `country_code` in the same `geo_targets` object.
 
 #### Geo-Targeting
 
@@ -89,7 +89,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 
 **Geo Types:**
 - `REGION` — States/provinces (e.g., Connecticut, California, Ontario)
-- `DMA_REGION` — Designated Market Areas for media targeting (e.g., "Hartford & New Haven, CT")
+- `DMA_REGION` — Designated Market Areas for media targeting (e.g., "Hartford & New Haven, CT"). **Note:** DMA-level targeting via `dma_ids` is no longer supported. DMAs can still be looked up but cannot be used as targeting refinements.
 - `CITY` — Cities and towns
 - `POSTAL_CODE` — ZIP codes (format: "US:06103", "CA:M5H")
 
@@ -110,15 +110,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 }
 ```
 
-3. **DMA-level** (media markets):
-```json
-"geo_targets": {
-  "country_code": "US",
-  "dma_ids": ["533"]  // Hartford & New Haven, CT
-}
-```
-
-4. **City-level**:
+3. **City-level**:
 ```json
 "geo_targets": {
   "country_code": "US",
@@ -126,7 +118,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 }
 ```
 
-5. **Postal code-level** (most granular):
+4. **Postal code-level** (most granular):
 ```json
 "geo_targets": {
   "country_code": "US",
@@ -134,12 +126,11 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 }
 ```
 
-6. **Multi-level** (combine different geo types):
+5. **Multi-level** (combine different geo types):
 ```json
 "geo_targets": {
   "country_code": "US",
   "region_ids": ["4831725"],  // Connecticut
-  "dma_ids": ["533"],          // Hartford & New Haven DMA
   "city_ids": ["4845411"]      // West Hartford
 }
 ```
@@ -228,15 +219,15 @@ validation confirmation.
 Prompt for required fields:
 - **name** (2-200 chars)
 - **ad_set_id** (uuid — suggest listing ad sets first)
-- **tagline** (2-40 chars, ad headline)
+- **tagline** (2-40 chars, ad headline; required for live ads, optional for drafts)
 - **advertiser_name** (2-25 chars)
 - **assets** — fetch available assets from `GET /assets` and prompt user to select:
-  - `asset_id` (required — audio/video/image creative matching ad set format)
+  - `asset_id` (required for live ads, optional for drafts — audio/video/image creative matching ad set format)
   - `logo_asset_id` (required — logo image)
   - `companion_asset_id` (required for AUDIO format — companion image)
 - **call_to_action** — uses field `key` (NOT `type`) and `clickthrough_url` (NOT `url`):
   - `key`: SHOP_NOW, LEARN_MORE, LISTEN_NOW, SIGN_UP, WATCH_NOW, BUY_NOW, DOWNLOAD, etc.
-  - `clickthrough_url`: landing page URL
+  - `clickthrough_url`: landing page URL (required for live ads, optional for drafts)
 - **delivery** (ON/OFF, default ON)
 - **third_party_tracking** (optional) — array of tracking pixels. Each entry needs:
   - `measurement_event`: **required** — `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, or `VIEWABLE_IMPRESSION`. If omitted, defaults to IMPRESSION — always set explicitly, especially for click trackers.

@@ -51,6 +51,7 @@ Scenarios should be run sequentially, as some depend on entities created in prio
 | 20 | Create draft from published entity | Scenario 3-5 or 6 (live campaign, ad set, or ad ID) |
 | 21 | Draft validation error recovery | Scenario 1 + existing incomplete draft fixture |
 | 22 | Ad product catalog validation behavior | Scenario 1 + existing campaign/ad set fixtures |
+| 23 | Change history | Scenario 1 + existing entity changes |
 
 ### Validation Checklist
 

@@ -81,10 +81,13 @@ The repository includes platform-specific marketplace metadata: `.agents/plugins
 
 ## Configure
 
-1. **Set up the redirect URI in Spotify Developer Dashboard:**
-   - Go to [developer.spotify.com](https://developer.spotify.com/) and open your app settings
-   - Under **Redirect URIs**, add: `http://127.0.0.1:8080/callback`
-   - Save the changes
+1. Create a Spotify Developer app:
+   - Go to [developer.spotify.com](https://developer.spotify.com/) and log in
+   - Click **Create App**
+   - Enter a name (e.g. "Ads Agentic Tools") and a simple description
+   - Under **Redirect URIs**, enter `http://127.0.0.1:8080/callback` and remember to click **Add**
+   - Under **Which API/SDKs are you planning to use?**, check **Ads API**
+   - Save the app and note your **Client ID** and **Client Secret**
    - Open [https://adsmanager.spotify.com/api-terms](https://adsmanager.spotify.com/api-terms) and make sure the ad account you want to use is selected. Accept the terms to authorize your client id to access your ad account through Ads API.
 
 2. Configure OAuth credentials:
@@ -130,6 +133,7 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | `/spotify-ads-api:export` | Export campaign hierarchy, targeting, budget, and optional metrics to CSV |
 | `/spotify-ads-api:bulk` | Apply batch pause, resume, budget, delivery, archive, and creative-swap workflows |
 | `/spotify-ads-api:clone` | Clone campaigns or ad sets with optional date, budget, name, or targeting changes |
+| `/spotify-ads-api:change-history` | View a timeline of changes — who changed what, when, and how |
 
 ## Natural Language Examples
 
@@ -149,6 +153,9 @@ The plugin includes an agent that interprets natural language requests automatic
 - "Pause all active ad sets in the Summer Sale campaign"
 - "Upload my-audio.mp3 as a creative asset"
 - "How are my campaigns performing?"
+- "What changed in my ad account this week?"
+- "Show me all budget changes in the last 7 days"
+- "Who changed the Summer Sale campaign?"
 
 ## Configuration Reference
 

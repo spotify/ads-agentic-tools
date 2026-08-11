@@ -23,6 +23,7 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/export/` — Denormalized CSV exports of campaigns, ad sets, ads, targeting, budgets, and optional metrics
   - `skills/bulk/` — Batch pause, resume, budget, delivery, archive, and creative-swap workflows
   - `skills/clone/` — Clone campaigns or ad sets by reading the source hierarchy and recreating entities with modifications
+  - `skills/change-history/` — View a timeline of changes made to campaigns, ad sets, creatives, and other entities. Supports filtering by entity type, actor, change category, and date range (180-day retention).
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Scripts** (`scripts/`) — Shared shell scripts used by skills and agents:
@@ -46,9 +47,9 @@ When updating marketplace metadata, keep the plugin name, source path, category,
 
 These non-obvious API quirks were discovered through real testing and are critical when modifying any command or agent:
 
-- **Micro-amounts**: Budget and bid values in entity payloads (`budget.micro_amount`, `bid_micro_amount`) are in micro-units ($1 = 1,000,000). However, SPEND values returned by `aggregate_reports` are already in dollars — do NOT divide those by 1,000,000.
+- **Micro-amounts**: Budget and bid values in entity payloads (`budget.micro_amount`, `bid_micro_amount`) are in micro-units (1 unit of the ad account's billing currency = 1,000,000 micro-units; e.g., $1 USD = 1,000,000, ¥1 JPY = 1,000,000). However, SPEND values returned by `aggregate_reports` are already in the billing currency — do NOT divide those by 1,000,000.
 - **`bid_strategy`** is a plain string enum (`MAX_BID`, `COST_PER_RESULT`, `UNSET`), not an object. Default to `MAX_BID` with a required `bid_micro_amount`.
-- **`geo_targets`** is a flat object (not an array) with a required `country_code` and optional refinement arrays (`region_ids`, `dma_ids`, `city_ids`, `postal_code_ids`). Use `GET /targets/geos?country_code=<code>&q=<query>` to look up geo IDs. Geo types: `REGION` (states/provinces), `DMA_REGION` (media markets), `CITY`, `POSTAL_CODE`. Example: `{"country_code": "US", "region_ids": ["4831725"]}` targets Connecticut. NEVER fall back to country-only without looking up the user's requested location first.
+- **`geo_targets`** is a flat object (not an array) with a required `country_code` and optional refinement arrays (`region_ids`, `city_ids`, `postal_code_ids`). Use `GET /targets/geos?country_code=<code>&q=<query>` to look up geo IDs. Geo types returned by lookup: `REGION` (states/provinces), `DMA_REGION` (media markets), `CITY`, `POSTAL_CODE` — note that `dma_ids` is no longer a valid targeting field; DMA-level targeting is not supported. Example: `{"country_code": "US", "region_ids": ["4831725"]}` targets Connecticut. NEVER fall back to country-only without looking up the user's requested location first.
 - **`platforms`** valid values are `ANDROID`, `DESKTOP`, `IOS` — not "MOBILE" or "CONNECTED_DEVICE".
 - **`category`** is required on ad sets — must be a valid `ADV_X_Y` code from `GET /ad_categories`.
 - **`call_to_action`** uses field `key` (not `type`) and `clickthrough_url` (not `url`).

@@ -1,6 +1,6 @@
 # Test Scenarios
 
-22 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors.
+23 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors.
 
 **Important:** All entity names (campaigns, ad sets, ads) must be prefixed with `[Test reject]` so they are automatically rejected by ad review and never serve live impressions.
 
@@ -440,14 +440,14 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 
 **Prompt:** `/spotify-ads-api:dashboard`
 
-**Quirks tested:** Micro-amount to dollar conversion for spend, aggregate report field format, active campaign filtering, zero-impression filtering
+**Quirks tested:** Micro-amount to billing-currency conversion for spend, aggregate report field format, active campaign filtering, zero-impression filtering
 
 **Expected behavior:**
 1. Plugin fetches aggregate report for active campaigns (entity_type=CAMPAIGN, statuses=ACTIVE)
 2. Uses repeated `fields` parameters (`&fields=IMPRESSIONS&fields=SPEND&...`), NOT comma-separated
 3. Fetches campaign details for names and budget info
 4. Displays formatted table with campaign metrics
-5. Spend values converted from micro-amounts to dollars (e.g., 450000000 → $450.00)
+5. Spend values converted from micro-amounts to the billing currency (e.g., 450000000 → $450.00 for USD accounts)
 6. Rows with zero impressions are filtered out
 7. Shows pacing info when budget data is available
 
@@ -465,7 +465,7 @@ limit=50"
 ```
 
 **Success criteria:**
-- Spend displayed in dollars (`$450.00`), NOT micro-amounts (`450000000`)
+- Spend displayed in the billing currency (e.g., `$450.00` for USD), NOT micro-amounts (`450000000`)
 - Fields use repeated parameter format, NOT comma-separated
 - All active campaigns appear in the table
 - Zero-impression rows are excluded
@@ -593,7 +593,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Expected behavior:**
 1. Agent identifies the draft ad set ID from prior context
 2. Constructs PATCH to `/drafts/ad_sets/<id>` (NOT `/ad_sets/<id>`)
-3. Converts $150 to 150000000 micro-amount
+3. Converts $150 to 150000000 micro-amount (amount in the ad account's billing currency)
 4. Updates age_ranges to `[{"min": 18, "max": 54}]`
 5. Displays updated draft — note that `draft_hierarchy_version` is `null` on ad set responses (version only lives on the campaign entity)
 
@@ -859,3 +859,37 @@ rules, effective PATCH validation, minimal user interruption, and draft validati
 - PATCH validation uses current entity + patch + required parent context
 - Clone validation follows the destination campaign product
 - Draft hierarchy validation and explicit publish confirmation remain intact
+
+---
+
+## Scenario 23: Change History
+
+**Prompt:** "Show me all budget changes in the last 7 days"
+
+**Quirks tested:** change_category filter, date range calculation, timeline display, before/after field diffs
+
+**Expected behavior:**
+1. Agent calculates `created_gte` as 7 days ago in ISO 8601
+2. Constructs GET with `change_category=BUDGET` and `created_gte` filter
+3. Formats response as timeline: Timestamp | Entity Type | Entity Name | Operation | Actor | Changes
+
+**Expected curl:**
+```bash
+curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
+  -H "$SDK_HEADER" \
+  "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/change_history?\
+change_category=BUDGET&\
+created_gte=2026-07-28T00:00:00Z&\
+limit=50&\
+sort_direction=DESC"
+```
+
+**Success criteria:**
+- Endpoint is `/ad_accounts/{id}/change_history` (underscore, not hyphen)
+- `change_category` uses valid enum: `BUDGET` (not `CREATED` — that is an `operation`, not a category)
+- Date range correctly calculated from "last 7 days"
+- Before/after values displayed for CHANGED operations (e.g., budget was $50/day → $75/day)
+- Micro-amount budget values converted to the billing currency for display
+- Actor name shown (not just principal_id)
+- Returns 200 with change records or empty array
+- If empty, displays "No budget changes found in the last 7 days"
