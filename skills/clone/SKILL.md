@@ -128,6 +128,21 @@ api POST "estimates/audience" \
 
 If the API returns a min-audience-threshold error, pause before creating that ad set and suggest broader targeting or a lower-threshold format.
 
+### Step 4.5: Validate the Clone Against Ad Product Rules
+
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for the clone workflow and validate the complete destination hierarchy,
+including user modifications, runtime estimates, and referenced assets.
+
+Resolve the product from the **new campaign request**. Preserve a known source
+`CONTENT` or `FPMNG` product only when the destination request explicitly includes that
+product; omit `ad_product` for the default `AUCTION` flow. Do not validate against the
+source product while creating a different destination product.
+
+Apply assistant-inferred compliant adjustments before showing the clone plan. Surface
+only incompatible explicit choices; do not print a per-field checklist.
+
 ### Step 5: Present Clone Plan
 
 Show the full plan with changes highlighted:
@@ -147,27 +162,11 @@ Skipped: 1 archived ad ("Old Creative")
 
 Ask for confirmation before executing.
 
-### Step 5.5: Fetch Ad Product Rules (Required)
-
-**This step is mandatory — do not skip it.** Before creating entities:
-
-1. Fetch the source campaign to determine its `ad_product`:
-```bash
-api GET "ad_accounts/{ad_account_id}/campaigns/$SOURCE_CAMPAIGN_ID"
-```
-2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
-```bash
-api GET "ad_product_catalog"
-```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For cloned entity creation, apply `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate all cloned entity values (including any user modifications) against the returned rules. If any values violate the rules, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not proceed to Step 6 until this step has completed.
-
 ### Step 6: Execute Sequentially
 
 Create entities in dependency order, passing IDs forward.
 
 #### 6a. Create campaign
-
-Before executing, validate the campaign fields against the ad product catalog rules from Step 5.5. Use the source campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute until validated.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/campaigns" \
@@ -178,7 +177,7 @@ Extract the new campaign `id` from the response. If this fails, stop — no depe
 
 #### 6b. Create ad sets (using new campaign_id)
 
-For each source ad set (excluding any the user filtered out), validate all ad set fields against the ad product catalog rules from Step 5.5. Use the source campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
+For each source ad set, excluding any the user filtered out:
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ad_sets" \
@@ -204,7 +203,7 @@ If an ad set creation fails, log the error and skip its ads. Continue with remai
 
 #### 6c. Create ads (using new ad_set_ids)
 
-For each source ad (excluding ARCHIVED/REJECTED), validate all ad fields against the ad product catalog rules from Step 5.5. Use the source campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute until validated.
+For each source ad, excluding ARCHIVED/REJECTED, mapped to the correct new ad set:
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ads" \
@@ -277,7 +276,11 @@ Same modification options as campaign clone (name, dates, budget, targeting) but
 
 ### Step 4: Validate and Present Plan
 
-Same validation as campaign clone (dates, assets, budget type).
+Apply the same date, asset, budget, and audience checks as the campaign clone. Read and
+follow `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`, fetch
+the catalog once for this clone workflow, and resolve the **target campaign's** product.
+Validate the final new ad set and ads against that destination product before presenting
+the existing confirmation. Do not print a per-field checklist or add another gate.
 
 ### Step 5: Execute
 

@@ -49,7 +49,8 @@ Scenarios should be run sequentially, as some depend on entities created in prio
 | 18 | Publish a draft campaign | Scenario 17 (validated unpublished draft A) |
 | 19 | Delete a draft | Separate unpublished draft B from Scenario 15; do not reuse a draft published in Scenario 18 |
 | 20 | Create draft from published entity | Scenario 3-5 or 6 (live campaign, ad set, or ad ID) |
-| 21 | Draft validation error recovery | Scenario 1 + uploaded assets (audio without companion) |
+| 21 | Draft validation error recovery | Scenario 1 + existing incomplete draft fixture |
+| 22 | Ad product catalog validation behavior | Scenario 1 + existing campaign/ad set fixtures |
 
 ### Validation Checklist
 
@@ -60,6 +61,7 @@ For each scenario, verify:
 - [ ] API response matches the scenario's expected status, including intentional validation 400s
 - [ ] Output is formatted readably (tables, masked tokens)
 - [ ] No internal endpoints or credentials leaked in output
+- [ ] Mutating campaign/ad set/ad workflows fetch the live ad product catalog once per workflow, block known violations, and do not add per-field success checklists or redundant confirmations
 
 ### Notes
 

@@ -94,6 +94,13 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | call_to_action.clickthrough_url | yes | Landing page URL |
 | delivery | no | `ON` (default) or `OFF` |
 
+## Step 1.5: Load Ad Product Rules
+
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this workflow, resolve the planned campaign's product, and use the
+applicable rules while constructing the plan. Do not display a per-field checklist.
+
 ## Step 2: Confirm the Parsed Plan
 
 Before making any API calls, present the full parsed plan as a visual tree:
@@ -111,45 +118,7 @@ Also show a table with all field values for each entity. Ask the user to confirm
 If the ad category was not specified, ask the user to select one using AskUserQuestion.
 You can fetch valid categories from `GET /ad_categories` to present options.
 
-## Step 2.5: Fetch Ad Product Rules (Required)
-
-**This step is mandatory — do not skip it.** After the user confirms the plan but before executing any API calls:
-
-1. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
-```bash
-api GET "ad_product_catalog"
-```
-
-2. Determine the campaign's `ad_product` from the planned campaign fields. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
-3. The catalog response contains rules separated by operation under each entity type (`campaign`, `ad_set`, `ad`). For entity creation, apply `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. See the api-reference endpoint docs for the full response structure.
-4. Validate all planned campaign, ad set, and ad field values against the returned rules.
-
-**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a validation summary to the user with every field checked against the product rules. Use this format:
-
-```
-Ad Product Catalog Validation (product: AUCTION)
-
-Campaign:
-  ✅ objective: REACH (allowed: REACH, IMPRESSIONS, CLICKS, ...)
-  ✅ status: ACTIVE (allowed: ACTIVE, PAUSED)
-
-Ad Set "...":
-  ✅ asset_format: AUDIO (allowed: AUDIO, VIDEO, IMAGE, CATALOG)
-  ✅ bid_strategy: MAX_BID (allowed: MAX_BID, COST_PER_RESULT, AUTOBID, UNSET)
-  ✅ budget.type: DAILY (allowed: DAILY, LIFETIME)
-  ...
-  ❌ targets.platforms: [MOBILE] (allowed: ANDROID, DESKTOP, IOS) ← FIX REQUIRED
-
-Ad "...":
-  ✅ assets.asset_id: present, status READY
-  ✅ assets.companion_asset_id: present (required for AUDIO)
-  ...
-```
-
-If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT proceed to Step 2.6 or any API calls until every field shows ✅. Fetching the catalog is not the same as completing validation — the checkpoint is the printed summary above.
-
-## Step 2.6: Validate Audience Size
+## Step 2.5: Validate Audience Size
 
 After the user confirms the plan but before executing API calls, run an audience estimate for each ad set's targeting:
 
@@ -209,13 +178,23 @@ Present audio/video assets and image assets separately in tables, and ask the us
 - **logo_asset_id** — a logo image
 - **companion_asset_id** — a companion image (required for AUDIO format ads)
 
+## Step 3.5: Validate the Final Hierarchy
+
+Using the catalog loaded in Step 1.5, validate the complete campaign, ad set, and ad
+request bodies now that assets and all dependent fields are known. Apply the canonical
+procedure's static and runtime checks, including asset lookups and the audience estimate
+above. Never send a known-invalid request.
+
+Do not add another confirmation or print per-field successes. If the existing plan
+summary is still visible, one compact validation status line is sufficient. Surface a
+failure only when an explicit user choice must change or no safe compliant value can be
+inferred.
+
 ## Step 4: Execute API Calls Sequentially
 
 Execute each step in order, passing IDs forward from each response.
 
 ### 4a. Create Campaign
-
-**⛔ CHECKPOINT — Print a ✅/❌ validation summary for the campaign fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute the POST until every field shows ✅.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/campaigns" \
@@ -225,8 +204,6 @@ api POST "ad_accounts/{ad_account_id}/campaigns" \
 Extract the campaign `id` from the response.
 
 ### 4b. Create Ad Sets (using campaign_id from 4a)
-
-**⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad set's fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ad_sets" \
@@ -254,8 +231,6 @@ api POST "ad_accounts/{ad_account_id}/ad_sets" \
 Extract each ad set `id` for use in ad creation.
 
 ### 4c. Create Ads (using ad_set_id from 4b)
-
-**⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad's fields against the ad product catalog rules from Step 2.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ads" \

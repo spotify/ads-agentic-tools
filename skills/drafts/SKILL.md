@@ -67,49 +67,22 @@ Fetch available assets from the account and present them for selection, just lik
 api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 ```
 
-#### Step 3.5: Fetch Ad Product Rules (Required)
+#### Step 3.5: Validate Against Ad Product Rules
 
-**This step is mandatory — do not skip it.** Before creating any entities:
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this draft-build workflow, resolve the planned campaign product, and
+validate the complete draft hierarchy now that assets and dependent fields are known.
+Apply resolvable runtime checks as well as static rules.
 
-1. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
-```bash
-api GET "ad_product_catalog"
-```
-
-2. Determine the campaign's `ad_product` from the planned campaign fields. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
-3. The catalog response contains rules separated by operation under each entity type (`campaign`, `ad_set`, `ad`). For draft creation, apply `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. See the api-reference endpoint docs for the full response structure.
-4. Validate all planned campaign, ad set, and ad field values against the returned rules.
-
-**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a validation summary to the user with every field checked against the product rules. Use this format:
-
-```
-Ad Product Catalog Validation (product: AUCTION)
-
-Campaign:
-  ✅ objective: REACH (allowed: REACH, IMPRESSIONS, CLICKS, ...)
-  ✅ status: ACTIVE (allowed: ACTIVE, PAUSED)
-
-Ad Set "...":
-  ✅ asset_format: AUDIO (allowed: AUDIO, VIDEO, IMAGE, CATALOG)
-  ✅ bid_strategy: MAX_BID (allowed: MAX_BID, COST_PER_RESULT, AUTOBID, UNSET)
-  ✅ budget.type: DAILY (allowed: DAILY, LIFETIME)
-  ...
-  ❌ targets.platforms: [MOBILE] (allowed: ANDROID, DESKTOP, IOS) ← FIX REQUIRED
-
-Ad "...":
-  ✅ assets.asset_id: present, status READY
-  ✅ assets.companion_asset_id: present (required for AUDIO)
-  ...
-```
-
-If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT proceed to Step 4 or any API calls until every field shows ✅. Fetching the catalog is not the same as completing validation — the checkpoint is the printed summary above.
+Do not print per-field successes or add another confirmation. Add a compact validation
+status to the existing draft plan, and interrupt only for an explicit incompatible user
+choice or when no safe compliant value can be inferred. Catalog preflight does not
+replace the draft hierarchy `VALIDATE` action in Step 5.
 
 #### Step 4: Create Draft Entities Sequentially
 
 **4a. Create Draft Campaign:**
-
-**⛔ CHECKPOINT — Print a ✅/❌ validation summary for the campaign fields against the ad product catalog rules from Step 3.5 before executing.** Use the campaign's `ad_product` to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified). Do not execute the POST until every field shows ✅.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
@@ -119,8 +92,6 @@ api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
 Extract the draft campaign `id` from the response. The response includes an initial `draft_hierarchy_version`, but do not rely on that value after creating child draft ad sets or ads because any hierarchy edit can increment the version.
 
 **4b. Create Draft Ad Sets** (using `campaign_id` = draft campaign ID from 4a):
-
-**⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad set's fields against the ad product catalog rules from Step 3.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
@@ -141,8 +112,6 @@ api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
 Extract each draft ad set `id`.
 
 **4c. Create Draft Ads** (using `ad_set_id` = draft ad set ID from 4b):
-
-**⛔ CHECKPOINT — Print a ✅/❌ validation summary for each ad's fields against the ad product catalog rules from Step 3.5 before executing.** Use the campaign's `ad_product` from the response in 4a to select the correct rules (default to `AUCTION` if `UNSET`/`UNKNOWN`). Do not execute the POST until every field shows ✅.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/ads" \
@@ -273,12 +242,13 @@ Display all fields in a readable format. Note that `draft_hierarchy_version` is 
 
 Use the entity type from the command to select the endpoint, then prompt the user for fields to update. The same field validations as create apply.
 
-**⛔ Ad Product Validation CHECKPOINT (Required — do not skip):** Before executing any draft update, fetch the parent draft campaign to determine its `ad_product`, then fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session). If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. For draft updates, apply `update` rules plus `both` rules for the matching entity type (`campaign`, `ad_set`, or `ad`) — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the updated field values against the returned rules and print a ✅/❌ validation summary for each changed field (same format as Step 3.5). If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
-
-For draft ad set or ad edits, fetch the parent draft campaign using the draft ad set's `campaign_id`:
-```bash
-api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
-```
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog and current draft entity, then traverse its actual parent chain: draft ad →
+draft ad set → draft campaign, or draft ad set → draft campaign. Deep-merge the PATCH
+into the current entity and validate the effective result against the matching entity's
+`update` (when present) plus `both` rules. Do not print a checklist or add another
+confirmation.
 
 **Update draft campaign:**
 ```bash

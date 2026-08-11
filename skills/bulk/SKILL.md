@@ -62,15 +62,30 @@ Ask the user to select entities. Support these selection formats:
 - All: `all`
 - Mixed: `1-3, 5`
 
-### 3. Confirm changes
+### 3. Validate against ad product rules
+
+Before showing the final change summary, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for the batch, fetch each current entity, resolve each distinct parent
+campaign once, and validate the final effective entities. Group validation by campaign
+and product instead of repeating catalog or campaign requests for every entity.
+
+For budget decreases, retrieve any available spend and pacing state needed to apply the
+catalog's delivery floor. Treat cooldowns or account exemptions that the public API
+does not expose as server-only checks; do not claim they passed and do not add a user
+confirmation for them.
+
+### 4. Confirm changes
 
 Show a summary of what will change. For budget operations, show before/after values. For status changes, show entity names and the target state.
+Include one compact catalog-validation status in this existing summary. Do not print
+per-field checklists or add a separate confirmation.
 
-### 4. Apply sequentially
+### 5. Apply sequentially
 
 Execute PATCH requests one at a time. Report success or failure for each entity. Continue on partial failure — do not stop the batch if one entity fails.
 
-### 5. Show results
+### 6. Show results
 
 Display a final summary table:
 
@@ -175,19 +190,6 @@ Budget changes (+20%):
 
 Proceed with these changes?
 ```
-
-#### Validate against ad product catalog
-
-**Before applying budget updates, you must validate — do not skip this step:**
-1. For each selected ad set, fetch the parent campaign to determine its `ad_product` (if not already known from the listing step):
-```bash
-api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
-```
-2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
-```bash
-api GET "ad_product_catalog"
-```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. For budget updates, apply `ad_set.update` rules plus `ad_set.both` rules — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the new budget values. If any values violate the rules, present a recommended fix and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not execute until validated.
 
 #### Apply
 
@@ -304,17 +306,8 @@ Ask the user to select which ads to update and which new asset to use. The new a
 api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 ```
 
-**You must validate against the ad product catalog before creating the replacement ad — do not skip this step:**
-
-1. Fetch the parent campaign to determine its `ad_product`: get the ad set's `campaign_id` (from the ad set fetch), then fetch the campaign:
-```bash
-api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
-```
-2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
-```bash
-api GET "ad_product_catalog"
-```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. For ad creation, apply `ad.create` rules plus `ad.both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate the replacement ad fields against the returned rules. If any values violate the rules, present a recommended fix and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do not execute the create request until validated.
+The batch validation step must include the current ad, its parent ad set and campaign,
+the replacement asset, and the final replacement-ad body.
 
 **Create the replacement ad** with the same fields but new asset_id:
 

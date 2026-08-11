@@ -693,15 +693,31 @@ Create a new ad account under a business.
 ## Ad Product Catalog
 
 ### GET /ad_product_catalog
-Returns the validation rules for all externally available ad products (AUCTION, CONTENT, FPMNG). Fetch this before creating or updating campaigns, ad sets, and ads to understand what values, constraints, and cross-field rules apply to each ad product. Cache the response for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again.
+Returns the live validation rules for externally available ad products: AUCTION,
+CONTENT, and FPMNG. These product-specific rules layer on top of the OpenAPI request
+shape and field types.
 
-For ad set and ad operations, fetch the parent campaign first to determine its `ad_product`. When `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules.
+Fetch the catalog once for each create or update workflow and reuse it only during that
+workflow. Do not maintain a timed session cache; the endpoint response is delivered
+with `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`.
+
+Resolve the product from the new campaign request or known hierarchy context. An
+omitted, `UNSET`, or `UNKNOWN` campaign product maps to AUCTION. Campaign responses do
+not consistently expose `ad_product`, so do not silently classify an existing hierarchy
+as AUCTION when its configuration or request context indicates CONTENT or FPMNG. See
+`ad-product-validation.md` for the complete resolution and interaction procedure.
 
 **Response:** 200 — Ad product catalog with validation rules per product type.
 
 **Response structure:**
 
-Rules are separated by operation. Use `"create"` rules for POST requests, `"update"` rules for PATCH requests, and `"both"` rules for all requests.
+Each product has `campaign`, `ad_set`, and `ad` sections. Rules are separated by
+operation: use `create` plus `both` for POST requests and `update` plus `both` for PATCH
+requests. Some products omit an operation section when they have no additional rules
+for it.
+
+The following is an abbreviated structural example. Always use values from the live
+response rather than treating this sample as an exhaustive catalog.
 
 ```json
 {
@@ -712,9 +728,7 @@ Rules are separated by operation. Use `"create"` rules for POST requests, `"upda
       "description": "...",
       "campaign": {
         "create": {
-          "allowed_values": { "field": ["VALUE1", "VALUE2"] },
-          "required_fields": ["field: explanation"],
-          "cross_field_rules": ["When X: Y must be Z"]
+          "allowed_values": { "objective": ["<live product-specific values>"] }
         },
         "update": {
           "allowed_values": { "status": ["ACTIVE", "PAUSED"] },
@@ -744,9 +758,13 @@ Rules are separated by operation. Use `"create"` rules for POST requests, `"upda
         }
       },
       "ad": {
-        "create": { "...": "..." },
-        "update": { "...": "..." },
-        "both": { "...": "..." }
+        "create": {
+          "required_fields": ["assets.asset_id: primary asset required; must not be archived"]
+        },
+        "update": { "restrictions": ["Cannot edit an archived creative"] },
+        "both": {
+          "constraints": ["Audio creative duration: max 31,000 ms"]
+        }
       }
     }
   }
@@ -754,10 +772,15 @@ Rules are separated by operation. Use `"create"` rules for POST requests, `"upda
 ```
 
 **How to apply rules:**
-- For a **POST** (create): check `create.allowed_values`, `create.required_fields`, `create.forbidden_fields`, `create.cross_field_rules`, plus everything in `both`.
-- For a **PATCH** (update): check `update.allowed_values`, `update.restrictions`, `update.cross_field_rules`, plus everything in `both`.
+- For a **POST**: apply every rule category present in `create` and `both`.
+- For a **PATCH**: fetch the current entity, deep-merge the patch, then apply every rule category present in `update` and `both` to the effective entity.
 - Match the entity type to the correct key: `campaign`, `ad_set`, or `ad`.
-- Select the ad product entry using the campaign's `ad_product` field (default to `AUCTION` if `UNSET`/`UNKNOWN`/not specified).
+- Treat `required_fields`, `forbidden_fields`, `constraints`, `restrictions`, and
+  `cross_field_rules` as semantic rules, not merely field-name arrays.
+- Retrieve parent entities, assets, estimates, prices, or reporting state when a rule
+  depends on them.
+- Do not report runtime or server-only conditions as passed unless the required state
+  was actually checked.
 
 ---
 

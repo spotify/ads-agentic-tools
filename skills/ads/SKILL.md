@@ -36,29 +36,11 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
 
 ### `ad-sets create`
-**Before prompting for fields, you must validate against the ad product catalog — do not skip this step:**
-
-1. Fetch the parent campaign to determine its `ad_product`:
-```bash
-api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
-```
-2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
-```bash
-api GET "ad_product_catalog"
-```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For creation, apply the entity's `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate all field values against the returned rules.
-
-**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a ✅/❌ validation summary for every ad set field checked against the product rules:
-```
-Ad Product Catalog Validation (product: AUCTION)
-Ad Set "...":
-  ✅ asset_format: AUDIO (allowed: AUDIO, VIDEO, IMAGE, CATALOG)
-  ✅ bid_strategy: MAX_BID (allowed: MAX_BID, COST_PER_RESULT, AUTOBID, UNSET)
-  ✅ budget.type: DAILY (allowed: DAILY, LIFETIME)
-  ...
-```
-If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the POST until every field shows ✅.
+Collect the required fields below first. Before the POST, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, parent campaign, and any runtime inputs required by its rules, then validate
+the final ad set body against `ad_set.create` plus `ad_set.both`. Do not add a separate
+validation confirmation.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -219,19 +201,12 @@ api GET "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID"
 
 ### `ad-sets update <id>`
 
-**Before updating, you must validate against the ad product catalog — do not skip this step:**
-1. Fetch the ad set to get its `campaign_id`, then fetch the parent campaign to determine its `ad_product`:
-```bash
-api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
-```
-2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
-```bash
-api GET "ad_product_catalog"
-```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For updates, apply the entity's `update` rules plus `both` rules — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the updated field values.
-
-**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a ✅/❌ validation summary for every updated ad set field checked against the product rules. If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad set, parent campaign, and runtime state required by applicable
+rules. Deep-merge the proposed PATCH into the current ad set and validate the effective
+entity against `ad_set.update` plus `ad_set.both`. Do not add a separate validation
+confirmation.
 
 Prompt for fields to update (min 1). Same fields as create, all optional.
 
@@ -244,29 +219,11 @@ api GET "ad_accounts/{ad_account_id}/ads?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Ad Set ID | Status | Delivery
 
 ### `ads create`
-**Before prompting for fields, you must validate against the ad product catalog — do not skip this step:**
-
-1. Fetch the parent campaign to determine its `ad_product`: get the ad set's `campaign_id` (from the user or by fetching the ad set), then fetch the campaign:
-```bash
-api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
-```
-2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session, otherwise fetch again):
-```bash
-api GET "ad_product_catalog"
-```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For creation, apply the entity's `create` rules plus `both` rules — check `allowed_values`, `required_fields`, `forbidden_fields`, and `cross_field_rules`. Validate all field values against the returned rules.
-
-**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a ✅/❌ validation summary for every ad field checked against the product rules:
-```
-Ad Product Catalog Validation (product: AUCTION)
-Ad "...":
-  ✅ assets.asset_id: present, status READY
-  ✅ assets.companion_asset_id: present (required for AUDIO)
-  ✅ call_to_action.key: LEARN_MORE
-  ...
-```
-If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the POST until every field shows ✅.
+Collect the required fields and asset selections below first. Before the POST, read and
+follow `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch
+the live catalog, current parent ad set and campaign, and referenced assets, then
+validate the final ad body against `ad.create` plus `ad.both`. Do not add a separate
+validation confirmation.
 
 Prompt for required fields:
 - **name** (2-200 chars)
@@ -305,19 +262,12 @@ api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 
 ### `ads update <id>`
 
-**Before updating, you must validate against the ad product catalog — do not skip this step:**
-1. Fetch the ad to get its `ad_set_id`, then fetch the ad set to get `campaign_id`, then fetch the parent campaign to determine its `ad_product`:
-```bash
-api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
-```
-2. Fetch the ad product catalog (cache for 15 minutes — reuse if already fetched within the last 15 minutes in this session):
-```bash
-api GET "ad_product_catalog"
-```
-3. If `ad_product` is `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` rules. The catalog contains rules separated by operation (`create`, `update`, `both`) under each entity type. For updates, apply the entity's `update` rules plus `both` rules — check `allowed_values`, `restrictions`, and `cross_field_rules`. Validate the updated field values.
-
-**⛔ CHECKPOINT — Do not proceed until this validation is printed.**
-Display a ✅/❌ validation summary for every updated ad field checked against the product rules. If any field shows ❌, present a recommended fix for each failing field and ask the user to either accept the recommendation or provide their own value. Do not auto-correct. Do NOT execute the PATCH until every field shows ✅.
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad, parent ad set and campaign, and any referenced assets. Deep-merge
+the proposed PATCH into the current ad and validate the effective entity against
+`ad.update` (when present) plus `ad.both`. Do not add a separate validation
+confirmation.
 
 Updateable fields: `call_to_action`, `delivery`, `status`.
 

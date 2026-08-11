@@ -39,7 +39,8 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - Choose CTA and landing URL based on the page and asset. Use `LEARN_MORE` when conversion intent is informational or regulated.
 
 4. Validate API targetability.
-   - **You must fetch the ad product catalog from `GET /ad_product_catalog` — do not skip this step.** Cache the response for 15 minutes — reuse if already fetched within the last 15 minutes in this session. Determine the campaign's `ad_product` from the planned fields; if `UNSET`, `UNKNOWN`, or not specified, apply the `AUCTION` ad product rules. Validate all planned campaign, ad set, and ad field values against the returned rules before presenting the strategy.
+   - Read and follow `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. When credentials are available, fetch `GET /ad_product_catalog` once for this strategy workflow and use it to validate the final plan. Do not print a per-field checklist.
+   - When credentials are unavailable, still provide the strategy, label it **catalog validation deferred**, and do not call it API-validated or ready to execute. The execution skill must fetch the live catalog before any mutation.
    - Fetch valid ad categories from `GET /ad_categories`; use the closest exact category code.
    - Look up every requested geo with `GET /targets/geos?country_code=<code>&q=<query>&limit=20`; never fall back to country-only without saying so.
    - Use only targeting dimensions available in the Ads API. If recommending interests, genres, artists, playlists, or languages, validate them with the matching target endpoint before presenting IDs. **Only `/targets/geos` accepts `limit`/`offset` parameters.** All other target endpoints (`/targets/genres`, `/targets/interests`, `/targets/artists`, `/targets/playlists`, `/targets/languages`) accept only `q` and/or `ids` — passing `limit` will cause a 400 error.
