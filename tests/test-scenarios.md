@@ -220,7 +220,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Success criteria:**
 - Uses draft endpoints (`/drafts/campaigns`, `/drafts/ad_sets`, `/drafts/ads`), NOT direct entity endpoints
 - Tree visualization labels entities as "DRAFT"
-- Draft campaign created with objective (default REACH) and `[Test reject]` prefix in name
+- Draft campaign created with `delivery_goal_group` (default AWARENESS, NOT the deprecated `objective` field) and `[Test reject]` prefix in name
 - Draft ad set created with all required fields (budget 100000000, geo_targets flat, platforms correct, category present, placements present, bid_strategy as string) and `[Test reject]` prefix in name
 - Draft ad created with all required assets (including companion_asset_id for AUDIO) and `[Test reject]` prefix in name
 - Draft IDs correctly passed from each step to the next
@@ -540,7 +540,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
-  -d '{"name":"[Test reject] Audio Draft Campaign","objective":"REACH"}' \
+  -d '{"name":"[Test reject] Audio Draft Campaign","delivery_goal_group":"AWARENESS"}' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns"
 ```
 

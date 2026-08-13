@@ -67,7 +67,7 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 ## Public Endpoint Groups
 
 ### Campaigns
-- `POST /ad_accounts/{id}/campaigns` — Create campaign (required: name, objective)
+- `POST /ad_accounts/{id}/campaigns` — Create campaign (required: name, objective; objective is deprecated — will be replaced by delivery_goal_group in v4)
 - `GET /ad_accounts/{id}/campaigns` — List campaigns (filterable by status, name, IDs)
 - `GET /ad_accounts/{id}/campaigns/{campaign_id}` — Get campaign by ID
 - `PATCH /ad_accounts/{id}/campaigns/{campaign_id}` — Update campaign (name, status)
