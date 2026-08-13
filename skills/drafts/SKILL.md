@@ -108,7 +108,7 @@ Extract fields exactly as documented in the `build-campaign` skill. The same fie
 Present the plan as a visual tree, clearly labeled as **DRAFT**:
 
 ```
-DRAFT Campaign: "My Campaign" (objective: REACH)
+DRAFT Campaign: "My Campaign" (AWARENESS)
 ├── DRAFT Ad Set 1: "Ad Set A" (AUDIO, $75/day, US, ages 25-54, Mar 1 start)
 │   └── DRAFT Ad 1: "My Ad" → SHOP_NOW → example.com
 └── DRAFT Ad Set 2: "Ad Set B" (VIDEO, $500 lifetime, US, ages 18-54, Mar 4–Apr 4)
@@ -131,8 +131,20 @@ api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
-  '{"name":"...","objective":"..."}'
+  '{"name":"...","delivery_goal_group":"..."}'
 ```
+
+Map the user's campaign goal to `delivery_goal_group`:
+
+| User goal | `delivery_goal_group` |
+|---|---|
+| Awareness, reach, brand recall, even impression delivery | `AWARENESS` |
+| Website traffic, clicks, website visits | `WEBSITE_TRAFFIC` |
+| App installs or mobile app promotion | `APP_PROMOTION` |
+| Video views, podcast streams, or on-platform engagement | `ENGAGEMENT_ON_SPOTIFY` |
+| Lead generation | `LEAD_GEN` |
+
+Do not set the deprecated `objective` field on draft campaigns.
 
 Extract the draft campaign `id` from the response. The response includes an initial `draft_hierarchy_version`, but do not rely on that value after creating child draft ad sets or ads because any hierarchy edit can increment the version.
 
@@ -236,7 +248,7 @@ List draft entities. Argument specifies which type: `campaigns`, `ad-sets`, or `
 api GET "ad_accounts/{ad_account_id}/drafts/campaigns?limit=50&sort_direction=DESC"
 ```
 
-Format as table: Draft ID | Name | Status | Objective | Version | Created
+Format as table: Draft ID | Name | Status | Delivery Goal Group | Version | Created
 
 Optional filters use the actual query parameter names: `campaign_ids` (repeated param), `channel`, `statuses` (repeated param), `sort_field`, `sort_direction`.
 
@@ -290,10 +302,10 @@ Use the entity type from the command to select the endpoint, then prompt the use
 **Update draft campaign:**
 ```bash
 api PATCH "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
-  '{"name":"...","objective":"..."}'
+  '{"name":"...","delivery_goal_group":"..."}'
 ```
 
-Updatable campaign fields: `name`, `purchase_order`, `objective`, `delivery_goal_group`, `status`.
+Updatable campaign fields: `name`, `purchase_order`, `delivery_goal_group`, `status`. Do not introduce the deprecated `objective` field when editing drafts.
 
 **Update draft ad set:**
 ```bash

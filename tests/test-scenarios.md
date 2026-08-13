@@ -70,10 +70,10 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
 
 **Prompt:** "Create a campaign called [Test reject] Q1 Brand Awareness with a reach objective"
 
-**Quirks tested:** Draft-first creation, POST body construction, objective enum, `[Test reject]` prefix for automatic ad review rejection
+**Quirks tested:** Draft-first creation, POST body construction, goal mapping, `[Test reject]` prefix for automatic ad review rejection
 
 **Expected behavior:**
-1. Agent extracts: name="[Test reject] Q1 Brand Awareness", objective="REACH"
+1. Agent extracts the name and maps the reach goal to `delivery_goal_group="AWARENESS"`
 2. Constructs a draft campaign POST request with JSON body
 3. Shows the `api()` helper request for confirmation
 4. Reports the campaign as staged and does not publish it
@@ -81,13 +81,13 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
 **Expected API helper call:**
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
-  '{"name":"[Test reject] Q1 Brand Awareness","objective":"REACH"}'
+  '{"name":"[Test reject] Q1 Brand Awareness","delivery_goal_group":"AWARENESS"}'
 ```
 
 **Success criteria:**
-- Request body contains exactly `name` and `objective`
+- Request body contains exactly `name` and `delivery_goal_group`
 - `name` starts with `[Test reject]`
-- Objective is uppercase enum value `REACH`
+- Delivery goal group is the uppercase enum value `AWARENESS`; deprecated `objective` is omitted
 - Returns a draft campaign object including `id` and `draft_hierarchy_version`
 - Does not call the published `/campaigns` creation endpoint
 - Does not publish without a separate request and explicit confirmation
@@ -216,7 +216,7 @@ api POST "ad_accounts/{ad_account_id}/drafts/ads" '{
 **Success criteria:**
 - Uses draft endpoints (`/drafts/campaigns`, `/drafts/ad_sets`, `/drafts/ads`), NOT direct entity endpoints
 - Tree visualization labels entities as "DRAFT"
-- Draft campaign created with objective (default REACH) and `[Test reject]` prefix in name
+- Draft campaign created with `delivery_goal_group` (default `AWARENESS`, not deprecated `objective`) and `[Test reject]` prefix in name
 - Draft ad set created with all required fields (budget 100000000, geo_targets flat, platforms correct, category present, placements present, bid_strategy as string) and `[Test reject]` prefix in name
 - Draft ad created with all required assets (including companion_asset_id for AUDIO) and `[Test reject]` prefix in name
 - Draft IDs correctly passed from each step to the next
@@ -538,7 +538,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
   -H "Content-Type: application/json" \
-  -d '{"name":"[Test reject] Audio Draft Campaign","objective":"REACH"}' \
+  -d '{"name":"[Test reject] Audio Draft Campaign","delivery_goal_group":"AWARENESS"}' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/campaigns"
 ```
 
@@ -902,7 +902,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 2. Displays the source hierarchy and proposed changes.
 3. Validates referenced assets and runs audience estimates for proposed ad sets.
 4. Omits source IDs, statuses, metrics, timestamps, and other read-only fields from create bodies.
-5. Requires confirmation, then creates the new hierarchy in dependency order and maps new parent IDs.
+5. Copies `delivery_goal_group`, or maps a legacy source `objective` to it, without sending deprecated `objective` on the new draft campaign.
+6. Requires confirmation, then creates the new hierarchy in dependency order and maps new parent IDs.
 
 **Success criteria:**
 - “Next month” is calculated at run time and each flight retains its intended duration.

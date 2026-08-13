@@ -67,7 +67,7 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 ## Public Endpoint Groups
 
 ### Campaigns
-- `POST /ad_accounts/{id}/campaigns` — Create campaign (required: name, objective)
+- `POST /ad_accounts/{id}/campaigns` — Create a live campaign (required: name and deprecated `objective`; prefer drafts with `delivery_goal_group`)
 - `GET /ad_accounts/{id}/campaigns` — List campaigns (filterable by status, name, IDs)
 - `GET /ad_accounts/{id}/campaigns/{campaign_id}` — Get campaign by ID
 - `PATCH /ad_accounts/{id}/campaigns/{campaign_id}` — Update campaign (name, status)
@@ -189,7 +189,7 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 
 # Draft-first POST with JSON body
-api POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"...","objective":"..."}'
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"...","delivery_goal_group":"AWARENESS"}'
 
 # Retrieve settings values for use outside API calls
 eval $(api --env)
