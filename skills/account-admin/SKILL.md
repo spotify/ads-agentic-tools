@@ -45,8 +45,10 @@ Create a business:
 
 ```bash
 api POST "businesses" \
-  '{"name":"Example Agency","type":"AD_AGENCY","business_admin_name":"Alex Smith","business_admin_email":"alex@example.com","business_admin_has_marketing_opt_in":false}'
+  '{"name":"Example Agency","type":"AGENCY","business_admin_name":"Alex Smith","business_admin_email":"alex@example.com","business_admin_has_marketing_opt_in":false}'
 ```
+
+Business types are `ADVERTISER`, `AGENCY`, `MUSIC_ARTIST_CONCERT_PROMOTER`, and `PODCAST_PROMOTER`. Do not reuse ad-account type values such as `AD_AGENCY` here.
 
 Create an ad account:
 

@@ -107,7 +107,7 @@ Security and execution rules:
 
 - The CAPI token is long-lived, distinct from Ads API OAuth, and must match its connection ID.
 - At most three CAPI tokens may exist for a connection. Revoke an old token before creating another only with explicit confirmation.
-- Reveal a newly created token once. Never put it in chat examples, shell history, logs, source control, or plugin settings. Store it in the user's secret manager.
+- Token create and list responses contain active secret values. Treat the full response as secret, never print or repeat it in chat, logs, or command summaries, and expose only redacted token IDs/counts. Arrange for a newly created token to be captured directly into the user's secret manager; if that is not possible, stop and have the user create and store it through a secure path rather than exposing it in the conversation.
 - Never submit a sample/test conversion event without explicit confirmation of the destination and expected effect; it changes measurement data.
 - If authorized to submit, redact identifiers and tokens from displayed commands and output.
 - Do not automatically retry POST. The implementation owner may retry transient 5xx with bounded backoff and a stable `event_id`; never retry a non-timeout 4xx unchanged.

@@ -31,6 +31,8 @@ tags:
     description: Operations to manage campaigns.
   - name: estimates
     description: Operations to manage audience forecasting.
+  - name: experiments
+    description: Operations to manage experiments.
   - name: mobile-measurement
     description: Operations to manage mobile measurement.
   - name: pixel-measurement
@@ -369,9 +371,6 @@ paths:
                   geo_targets:
                     country_code: US
                     city_ids: []
-                    dma_ids:
-                      - '503'
-                      - '500'
                     postal_code_ids:
                       - US:73170
                     region_ids:
@@ -490,7 +489,6 @@ paths:
                 geo_targets:
                   country_code: US
                   city_ids: []
-                  dma_ids: []
                   postal_code_ids:
                     - US:73170
                   region_ids: []
@@ -555,9 +553,6 @@ paths:
                   geo_targets:
                     country_code: US
                     city_ids: []
-                    dma_ids:
-                      - '503'
-                      - '500'
                     postal_code_ids:
                       - US:73170
                     region_ids:
@@ -691,9 +686,6 @@ paths:
                   country_code: US
                   region_ids:
                     - '5101760'
-                  dma_ids:
-                    - '500'
-                    - '503'
                   postal_code_ids:
                     - US:73170
                 genders:
@@ -776,9 +768,6 @@ paths:
                   geo_targets:
                     country_code: US
                     city_ids: []
-                    dma_ids:
-                      - '503'
-                      - '500'
                     postal_code_ids:
                       - US:73170
                     region_ids:
@@ -895,9 +884,6 @@ paths:
                       geo_targets:
                         country_code: US
                         city_ids: []
-                        dma_ids:
-                          - '500'
-                          - '503'
                         postal_code_ids:
                           - US:73170
                         region_ids:
@@ -966,9 +952,6 @@ paths:
                       geo_targets:
                         country_code: US
                         city_ids: []
-                        dma_ids:
-                          - '500'
-                          - '503'
                         postal_code_ids:
                           - US:73170
                         region_ids:
@@ -3271,6 +3254,40 @@ paths:
       summary: Estimate bid
       tags:
         - estimates
+  /ad_accounts/{ad_account_id}/experiment_availability:
+    get:
+      description: Returns which experiment types (CLS, SBL, A/B test) can be created for an ad account
+      operationId: getExperimentAvailability
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      responses:
+        '200':
+          description: Experiment availability retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetExperimentAvailabilityResponse'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Ad account not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Experiment Creation Availability for Ad Account
+      tags:
+        - experiments
   /businesses/{business_id}/mobile_apps:
     get:
       description: Get all mobile apps for the business.
@@ -4943,6 +4960,118 @@ paths:
       summary: Get Sensitive Topic Targets
       tags:
         - targets
+  /ad_accounts/{ad_account_id}/change_history:
+    get:
+      description: |
+        Returns a paged list of change-history rows visible to the calling user
+        within the specified ad account. Each row aggregates the field-level
+        audits of one logical save into a single event with resolved entity
+        name, classified actor, and translated field labels.
+
+        Access control:
+          - Requires a qualifying role on the ad account (admin, contributor,
+            or viewer).
+          - actor.email is null for non-admin callers.
+          - Rows whose change_category is BILLING are excluded for non-admin
+            callers.
+
+        Retention: results are constrained to a rolling 180-day window. The
+        created_gte parameter is clamped up to the floor when older.
+      operationId: getChangeHistory
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+        - $ref: '#/components/parameters/parameters-entity_type'
+        - $ref: '#/components/parameters/parameters-entity_ids'
+        - $ref: '#/components/parameters/entity_name'
+        - $ref: '#/components/parameters/change_ids'
+        - $ref: '#/components/parameters/actor_ids'
+        - $ref: '#/components/parameters/principal_type'
+        - $ref: '#/components/parameters/change_category'
+        - $ref: '#/components/parameters/created_lte'
+        - $ref: '#/components/parameters/created_gte'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/sort_direction'
+        - $ref: '#/components/parameters/change_history_sort_field'
+      responses:
+        '200':
+          description: A paged list of change-history rows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeHistoryResponse'
+              example:
+                paging:
+                  page_size: 50
+                  total_results: 2
+                  offset: 0
+                change_history:
+                  - change_id: d936ecbb-3a93-4cfa-b756-c61811c6cdc3
+                    timestamp: '2026-04-23T14:32:07Z'
+                    entity_type: CAMPAIGN
+                    entity_id: 5bbc4fec-c9a5-4fc6-98f4-e950f40b74c7
+                    entity_name: Summer Promo Campaign
+                    operation: CHANGED
+                    actor:
+                      principal_id: user123
+                      principal_type: USER
+                      name: Jane Doe
+                      email: jane@example.com
+                      category: ADVERTISER_USER
+                    changes:
+                      - field_type: name
+                        display_label: Campaign Name
+                        change_category: SETTINGS
+                        before:
+                          value: Summer Promo
+                        after:
+                          value: Summer Promo Campaign
+                      - field_type: status
+                        display_label: Status
+                        change_category: STATUS
+                        before:
+                          value: PAUSED
+                        after:
+                          value: ACTIVE
+                  - change_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    timestamp: '2026-04-22T09:15:43Z'
+                    entity_type: AD_SET
+                    entity_id: 1a2b3c4d-5e6f-7890-abcd-ef1234567890
+                    entity_name: Audio - US 18-35
+                    operation: CHANGED
+                    actor:
+                      principal_id: api-client-456
+                      principal_type: SERVICE
+                      name: Ad Platform API
+                      email: null
+                      category: API_INTEGRATION
+                    changes:
+                      - field_type: budget
+                        display_label: Budget
+                        change_category: BUDGET
+                        before:
+                          micro_amount: 500000000
+                          currency: USD
+                          type: DAILY
+                        after:
+                          micro_amount: 750000000
+                          currency: USD
+                          type: DAILY
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Change History
+      tags:
+        - change-history
 components:
   securitySchemes:
     bearerAuth:
@@ -5187,6 +5316,8 @@ components:
             - TAN
             - NZBN
             - IRD
+            - CODICE_FISCALE
+            - SDI
           description: The tax ID type
     UpdateAdAccountRequest:
       type: object
@@ -5364,9 +5495,11 @@ components:
       type: integer
       format: int64
       description: |
-        The amount of your bid per 1000 impressions, multiplied by x10 to the 6th power.
-        Behavior of this field depends on the bid_strategy specified. Ex: In order to set a
-        bid of $20, you would specify a bid_micro_amount of 20000000.
+        The amount of your bid per 1000 impressions, denominated in the ad account's
+        billing currency and multiplied by x10 to the 6th power. Behavior of this field
+        depends on the bid_strategy specified. Ex: In order to set a bid of $20 on a USD
+        ad account, you would specify a bid_micro_amount of 20000000; a bid of 160 JPY on
+        a JPY ad account would be 160000000.
       example: 1000000
       x-spotify-requires:
         - condition: bid_strategy is MAX_BID
@@ -5380,8 +5513,8 @@ components:
           description: bid_micro_amount is not required when bid_strategy is AUTOBID. Bids are set automatically.
       x-spotify-common-mistakes:
         - field: bid_micro_amount
-          mistake: Passing the dollar amount directly (e.g., 20 instead of 20000000)
-          correct: Multiply the dollar amount by 1,000,000. For example, $20 = 20000000, $15 = 15000000.
+          mistake: Passing the bid amount directly (e.g., 20 instead of 20000000)
+          correct: Multiply the bid amount (in the ad account's billing currency) by 1,000,000. For example, $20 = 20000000, 160 JPY = 160000000.
     CostModifier:
       type: object
       description: Cost modifier object containing rate adjustment information.
@@ -5735,14 +5868,6 @@ components:
           uniqueItems: true
           example:
             - '4174700'
-        dma_ids:
-          type: array
-          description: ID(s) of the DMA(s) to target.
-          items:
-            type: string
-          uniqueItems: true
-          example:
-            - '501'
         postal_code_ids:
           type: array
           description: ID(s) of the postal codes(s) to target.
@@ -6453,9 +6578,6 @@ components:
             country_code: US
             region_ids:
               - '5101760'
-            dma_ids:
-              - '500'
-              - '503'
             postal_code_ids:
               - US:73170
           genders:
@@ -6534,6 +6656,7 @@ components:
         - ACTIVE
         - APPROVED
         - ARCHIVED
+        - FAILED
         - PENDING
         - PENDING_APPROVAL
         - REJECTED
@@ -6677,14 +6800,17 @@ components:
           $ref: '#/components/schemas/Currency'
     CatalogItem:
       type: object
-      description: Item within a catalog
+      description: Item within a catalog. Must have 2-6 items.
       required:
         - position
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
         asset_id:
-          $ref: '#/components/schemas/Uuid'
+          description: A unique identifier for the asset. Required for create/update ad. Optional for drafts.
+          format: uuid
+          allOf:
+            - $ref: '#/components/schemas/Uuid'
         asset:
           $ref: '#/components/schemas/AssetMetadata'
         sku:
@@ -6698,7 +6824,7 @@ components:
         clickthrough_url:
           type: string
           format: uri
-          description: The link to the ads desired landing page.
+          description: The link to the ads desired landing page. Required for create/update ad. Optional for drafts.
           example: https://www.spotify.com
         price:
           $ref: '#/components/schemas/Price'
@@ -6713,7 +6839,9 @@ components:
           description: Displayable localized sale price. Only present in response.
           example: $14.99 USD
         tagline:
-          $ref: '#/components/schemas/AdTagline'
+          description: Tagline to give listeners more context about your company or product. This will be displayed in the CTA card leavebehind. Required for create/update ad. Optional for drafts.
+          allOf:
+            - $ref: '#/components/schemas/AdTagline'
     Catalog:
       type: object
       description: Catalog of things to be placed in a carousel type ad. Ad Set asset_format must be set to CATALOG.
@@ -8393,7 +8521,9 @@ components:
       type: integer
       format: int64
       description: |
-        Bid for the ad set per 1,000 impressions multiplied by x10 to the 6th power.
+        Bid for the ad set per 1,000 impressions, denominated in the currency of the
+        budget from the request (`budget.currency`, which should be the ad account's
+        billing currency) and multiplied by x10 to the 6th power.
         Ex: In order to set a bid of 15, you would specify a bid_micro_amount of 15000000.
         Must be greater than 0 unless use_recommended_bid is true.
       example: 15000000
@@ -8504,8 +8634,6 @@ components:
           language: en
           geo_targets:
             country_code: US
-            dma_ids:
-              - '501'
             region_ids:
               - '5279468'
             city_ids:
@@ -8743,8 +8871,6 @@ components:
             - 06HL4z0CvFAxyc27GXpf02
           geo_targets:
             country_code: US
-            dma_ids:
-              - '501'
             region_ids:
               - '5279468'
             city_ids:
@@ -8799,6 +8925,34 @@ components:
         bid_estimate_max: 21000000
         cost_model: CPM
         currency: USD
+    ActiveExperiment:
+      type: string
+      description: The experiment type currently active on the ad account.
+      enum:
+        - CLS
+        - SBL
+        - AB_TEST
+    GetExperimentAvailabilityResponse:
+      type: object
+      required:
+        - ad_account_id
+      properties:
+        ad_account_id:
+          $ref: '#/components/schemas/Uuid'
+        can_create_cls:
+          type: boolean
+          description: Whether a Conversion Lift Study can be created for this ad account.
+        can_create_sbl:
+          type: boolean
+          description: Whether a Survey Brand Lift experiment can be created for this ad account.
+        can_create_ab_test:
+          type: boolean
+          description: Whether an A/B test can be created for this ad account.
+        active_experiments:
+          type: array
+          description: List of experiment types currently active on the ad account.
+          items:
+            $ref: '#/components/schemas/ActiveExperiment'
     PlatformAppId:
       type: string
       description: The unique identifier of the app, provided by the app platform.
@@ -9340,6 +9494,7 @@ components:
       enum:
         - PIXEL
         - CAPI
+        - MOBILE_APP
     DiagnosticEvent:
       type: object
       description: An diagnostic event received from a datasource.
@@ -10091,6 +10246,14 @@ components:
         - PAUSED
         - PENDING_APPROVAL
         - REJECTED
+    AttributionWindow:
+      type: string
+      enum:
+        - IMPRESSION_30_DAY
+        - IMPRESSION_7_DAY
+      description: |
+        Attribution window for conversion metrics.
+        When unset, defaults to IMPRESSION_30_DAY.
     CreateAsyncReportRequest:
       type: object
       required:
@@ -10213,6 +10376,11 @@ components:
             the report will include a row for each unique value of the insight dimension (e.g., AGE,
             GENDER, COUNTRY) within the primary entity. Delivery insights are only supported with
             LIFETIME granularity.
+        attribution_window:
+          $ref: '#/components/schemas/AttributionWindow'
+          description: |
+            Attribution window for conversion metrics.
+            When unset, defaults to IMPRESSION_30_DAY.
     CreateAsyncReportResponse:
       type: object
       properties:
@@ -10394,6 +10562,190 @@ components:
             id: crime-and-violence
           - name: Alcohol
             id: alcohol
+    ChangeHistoryEntityType:
+      type: string
+      description: Customer-visible subset of entity types that emit change history events.
+      enum:
+        - CAMPAIGN
+        - AD_SET
+        - AD_ACCOUNT
+        - BUSINESS
+        - CREATIVE
+      example: CAMPAIGN
+    PrincipalType:
+      type: string
+      description: |
+        Coarse actor classification used for filtering. USER represents
+        advertiser-side actors (team members who log in to SAM).
+        SERVICE represents Spotify-side actors (support staff, API
+        integrations, and automated systems). Use this to filter change
+        history results; see ChangeHistoryActorCategory for the resolved
+        display-level classification returned on each row.
+      enum:
+        - USER
+        - SERVICE
+      example: USER
+    ChangeCategory:
+      type: string
+      description: |
+        Coarse change-category bucket. BILLING events are excluded entirely
+        for non-admin callers.
+      enum:
+        - STATUS
+        - BUDGET
+        - TARGETING
+        - CREATIVE
+        - SCHEDULING
+        - SETTINGS
+        - BILLING
+      example: BUDGET
+    ChangeHistorySortField:
+      type: string
+      enum:
+        - TIMESTAMP
+        - ENTITY_TYPE
+        - PRINCIPAL_TYPE
+      default: TIMESTAMP
+      description: Field by which to sort the change history rows.
+    ChangeHistoryOperation:
+      type: string
+      description: Type of operation performed on the entity.
+      enum:
+        - CREATED
+        - CHANGED
+        - REMOVED
+      example: CHANGED
+    ChangeHistoryActorCategory:
+      type: string
+      description: |
+        Resolved actor classification returned on each change history row
+        for display purposes. Derived from the principal type plus
+        additional context (role memberships, access groups). Spotify
+        employees acting on behalf of the advertiser resolve to SUPPORT
+        and their identity is never exposed. Not used for filtering;
+        use PrincipalType to filter by actor type.
+      enum:
+        - ADVERTISER_USER
+        - SUPPORT
+        - API_INTEGRATION
+        - SYSTEM
+        - UNKNOWN
+      example: ADVERTISER_USER
+    ChangeHistoryActor:
+      type: object
+      description: Resolved actor identity for a change event.
+      properties:
+        principal_id:
+          type: string
+          description: Identifier of the principal that performed the change.
+          example: user123
+        principal_type:
+          type: string
+          description: Type of principal (USER or SERVICE).
+          example: USER
+        name:
+          type: string
+          description: Display name for the actor. For SUPPORT actors a generic label is shown.
+          example: Jane Doe
+        email:
+          type: string
+          nullable: true
+          description: |
+            Email address of the actor. Populated only for admin callers
+            (ad-account-admin, business-admin); null for all other roles.
+          example: jane@example.com
+        category:
+          $ref: '#/components/schemas/ChangeHistoryActorCategory'
+      required:
+        - principal_id
+        - principal_type
+        - category
+    FieldChange:
+      type: object
+      description: A single field change within a logical save event.
+      properties:
+        field_type:
+          type: string
+          description: Internal field identifier as emitted by the audit layer.
+          example: bidAmount
+        display_label:
+          type: string
+          description: |
+            Human-readable label for the field. Falls back to the raw field_type
+            for fields without an explicit translation.
+          example: Bid Amount
+        change_category:
+          $ref: '#/components/schemas/ChangeCategory'
+        before:
+          type: object
+          description: JSON object representing the field state before the change.
+          additionalProperties: true
+          example:
+            value: Summer Promo
+        after:
+          type: object
+          description: JSON object representing the field state after the change.
+          additionalProperties: true
+          example:
+            value: Summer Promo Campaign
+      required:
+        - field_type
+        - display_label
+        - change_category
+    ChangeHistoryRow:
+      type: object
+      description: |
+        One logical change event: an actor's save, possibly spanning multiple
+        field changes, on a single entity.
+      properties:
+        change_id:
+          $ref: '#/components/schemas/Uuid'
+          description: Unique identifier for the change transaction.
+        timestamp:
+          type: string
+          format: date-time
+          description: |
+            When the change was made. Anchored to the earliest field-level
+            audit log within the change. ISO 8601 / UTC.
+          example: '2026-04-23T04:56:07Z'
+        entity_type:
+          $ref: '#/components/schemas/ChangeHistoryEntityType'
+        entity_id:
+          $ref: '#/components/schemas/Uuid'
+          description: Identifier of the entity that was modified.
+        entity_name:
+          type: string
+          description: |
+            Display name for the entity at read time. Falls back to
+            "Unnamed TYPE" when the name cannot be resolved.
+          example: Summer Promo Campaign
+        operation:
+          $ref: '#/components/schemas/ChangeHistoryOperation'
+        actor:
+          $ref: '#/components/schemas/ChangeHistoryActor'
+        changes:
+          type: array
+          description: One entry per field changed within this logical save.
+          items:
+            $ref: '#/components/schemas/FieldChange'
+      required:
+        - change_id
+        - timestamp
+        - entity_type
+        - entity_id
+        - entity_name
+        - operation
+        - actor
+        - changes
+    ChangeHistoryResponse:
+      type: object
+      properties:
+        paging:
+          $ref: '#/components/schemas/Paging'
+        change_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChangeHistoryRow'
   parameters:
     ad_account_id:
       name: ad_account_id
@@ -11277,6 +11629,95 @@ components:
       description: A list of unique identifiers for sensitive topics.
       example:
         - gambling
+    parameters-entity_type:
+      name: entity_type
+      in: query
+      required: false
+      description: Filter change history rows by entity type.
+      schema:
+        $ref: '#/components/schemas/ChangeHistoryEntityType'
+    parameters-entity_ids:
+      name: entity_ids
+      in: query
+      required: false
+      description: Filter to a specific set of entity IDs within the requested ad account.
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/Uuid'
+    entity_name:
+      name: entity_name
+      in: query
+      required: false
+      description: |
+        Case-insensitive substring match on entity name. Must be used together
+        with entity_type. Resolves matching entities to IDs before querying
+        the audit log, so the result set contains only changes for entities
+        whose name contains this value.
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 255
+        example: Summer Promo
+    change_ids:
+      name: change_ids
+      in: query
+      required: false
+      description: A list of change IDs to fetch only the requested subset of changes.
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/Uuid'
+    actor_ids:
+      name: actor_ids
+      in: query
+      required: false
+      description: Filter to changes performed by these principal IDs.
+      schema:
+        type: array
+        items:
+          type: string
+    principal_type:
+      name: principal_type
+      in: query
+      required: false
+      description: Filter to changes performed by actors of this principal type.
+      schema:
+        $ref: '#/components/schemas/PrincipalType'
+    change_category:
+      name: change_category
+      in: query
+      required: false
+      description: Filter to a single change category. Billing is admin-only and silently ignored for non-admin callers.
+      schema:
+        $ref: '#/components/schemas/ChangeCategory'
+    created_lte:
+      name: created_lte
+      in: query
+      required: false
+      description: Return changes created on or before this timestamp (inclusive).
+      schema:
+        type: string
+        format: date-time
+        example: '2026-12-31T23:59:59Z'
+    created_gte:
+      name: created_gte
+      in: query
+      required: false
+      description: |
+        Return changes created on or after this timestamp (inclusive). Clamped
+        to the 180-day retention floor; values older than the floor are coerced
+        to the floor.
+      schema:
+        type: string
+        format: date-time
+        example: '2026-01-01T00:00:00Z'
+    change_history_sort_field:
+      name: sort_field
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/ChangeHistorySortField'
   links:
     GetAdSetForAd:
       operationId: getAdSetById

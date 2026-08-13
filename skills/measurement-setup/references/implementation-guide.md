@@ -2,6 +2,17 @@
 
 Use this reference for implementation advice. The Ads API manages resources; website, server, GTM, consent, and secret-manager changes remain with the user's implementation owners.
 
+## Contents
+
+- [Choose the topology](#choose-the-topology)
+- [Event mapping](#event-mapping)
+- [Parameters](#parameters)
+- [Direct CAPI contract](#direct-capi-contract)
+- [Pixel implementation](#pixel-implementation)
+- [CAPI with server GTM](#capi-with-server-gtm)
+- [Advanced matching and privacy](#advanced-matching-and-privacy)
+- [Verification boundaries](#verification-boundaries)
+
 ## Choose the topology
 
 | Need | Recommended source |

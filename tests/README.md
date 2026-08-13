@@ -21,7 +21,7 @@ Never use real customer data in plugin tests. Prefix test campaign, ad set, and 
 
 ### Read-only smoke test
 
-Run scenarios 1-2, 7, 13-14, 22, 26, 28-29, and 31. These cover configuration plus the major read-only and planning skills without changing campaign or account state.
+Run scenarios 1-2, 7, 13-14, 22, 26, 28-29, 31, and 32. These cover configuration plus the major read-only and planning skills without changing campaign or account state.
 
 ### Creation and draft workflow
 
@@ -29,7 +29,7 @@ Run scenarios 3-6 and 11-21 sequentially. Several scenarios reuse IDs or assets 
 
 ### Newer skill coverage
 
-Run scenarios 22-31 to exercise campaign strategy, monitoring, export, bulk operations, cloning, audiences, measurement, and account administration. Scenarios 24-25, 27, and 30 mutate state and require the confirmations described in each scenario.
+Run scenarios 22-32 to exercise campaign strategy, monitoring, export, bulk operations, cloning, audiences, measurement, account administration, and change history. Scenarios 24-25, 27, and 30 mutate state and require the confirmations described in each scenario.
 
 ## Validation checklist
 

@@ -26,7 +26,7 @@ api GET "ad_accounts/{ad_account_id}/audiences/<audience_id>"
 api GET "ad_accounts/{ad_account_id}/audiences/datasets?limit=50"
 ```
 
-Paginate list results. Filter with repeated `audience_types`, `audience_ids`, or `q` only when requested. Show audience type, subtype, source, status, size range, and ID.
+Paginate list results. Filter with repeated `audience_types`, `audience_ids`, or `q` only when requested. Show audience type, subtype, source, status, size range, audience category (when returned), and ID. `audience_category` is read-only; never send it in create or edit payloads.
 
 ### Upload a customer list
 
@@ -136,5 +136,6 @@ DELETE permanently removes an audience. Fetch it first, state its name, type, st
 - Do not claim audience-overlap estimates; no overlap endpoint exists.
 - Do not claim arbitrary bulk upload. Process files one at a time and confirm the intended mapping of file to audience name.
 - Status is asynchronous (`PROCESSING`, `LEARNING`, `BOOKABLE`, `LIVE`, and others). Report the current status without promising completion time.
+- A customer-list audience is targetable when its status reaches `BOOKABLE`; processing can take up to three days. A `LIVE` audience is in use by an ad set and cannot be deleted until that dependency is removed.
 - Only retry GET on network errors or 5xx. Never automatically retry POST, PATCH, PUT, or DELETE.
 - Check `HTTP_STATUS:` before parsing. On a non-timeout 4xx, show the API error and do not retry.

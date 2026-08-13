@@ -1,5 +1,15 @@
 # Spotify measurement troubleshooting
 
+## Contents
+
+- [Pixel checklist](#pixel-checklist)
+- [CAPI checklist](#capi-checklist)
+- [Pixel + CAPI deduplication](#pixel--capi-deduplication)
+- [Dataset routing](#dataset-routing)
+- [Diagnostics interpretation](#diagnostics-interpretation)
+- [Receipt versus attribution](#receipt-versus-attribution)
+- [Escalation packet](#escalation-packet)
+
 ## Pixel checklist
 
 1. Confirm at least 20 minutes have passed since a real event fired.
