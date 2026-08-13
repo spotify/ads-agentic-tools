@@ -1,0 +1,4 @@
+interface:
+  display_name: "Audience Management"
+  short_description: "Manage custom and lookalike audiences"
+  default_prompt: "Use $audiences to upload a customer list and create a custom audience."

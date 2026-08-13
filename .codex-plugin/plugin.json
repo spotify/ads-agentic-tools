@@ -1,7 +1,7 @@
 {
   "name": "spotify-ads-api",
-  "version": "1.7.0",
-  "description": "Manage Spotify ad campaigns with natural language. Create campaigns, ad sets, ads, pull reports, and handle OAuth — all through conversation.",
+  "version": "1.8.0",
+  "description": "Manage Spotify ad campaigns, audiences, measurement, account access, assets, and reporting with natural language and OAuth.",
   "author": {
     "name": "Alex Murphy"
   },
@@ -13,16 +13,16 @@
   "hooks": "./.codex-plugin/hooks.json",
   "interface": {
     "displayName": "Spotify Ads API",
-    "shortDescription": "Manage Spotify ad campaigns with natural language",
-    "longDescription": "Create campaigns, ad sets, and ads, pull reports, upload creative assets, and handle OAuth 2.0 — all through conversation. Wraps the Spotify Ads API v3.",
+    "shortDescription": "Manage Spotify ads, audiences, and measurement",
+    "longDescription": "Plan and manage campaigns, ad sets, ads, audiences, creative assets, conversion measurement, account access, and reporting through the Spotify Ads API v3.",
     "developerName": "Spotify",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
     "websiteURL": "https://developer.spotify.com/documentation/ads-api",
     "defaultPrompt": [
-      "Configure my Spotify Ads API credentials.",
-      "Show me a dashboard of my active Spotify ad campaigns.",
-      "Create a new Spotify ad campaign targeting US listeners."
+      "Plan and build a Spotify campaign as a validated draft.",
+      "Upload a customer list and create a Spotify Ads audience.",
+      "Audit my Spotify Pixel, CAPI, and ad-account access."
     ]
   }
 }

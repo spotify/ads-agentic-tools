@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debug Spotify measurement"
+  short_description: "Diagnose Pixel, CAPI, and dataset event delivery"
+  default_prompt: "Use $measurement-debug to audit my Spotify setup and explain why conversion events are missing or inconsistent."

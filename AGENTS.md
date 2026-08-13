@@ -18,6 +18,10 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/drafts/` — Draft campaign lifecycle: create, edit, validate, and publish draft campaigns, ad sets, and ads. **Preferred flow** for creating new campaigns — builds the full hierarchy as drafts, validates everything at once, then publishes only after review.
   - `skills/report/` — Aggregate, insight, and async CSV reporting
   - `skills/assets/` — Upload, list, and manage creative assets (audio, video, images)
+  - `skills/audiences/` — Customer-list uploads and custom, engagement, event, and lookalike audiences
+  - `skills/measurement-setup/` — Pixel, CAPI, datasets, event planning, advanced matching, mobile apps, and sharing
+  - `skills/measurement-debug/` — Read-only-first Pixel, CAPI, dataset, deduplication, and attribution troubleshooting
+  - `skills/account-admin/` — Business/ad-account discovery and account membership, roles, invitations, and details
   - `skills/dashboard/` — Quick performance overview with pacing for active campaigns
   - `skills/monitor/` — Campaign health diagnostics for pacing, delivery, stalled entities, and underdelivery
   - `skills/export/` — Denormalized CSV exports of campaigns, ad sets, ads, targeting, budgets, and optional metrics
