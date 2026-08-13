@@ -1,13 +1,13 @@
 ---
 name: bulk
-description: Apply batch operations to multiple Spotify Ads API entities — pause or resume ad sets, update budgets, toggle ad delivery, swap creatives, or archive campaigns, ad sets, and ads.
-argument-hint: "pause | resume | budget | delivery | archive | creative"
+description: Stage batch changes to Spotify Ads API campaigns, ad sets, and ads through drafts by default — pause, resume, budgets, delivery, archive, creative, and tracking changes. Use direct live writes only when explicitly requested.
+argument-hint: "pause | resume | budget | delivery | archive | creative | tracking"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
 
 # Spotify Ads API — Bulk Operations
 
-Apply batch changes to multiple entities in a single workflow. All operations follow the same pattern: list entities, select targets, confirm changes, apply sequentially.
+Apply batch changes to multiple entities in a single workflow. Campaign hierarchy changes are staged through drafts by default, grouped and validated by parent campaign, and never published automatically.
 
 ## Setup
 
@@ -29,6 +29,7 @@ Parse the user's argument to determine the operation:
 - `delivery` — Toggle ad delivery ON/OFF
 - `archive` — Archive multiple entities
 - `creative` — Swap creative assets across ads
+- `tracking` — Update third-party tracking across ads
 - If no argument, ask the user which operation.
 
 All operations optionally accept a campaign filter: `pause --campaign <campaign_id>` narrows the entity list to a specific campaign.
@@ -66,23 +67,25 @@ Ask the user to select entities. Support these selection formats:
 
 Show a summary of what will change. For budget operations, show before/after values. For status changes, show entity names and the target state.
 
-### 4. Apply sequentially
+### 4. Stage changes
 
-Execute PATCH requests one at a time. Report success or failure for each entity. Continue on partial failure — do not stop the batch if one entity fails.
+Group selected entities by parent campaign. For each target, check for an existing same-ID draft and disclose pending changes. If none exists, create a draft from the published entity, then PATCH the draft endpoint. Preserve fields the user did not request to change.
+
+After staging all selected changes, fetch each affected draft campaign's current `draft_hierarchy_version` and validate once per campaign. Continue on per-entity staging failures, but do not validate a campaign until all successful edits for that campaign are staged.
 
 ### 5. Show results
 
 Display a final summary table:
 
 ```
-Bulk Pause Results:
+Bulk Pause Staging Results:
 | Ad Set | Status | Result |
 |--------|--------|--------|
-| US 18-34 Audio | PAUSED | Success |
-| UK All Audio | PAUSED | Success |
-| US All Display | — | Failed: 403 Forbidden |
+| US 18-34 Audio | PAUSED | Staged; validation passed |
+| UK All Audio | PAUSED | Staged; validation passed |
+| US All Display | — | Failed: error details |
 
-2/3 operations succeeded.
+2/3 changes staged. Nothing was published.
 ```
 
 ---
@@ -109,14 +112,14 @@ api GET "ad_accounts/{ad_account_id}/campaigns?statuses=ACTIVE&limit=50&sort_dir
 
 #### Apply
 
-For each selected ad set:
+For each selected ad set, create or reuse its draft, then:
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$AD_SET_ID" \
   '{"status":"PAUSED"}'
 ```
 
-For campaigns, use the campaigns endpoint instead.
+For campaigns, create or reuse the campaign draft and PATCH `/drafts/campaigns/{id}` instead.
 
 Skip entities that are already PAUSED — note them as "Already paused, skipped" in the results.
 
@@ -134,10 +137,10 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?statuses=PAUSED&limit=50&sort_direc
 
 #### Apply
 
-For each selected ad set:
+For each selected ad set, create or reuse its draft, then:
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$AD_SET_ID" \
   '{"status":"ACTIVE"}'
 ```
 
@@ -178,10 +181,10 @@ Proceed with these changes?
 
 #### Apply
 
-For each selected ad set:
+For each selected ad set, create or reuse its draft, then:
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$AD_SET_ID" \
   '{"budget":{"micro_amount":<NEW_MICRO_AMOUNT>,"type":"<DAILY|LIFETIME>"}}'
 ```
 
@@ -209,10 +212,10 @@ Ask the user: toggle all selected to ON, or toggle all to OFF?
 
 #### Apply
 
-For each selected ad:
+For each selected ad, create or reuse its draft, then:
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/ads/$AD_ID" \
+api PATCH "ad_accounts/{ad_account_id}/drafts/ads/$AD_ID" \
   '{"delivery":"ON"}'
 ```
 
@@ -222,7 +225,7 @@ Skip ads already in the target delivery state.
 
 ### `archive`
 
-Archive multiple entities. This is effectively permanent — there is no unarchive for campaigns, ad sets, or ads.
+Stage archival of multiple entities. The draft can be reviewed or deleted before publishing, but publishing an archive is effectively permanent because campaigns, ad sets, and ads cannot be unarchived.
 
 #### Ask entity type
 
@@ -239,16 +242,45 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?statuses=ACTIVE&statuses=PAUSED&lim
 
 #### Confirm with warning
 
-Before applying, warn: "Archiving is effectively permanent. Archived entities cannot be reactivated. Are you sure?"
+Before staging, warn: "Publishing these staged archive changes will be effectively permanent. Archived entities cannot be reactivated. Stage these changes for review?"
 
 #### Apply
 
-For each selected entity:
+For each selected entity, create or reuse its draft, then:
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$AD_SET_ID" \
   '{"status":"ARCHIVED"}'
 ```
+
+---
+
+### `tracking`
+
+Update `third_party_tracking` across multiple ads. This is the default workflow for requests to fix, add, remove, or replace impression, click, quartile, completion, or viewability trackers.
+
+#### Step 1: Read and select ads
+
+List candidates, then fetch every selected published ad so the current tracking array is available. Present the existing trackers with `measurement_event`, `measurement_partner`, and a safely shortened URL.
+
+#### Step 2: Build complete intended arrays
+
+Apply the user's requested transformations while preserving entries they did not ask to remove or replace. Strip or rewrite URL macros only as explicitly requested. Set `measurement_event` on every entry; use `CLICKED` for click trackers and `IMPRESSION` for impression trackers.
+
+Show a before/after summary and ask for confirmation.
+
+#### Step 3: Stage each update
+
+For each selected ad, check for an existing same-ID draft. Create one from the published ad only after a 404, then PATCH the draft with the complete intended tracking array:
+
+```bash
+api GET "ad_accounts/{ad_account_id}/drafts/ads/$AD_ID"
+api POST "ad_accounts/{ad_account_id}/ads/$AD_ID/drafts" # only after draft GET returns 404
+api PATCH "ad_accounts/{ad_account_id}/drafts/ads/$AD_ID" \
+  '{"third_party_tracking":[...]}'
+```
+
+Resolve the parent draft campaign for every ad, group by campaign, and validate once per affected campaign after all successful tracking patches are staged. Report that nothing was published.
 
 ---
 
@@ -256,12 +288,7 @@ api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
 
 Swap creative assets across multiple ads.
 
-**Important**: The `PATCH /ads/{id}` endpoint does **not** support updating asset fields. To swap creative, this operation must:
-1. Read the existing ad's full configuration
-2. Create a **new** ad with the same configuration but different assets
-3. Archive the old ad
-
-This means creative swaps produce new ad IDs, new approval cycles, and reset delivery metrics. Warn the user about this before proceeding. Also preserve third-party tracking exactly from the original ad unless the user explicitly asks to remove or change tracking.
+The live `PATCH /ads/{id}` endpoint does not support updating asset fields, but draft ads do. Create or reuse a same-ID draft for each selected published ad and update its `assets` field. Preserve third-party tracking exactly unless the user explicitly asks to remove or change tracking.
 
 #### Step 1: List ads
 
@@ -283,7 +310,7 @@ Present table of available assets filtered to READY status.
 
 Ask the user to select which ads to update and which new asset to use. The new asset must match the ad set's `asset_format` (AUDIO, VIDEO, or IMAGE).
 
-#### Step 4: For each selected ad, swap
+#### Step 4: For each selected ad, stage the swap
 
 **Read the existing ad:**
 
@@ -291,63 +318,55 @@ Ask the user to select which ads to update and which new asset to use. The new a
 api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 ```
 
-**Create the replacement ad** with the same fields but new asset_id:
+**Check for or create the draft:**
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/ads" \
+api GET "ad_accounts/{ad_account_id}/drafts/ads/$AD_ID"
+api POST "ad_accounts/{ad_account_id}/ads/$AD_ID/drafts" # only after draft GET returns 404
+```
+
+**Update the draft ad** with the complete intended assets object:
+
+```bash
+api PATCH "ad_accounts/{ad_account_id}/drafts/ads/$AD_ID" \
   '{
-    "name": "<same_name>",
-    "ad_set_id": "<same_ad_set_id>",
-    "tagline": "<same_tagline>",
-    "advertiser_name": "<same_advertiser_name>",
     "assets": {
       "asset_id": "<NEW_ASSET_ID>",
       "logo_asset_id": "<same_logo>",
       "companion_asset_id": "<same_companion>"
-    },
-    "call_to_action": {
-      "key": "<same_key>",
-      "clickthrough_url": "<same_url>"
-    },
-    "third_party_tracking": <same_third_party_tracking_if_present>,
-    "delivery": "<same_delivery>"
+    }
   }'
 ```
 
-Only include `third_party_tracking` when it exists on the source ad. If tracking cannot be copied, ask the user before archiving the original ad.
-
-**Archive the old ad:**
-
-```bash
-api PATCH "ad_accounts/{ad_account_id}/ads/$OLD_AD_ID" \
-  '{"status":"ARCHIVED"}'
-```
+Resolve each draft ad's parent draft campaign and validate once per affected campaign after all swaps are staged. Do not archive the published ad and do not create a replacement live ad.
 
 #### Results table
 
 ```
 Creative Swap Results:
-| Original Ad | New Ad ID | Asset | Result |
-|-------------|-----------|-------|--------|
-| 30s Spot A (abc...) | def... | new-audio.mp3 | Success |
-| 30s Spot B (ghi...) | jkl... | new-audio.mp3 | Success |
+| Draft Ad | Published ID | Asset | Result |
+|----------|--------------|-------|--------|
+| 30s Spot A | abc... | new-audio.mp3 | Staged; validation passed |
+| 30s Spot B | ghi... | new-audio.mp3 | Staged; validation passed |
 
-2/2 swaps completed. Old ads archived. New ads are in PENDING approval status.
+2/2 swaps staged. Nothing was published.
 ```
 
 ---
 
 ## Execution Behavior
 
-- If `auto_execute` is `true`, execute after the user confirms the change summary. The listing and selection steps always require user interaction regardless of auto_execute.
+- If `auto_execute` is `true`, stage and validate after the user confirms the change summary. The listing and selection steps always require user interaction regardless of auto_execute.
 - If `auto_execute` is `false`, present each curl command and ask for confirmation before executing.
 - Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
 - On error for any individual entity, log the error and continue with remaining entities. Never automatically retry POST or PATCH requests.
 - Display a final summary showing success/failure count and per-entity results.
 - For accounts with >50 entities, show the first 50 and suggest using a campaign filter (`--campaign <id>`) to narrow results.
+- Never publish staged bulk changes automatically. Publishing is a separate operation and requires explicit confirmation immediately before each affected campaign's `PUBLISH` request.
+- Only use direct published endpoints when the user explicitly asks for immediate/direct live changes. If such a request returns HTTP 403 or an edit-permission error, describe only the direct-write denial and offer draft staging; do not infer that the credentials are read-only.
 
 ## Cross-references
 
 - Before bulk operations, review performance with `/spotify-ads-api:dashboard`.
-- For individual entity changes, use `/spotify-ads-api:campaigns update` or `/spotify-ads-api:ads ad-sets update`.
+- For individual entity changes, use `/spotify-ads-api:drafts stage-edit <campaign|ad-set|ad> <id> <changes>`.
 - To see available assets for creative swaps, use `/spotify-ads-api:assets list`.

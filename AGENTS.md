@@ -101,6 +101,8 @@ api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"...
 
 The wrapper handles settings discovery (platform-ordered fallback), authentication, SDK/skill tracking headers, and `\nHTTP_STATUS:<code>` capture. If `auto_execute` is false, the skill presents the command and asks for confirmation before executing. Exceptions (asset file uploads, OAuth token exchange) use raw curl — see the relevant skill for details.
 
+In skills, agents, documentation, and test scenarios, express standard Ads API v3 requests with the shared `api()` helper, never as expanded raw HTTP-client commands. This keeps authentication, tracking headers, settings lookup, and status capture centralized. Only the documented asset-upload and OAuth implementations may use their required raw transport commands; do not use those exceptions as patterns for ordinary API examples.
+
 After execution, check the `HTTP_STATUS:` line first:
 - **2xx**: Request succeeded — parse and display the response body.
 - **4xx/5xx**: Request failed — display the error from the response body. **Never retry a POST or PATCH that returned a non-timeout 4xx** — the request was received and rejected, not lost.

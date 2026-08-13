@@ -11,7 +11,7 @@ Context: User wants to create a campaign using plain English
 user: "Create a campaign called Summer Sale with a reach objective"
 assistant: "I'll use the api-request-builder agent to translate this into the correct Spotify Ads API call."
 <commentary>
-User is describing a campaign creation in natural language, which needs to be mapped to the correct POST /ad_accounts/{id}/campaigns endpoint with the right request body.
+User is describing campaign creation in natural language. Campaign hierarchy writes default to the draft workflow, so this maps to POST /ad_accounts/{id}/drafts/campaigns with the right request body.
 </commentary>
 </example>
 
@@ -38,7 +38,7 @@ Context: User wants to modify existing resources
 user: "Pause the Summer Sale campaign"
 assistant: "I'll use the api-request-builder agent to construct the update request."
 <commentary>
-User wants to change campaign status, which maps to PATCH /campaigns/{id} with status: PAUSED.
+User wants to change a published campaign. Default to creating or reusing its draft, PATCH the draft campaign with status: PAUSED, and validate the staged hierarchy. Do not PATCH the published campaign unless the user explicitly asks for an immediate live change.
 </commentary>
 </example>
 
@@ -113,21 +113,44 @@ When the user provides a landing page, business/product page, brand brief, locat
 - Exception: draft `PUBLISH` requests create live entities and must always be confirmed immediately before execution, even when `auto_execute` is `true`.
 - For multi-step operations: Present the full plan first (e.g., "This requires 3 API calls: 1. Create campaign, 2. Create ad set, 3. Create ad"), then execute them in sequence.
 
-**Multi-Step Operations — Prefer Drafts:**
-When the user describes a complete ad setup (campaign + ad sets + ads), use the **draft workflow** by default. Route to the `/spotify-ads-api:drafts build <description>` skill. The draft flow creates draft entities first, validates the full hierarchy, and only publishes after user confirmation.
+**Campaign Hierarchy Writes — Drafts by Default:**
+For every create or modify request involving a campaign, ad set, or ad, use the **draft workflow** by default. This applies even when the user does not say "draft," including ordinary language such as "change," "update," "adjust," "fix," "pause," "resume," "archive," "swap," or "make these edits." Route these requests to the `/spotify-ads-api:drafts` skill.
 
-If the user explicitly asks to skip drafts or create live entities immediately, use the direct flow:
+- Complete new hierarchy: `/spotify-ads-api:drafts build <description>`
+- New campaign: create a draft campaign.
+- New ad set under a published campaign: create or reuse a draft from that campaign, then create the draft ad set under it.
+- New ad under a published ad set: create or reuse a draft from that ad set, then create the draft ad under it.
+- Modify a published entity: use `/spotify-ads-api:drafts stage-edit <campaign|ad-set|ad> <entity_id> <changes>`.
+
+For a published-entity edit, the draft skill must:
+1. Read the published entity for context.
+2. Check for an existing draft with the same ID. Drafts created from published entities reuse the published ID.
+3. If an existing draft is found, show its pending state before combining changes. Do not overwrite undisclosed staged work.
+4. Otherwise create it with `POST /campaigns/{id}/drafts`, `POST /ad_sets/{id}/drafts`, or `POST /ads/{id}/drafts`.
+5. PATCH the corresponding `/drafts/.../{id}` endpoint.
+6. Resolve the parent draft campaign, fetch its current `draft_hierarchy_version`, and validate the hierarchy.
+7. Report the result as staged. Do not publish unless the user separately asks to publish.
+
+Credentials may allow reading and draft staging while denying direct writes to published entities. Do not describe credentials as "read-only" based only on a direct-write permission error.
+
+Only if the user explicitly asks to skip drafts, use a direct/live operation, or apply the change immediately to the published entity, use the direct flow:
 1. **Campaign** → POST /ad_accounts/{id}/campaigns
 2. **Ad Set** → POST /ad_accounts/{id}/ad_sets (uses campaign_id from step 1)
 3. **Ad** → POST /ad_accounts/{id}/ads (uses ad_set_id from step 2)
 
 Pass IDs from each step's response to the next step.
 
+For an explicit direct/live write that receives HTTP 403 or an edit-permission error:
+- Do not retry the same published write.
+- Explain only that direct editing of the published entity was denied; do not infer that all credentials are read-only or identify a specific organizational role.
+- Offer to stage the same requested changes through the draft workflow.
+- Do not silently stage the change if the user explicitly required an immediate live update.
+
 **Change History Routing:**
 When the user asks about changes, audit trail, activity log, who changed what, or what changed (e.g., "what changed this week?", "who modified the budget?", "show me recent changes"), route to the `/spotify-ads-api:change-history` skill.
 
 **Draft Management:**
-When the user asks about drafts, draft campaigns, validating, or publishing drafts, route to the `/spotify-ads-api:drafts` skill. Operations include: listing drafts, editing draft entities, validating a draft campaign hierarchy, publishing drafts, creating drafts from existing live entities, and deleting drafts.
+Route all campaign, ad set, and ad creation or modification requests to the `/spotify-ads-api:drafts` skill by default, as well as explicit requests about drafts, validation, publishing, or deleting drafts. Read-only list/get requests may continue to use the campaigns or ads skills.
 
 **Specialized Skill Routing:**
 Route focused requests to the matching skill instead of rebuilding those workflows here:

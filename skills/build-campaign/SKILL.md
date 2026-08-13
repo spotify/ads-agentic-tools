@@ -10,9 +10,9 @@ allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 Given a plain-text description of an advertising campaign, parse it into structured API
 calls and create the full campaign hierarchy: Campaign → Ad Sets → Ads.
 
-## Preferred Flow: Draft → Validate → Publish
+## Default Flow: Draft → Validate → Publish
 
-By default, use the **draft workflow** to build campaigns. This creates draft entities first, validates the entire hierarchy, and only publishes after confirmation. Route to the `/spotify-ads-api:drafts build <description>` skill to execute the draft flow.
+By default, use the **draft workflow** for all campaign hierarchy creation. This creates draft entities first, validates the entire hierarchy, and only publishes after confirmation. Route to the `/spotify-ads-api:drafts build <description>` skill to execute the draft flow.
 
 The draft flow is preferred because:
 - **Batch validation** catches all errors across the hierarchy before anything goes live
@@ -21,7 +21,7 @@ The draft flow is preferred because:
 
 Publishing a draft always requires explicit user confirmation immediately before the `PUBLISH` request, even when `auto_execute` is enabled.
 
-Only use the direct creation flow below if the user explicitly asks to skip drafts or create live entities immediately.
+Only use the direct creation flow below if the user explicitly asks to skip drafts or create live entities immediately. If a direct write is denied, do not infer that the credentials are read-only; offer the draft workflow instead.
 
 ## Direct Creation Flow (Legacy)
 

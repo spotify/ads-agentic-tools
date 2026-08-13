@@ -31,6 +31,10 @@ Run scenarios 3-6 and 11-21 sequentially. Several scenarios reuse IDs or assets 
 
 Run scenarios 22-32 to exercise campaign strategy, monitoring, export, bulk operations, cloning, audiences, measurement, account administration, and change history. Scenarios 24-25, 27, and 30 mutate state and require the confirmations described in each scenario.
 
+### Draft-first regression coverage
+
+Run scenarios 33-34 to verify that implicit tracking edits use drafts and that an explicitly requested direct write handles permission denial without overstating the credentials' restrictions. Scenario 33 requires existing published ads with tracking entries; Scenario 34 may use a mocked 403 response.
+
 ## Validation checklist
 
 For every scenario, verify:
