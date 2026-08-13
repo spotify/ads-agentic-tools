@@ -1,0 +1,4 @@
+interface:
+  display_name: "Account Administration"
+  short_description: "Manage businesses, accounts, and access"
+  default_prompt: "Use $account-admin to inspect my ad account members and roles."

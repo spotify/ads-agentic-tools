@@ -93,7 +93,38 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 ### Audiences
 - `POST /ad_accounts/{id}/audiences` — Create audience (CUSTOM or LOOKALIKE)
 - `GET /ad_accounts/{id}/audiences` — List audiences
+- `GET/PATCH /ad_accounts/{id}/audiences/{audience_id}` — Get or edit an audience
 - `DELETE /ad_accounts/{id}/audiences/{audience_id}` — Delete audience
+- `POST /ad_accounts/{id}/audiences/upload_url` — Get a signed customer-list upload URL
+- `POST /ad_accounts/{id}/audiences/upload_url/{audience_id}` — Replace an audience file
+- `GET /ad_accounts/{id}/audiences/datasets` — List datasets eligible for custom audiences
+
+### Measurement Setup
+- `GET/POST /businesses/{id}/mobile_apps` — List or register mobile apps
+- `GET/PATCH /businesses/{id}/mobile_apps/{mobile_app_id}` — Get or update a mobile app
+- `POST/DELETE /businesses/{id}/mobile_apps/{mobile_app_id}/ad_accounts/{ad_account_id}` — Share or unshare an app
+- `GET/POST /businesses/{id}/pixels` — List or create Pixels
+- `GET/PATCH /businesses/{id}/pixels/{pixel_id}` — Get or update a Pixel
+- `POST /businesses/{id}/capi` — Create a CAPI integration
+- `GET/PATCH /businesses/{id}/capi/{connection_id}` — Get or update CAPI
+- `POST/GET/DELETE /businesses/{id}/capi/{connection_id}/tokens[...]` — Manage CAPI auth tokens
+- `GET/POST /businesses/{id}/datasets` — List or create datasets
+- `GET/PATCH /businesses/{id}/datasets/{dataset_id}` — Get or update a dataset
+- `GET /businesses/{id}/datasets/{dataset_id}/diagnostics` — Inspect received events
+- `POST/DELETE /businesses/{id}/datasets/{dataset_id}/ad_accounts/{ad_account_id}` — Share or unshare a dataset
+
+### Account Administration
+- `GET/POST /businesses` — List or create businesses
+- `GET/PATCH /businesses/{id}` — Get or update a business
+- `GET /businesses/{id}/members` — List members and invited users
+- `GET/PATCH/DELETE /businesses/{id}/members/{member_id}` — Inspect, edit, or remove a member
+- `PATCH /businesses/{id}/members/{member_id}/role` — Update a business role
+- `GET/POST /businesses/{id}/invitations` — List or create invitations
+- `DELETE /businesses/{id}/invitations/{invitation_id}` — Cancel an invitation
+- `GET/POST /businesses/{id}/ad_accounts` — List or create ad accounts
+- `GET/PATCH /ad_accounts/{id}` — Get or update supported ad-account fields
+- `GET/POST /ad_accounts/{id}/members` — List or add ad-account members
+- `PATCH/DELETE /ad_accounts/{id}/members/{member_id}` — Update a role or remove access
 
 ### Reports
 - `GET /ad_accounts/{id}/aggregate_reports` — Aggregated metrics by entity

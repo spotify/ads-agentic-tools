@@ -18,6 +18,10 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/drafts/` — Draft campaign lifecycle: create, edit, validate, and publish draft campaigns, ad sets, and ads. **Preferred flow** for creating new campaigns — builds the full hierarchy as drafts, validates everything at once, then publishes only after review.
   - `skills/report/` — Aggregate, insight, and async CSV reporting
   - `skills/assets/` — Upload, list, and manage creative assets (audio, video, images)
+  - `skills/audiences/` — Customer-list uploads and custom, engagement, event, and lookalike audiences
+  - `skills/measurement-setup/` — Pixel, CAPI, datasets, event planning, advanced matching, mobile apps, and sharing
+  - `skills/measurement-debug/` — Read-only-first Pixel, CAPI, dataset, deduplication, and attribution troubleshooting
+  - `skills/account-admin/` — Business/ad-account discovery and account membership, roles, invitations, and details
   - `skills/dashboard/` — Quick performance overview with pacing for active campaigns
   - `skills/monitor/` — Campaign health diagnostics for pacing, delivery, stalled entities, and underdelivery
   - `skills/export/` — Denormalized CSV exports of campaigns, ad sets, ads, targeting, budgets, and optional metrics
@@ -96,6 +100,8 @@ api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"...
 ```
 
 The wrapper handles settings discovery (platform-ordered fallback), authentication, SDK/skill tracking headers, and `\nHTTP_STATUS:<code>` capture. If `auto_execute` is false, the skill presents the command and asks for confirmation before executing. Exceptions (asset file uploads, OAuth token exchange) use raw curl — see the relevant skill for details.
+
+In skills, agents, documentation, and test scenarios, express standard Ads API v3 requests with the shared `api()` helper, never as expanded raw HTTP-client commands. This keeps authentication, tracking headers, settings lookup, and status capture centralized. Only the documented asset-upload and OAuth implementations may use their required raw transport commands; do not use those exceptions as patterns for ordinary API examples.
 
 After execution, check the `HTTP_STATUS:` line first:
 - **2xx**: Request succeeded — parse and display the response body.
