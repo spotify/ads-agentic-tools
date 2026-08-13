@@ -4,7 +4,7 @@ This is the canonical instruction file for agents working in this repository. Co
 
 ## What This Is
 
-A Codex, Claude Code, and Antigravity CLI plugin package for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
+A Codex, Claude Code, and Antigravity CLI plugin package for the Spotify Ads API v3. Plugin source is markdown and shell; there is no compiled code, package manager, or build step. Lightweight shell regression tests live under `tests/`. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
 
 ## Architecture
 
@@ -52,7 +52,7 @@ When updating marketplace metadata, keep the plugin name, source path, category,
 These non-obvious API quirks were discovered through real testing and are critical when modifying any command or agent:
 
 - **Micro-amounts**: Budget and bid values in entity payloads (`budget.micro_amount`, `bid_micro_amount`) are in micro-units (1 unit of the ad account's billing currency = 1,000,000 micro-units; e.g., $1 USD = 1,000,000, ¥1 JPY = 1,000,000). However, SPEND values returned by `aggregate_reports` are already in the billing currency — do NOT divide those by 1,000,000.
-- **`bid_strategy`** is a plain string enum (`MAX_BID`, `COST_PER_RESULT`, `UNSET`), not an object. Default to `MAX_BID` with a required `bid_micro_amount`.
+- **`bid_strategy`** is a plain string enum (`MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, `UNSET`), not an object. Default to `MAX_BID` with a required `bid_micro_amount`; use `AUTOBID` for automatic bidding without `bid_micro_amount`. Do not choose `UNSET` for new ad sets.
 - **`geo_targets`** is a flat object (not an array) with a required `country_code` and optional refinement arrays (`region_ids`, `city_ids`, `postal_code_ids`). Use `GET /targets/geos?country_code=<code>&q=<query>` to look up geo IDs. Geo types returned by lookup: `REGION` (states/provinces), `DMA_REGION` (media markets), `CITY`, `POSTAL_CODE` — note that `dma_ids` is no longer a valid targeting field; DMA-level targeting is not supported. Example: `{"country_code": "US", "region_ids": ["4831725"]}` targets Connecticut. NEVER fall back to country-only without looking up the user's requested location first.
 - **`platforms`** valid values are `ANDROID`, `DESKTOP`, `IOS` — not "MOBILE" or "CONNECTED_DEVICE".
 - **`category`** is required on ad sets — must be a valid `ADV_X_Y` code from `GET /ad_categories`.

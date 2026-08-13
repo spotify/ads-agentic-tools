@@ -31,16 +31,16 @@ List campaigns for the configured ad account.
 api GET "ad_accounts/{ad_account_id}/campaigns?limit=50&sort_direction=DESC"
 ```
 
-Format the output as a table: ID | Name | Status | Objective | Created
+Format the output as a table: ID | Name | Status | Objective / Delivery Goal Group | Created
 
 ### `create`
-Prompt the user for required fields:
+Prompt the user for a name and campaign goal. Map the goal to `delivery_goal_group` using the mapping in the drafts skill.
 - **name** (string, 2-200 chars)
-- **objective** (REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS)
+- **delivery_goal_group** (`AWARENESS`, `WEBSITE_TRAFFIC`, `APP_PROMOTION`, `ENGAGEMENT_ON_SPOTIFY`, or `LEAD_GEN`)
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
-  '{"name":"...","objective":"..."}'
+  '{"name":"...","delivery_goal_group":"..."}'
 ```
 
 Campaign creation is staged by default. Display the returned draft ID and current `draft_hierarchy_version`. Do not publish unless the user separately requests publishing through the drafts skill.

@@ -53,11 +53,12 @@
 ```
 
 ### CreateCampaignRequest
-Required: `name`, `objective`
+Required: `name`, `objective`. The direct v3 endpoint still requires deprecated `objective`; prefer draft creation with `delivery_goal_group`.
 ```json
 {
   "name": "string (2-200 chars)",
-  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY | PODCAST_STREAMS | APP_INSTALLS | WEBSITE_VISITS",
+  "objective": "(deprecated) REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY | PODCAST_STREAMS | APP_INSTALLS | WEBSITE_VISITS",
+  "delivery_goal_group": "AWARENESS | WEBSITE_TRAFFIC | APP_PROMOTION | ENGAGEMENT_ON_SPOTIFY | LEAD_GEN (optional)",
   "purchase_order": "string (optional)",
   "measurement_partner": "string (optional)"
 }
@@ -480,9 +481,9 @@ Bid amounts are in micro-units. Divide by 1,000,000 for currency values.
 {
   "id": "uuid",
   "name": "string (max 200 chars)",
-  "objective": "REACH | EVEN_IMPRESSION_DELIVERY | CLICKS | VIDEO_VIEWS | PODCAST_STREAMS",
+  "objective": "(deprecated) REACH | EVEN_IMPRESSION_DELIVERY | CLICKS | VIDEO_VIEWS | PODCAST_STREAMS",
   "purchase_order": "string (max 45 chars)",
-  "delivery_goal_group": "AWARENESS | CONSIDERATION",
+  "delivery_goal_group": "AWARENESS | WEBSITE_TRAFFIC | APP_PROMOTION | ENGAGEMENT_ON_SPOTIFY | LEAD_GEN",
   "status": "CampaignStatus enum",
   "draft_hierarchy_version": 1,
   "ad_account_id": "uuid",

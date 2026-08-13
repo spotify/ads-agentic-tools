@@ -155,8 +155,10 @@ Create entities in dependency order, passing IDs forward.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
-  '{"name":"Summer Promo (Copy)","objective":"REACH"}'
+  '{"name":"Summer Promo (Copy)","delivery_goal_group":"AWARENESS"}'
 ```
+
+Copy the source `delivery_goal_group` when present. If the source only exposes the deprecated `objective`, map it to `delivery_goal_group` using the mapping in the drafts skill; do not copy `objective` into the new draft.
 
 Extract the new campaign `id` from the response. If this fails, stop — no dependent entities can be created.
 
@@ -295,7 +297,7 @@ Fetch the target draft campaign's current version, validate it, and use the same
 
 | Entity | Fields Copied | Fields Generated/Modified |
 |--------|---------------|---------------------------|
-| Campaign | `objective`, `purchase_order` | `name` (appended " (Copy)"), new `id` |
+| Campaign | `delivery_goal_group`, `purchase_order` | `name` (appended " (Copy)"), new `id`; map a legacy source `objective` to `delivery_goal_group` |
 | Ad Set | `asset_format`, `category`, `targets`, `bid_strategy`, `bid_micro_amount`, `pacing`, `frequency_caps` | `name`, `campaign_id`, `start_time`, `end_time`, `budget`, new `id` |
 | Ad | `tagline`, `advertiser_name`, `assets`, `call_to_action`, `third_party_tracking` | `name` (kept same), `ad_set_id`, new `id` |
 

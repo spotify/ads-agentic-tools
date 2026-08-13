@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.8.0] - 2026-08-13
+
+### Added
+- Audience management for customer-list uploads and replacements, web-event and ad-engagement audiences, lookalikes, discovery, editing, status checks, and deletion
+- Conversion measurement setup for Spotify Pixel, Conversions API (CAPI), datasets, advanced matching, event mapping, mobile apps, and ad-account sharing
+- Read-only-first measurement debugging for missing, stale, duplicated, misrouted, or unattributed Pixel and CAPI events
+- Business and ad-account administration for account discovery, member and role audits, invitations, access assignments, and supported account updates
+- Change-history queries for auditing who changed campaigns, ad sets, creatives, budgets, targeting, statuses, and other settings within the API's 180-day retention window
+- A prompt catalog and expanded behavioral scenarios covering routing, schema rules, destructive-operation confirmation, draft workflows, and recovery behavior
+- A 36-case shell regression suite for token updates, command substitution, settings discovery, and hook response formats
+
+### Changed
+- Made drafts the default for campaign, ad-set, and ad creation or modification; complete hierarchies are validated before publishing, and publishing always requires explicit confirmation
+- Added staged edits for published entities, including existing-draft preservation, create-from-published flows, parent-campaign resolution, and grouped validation for bulk changes
+- Updated the bundled OpenAPI specification and API reference to the August 2026 Ads API surface
+- Replaced deprecated `objective` usage on draft campaigns with `delivery_goal_group` and documented goal-to-group mappings; direct v3 campaign creation and estimate requests retain `objective` where the API still requires it
+- Removed unsupported `dma_ids` targeting guidance while retaining an explanation that DMA results may still appear in geo lookup responses
+- Updated budget and bid documentation for ad accounts in any billing currency instead of assuming USD
+- Documented draft-only field optionality, `FAILED` ad and async-report statuses, experiment availability, and attribution-window fields
+- Clarified that `AUTOBID` enables automatic bidding without `bid_micro_amount`, while `UNSET` should not be chosen for new ad sets
+- Refreshed natural-language routing, plugin prompts, onboarding instructions, marketplace descriptions, README examples, and Claude Code auto-update guidance
+- Synced version `1.8.0` across the Claude Code, Codex, and Antigravity manifests
+
+### Fixed
+- Prevented OAuth token values containing pipes, ampersands, backslashes, wildcard characters, or other shell metacharacters from corrupting settings or command substitution
+- Prevented ordinary update requests from writing directly to published campaign hierarchies when they should be staged as drafts
+- Prevented direct-write permission errors from being reported as proof that credentials are entirely read-only
+- Corrected draft campaign examples and manual reference schemas that still used deprecated or invalid campaign-goal values
+- Aligned request-builder bidding guidance with the current `AUTOBID` and `UNSET` semantics
+
 ## [1.7.0] - 2026-07-23
 
 ### Added
