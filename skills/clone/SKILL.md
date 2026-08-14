@@ -1,15 +1,15 @@
 ---
 name: clone
-description: Clone an existing Spotify Ads API campaign or ad set — duplicate the full hierarchy (campaign, ad sets, ads) with optional modifications to name, dates, budget, or targeting.
-argument-hint: "campaign <campaign_id> | ad-set <ad_set_id>"
+description: Clone an existing Spotify Ads API campaign or ad set as a validated draft hierarchy by default, with optional modifications to name, dates, budget, or targeting.
+argument-hint: "campaign <campaign_id> | ad-set <ad_set_id> | campaign-live | ad-set-live"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
 
 # Spotify Ads API — Campaign & Ad Set Cloning
 
-Clone an existing campaign or ad set by reading its full hierarchy and recreating it with optional modifications.
+Clone an existing campaign or ad set by reading its full hierarchy and recreating it as drafts with optional modifications. Nothing is published automatically.
 
-**Note:** If the goal is to _edit_ an existing campaign rather than _duplicate_ it, use `/spotify-ads-api:drafts draft-from <campaign_id>` instead — this creates a draft copy of the live entity that can be edited and re-published.
+**Note:** If the goal is to _edit_ an existing campaign rather than _duplicate_ it, use `/spotify-ads-api:drafts stage-edit campaign <campaign_id> <changes>` instead.
 
 ## Setup
 
@@ -162,7 +162,7 @@ Skipped: 1 archived ad ("Old Creative")
 
 Ask for confirmation before executing.
 
-### Step 6: Execute Sequentially
+### Step 6: Create Drafts Sequentially
 
 Create entities in dependency order, passing IDs forward.
 
@@ -172,9 +172,11 @@ For a destination CONTENT or FPMNG campaign, include that explicit `ad_product` 
 request. For the default AUCTION flow, omit `ad_product`.
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/campaigns" \
-  '{"name":"Summer Promo (Copy)","objective":"REACH"}'
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
+  '{"name":"Summer Promo (Copy)","delivery_goal_group":"AWARENESS"}'
 ```
+
+Copy the source `delivery_goal_group` when present. If the source only exposes the deprecated `objective`, map it to `delivery_goal_group` using the mapping in the drafts skill; do not copy `objective` into the new draft.
 
 Extract the new campaign `id` from the response. If this fails, stop — no dependent entities can be created.
 
@@ -183,7 +185,7 @@ Extract the new campaign `id` from the response. If this fails, stop — no depe
 For each source ad set, excluding any the user filtered out:
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/ad_sets" \
+api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
   '{
     "name": "US 18-34 Audio (Copy)",
     "campaign_id": "<NEW_CAMPAIGN_ID>",
@@ -209,7 +211,7 @@ If an ad set creation fails, log the error and skip its ads. Continue with remai
 For each source ad, excluding ARCHIVED/REJECTED, mapped to the correct new ad set:
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/ads" \
+api POST "ad_accounts/{ad_account_id}/drafts/ads" \
   '{
     "name": "30s Spot A",
     "ad_set_id": "<NEW_AD_SET_ID>",
@@ -233,22 +235,26 @@ Only include `third_party_tracking` when it exists on the source ad. Preserve it
 
 If an ad creation fails, log the error and continue with remaining ads.
 
-### Step 7: Display Summary
+### Step 7: Validate and Display Summary
+
+Fetch the new draft campaign after all child drafts are created, use its current `draft_hierarchy_version`, and run `VALIDATE`. Do not publish as part of cloning.
 
 ```
-Clone Complete:
+Clone Staged:
 | Entity | Source ID | New ID | Name | Status |
 |--------|-----------|--------|------|--------|
-| Campaign | abc-123 | def-456 | Summer Promo (Copy) | ACTIVE |
-| Ad Set 1 | ... | ... | US 18-34 Audio (Copy) | ACTIVE |
-| ↳ Ad 1 | ... | ... | 30s Spot A | PENDING |
-| ↳ Ad 2 | ... | ... | 30s Spot B | PENDING |
-| Ad Set 2 | ... | ... | US 25-54 Video (Copy) | ACTIVE |
-| ↳ Ad 3 | ... | ... | 15s Video | PENDING |
+| Campaign | abc-123 | def-456 | Summer Promo (Copy) | DRAFT |
+| Ad Set 1 | ... | ... | US 18-34 Audio (Copy) | DRAFT |
+| ↳ Ad 1 | ... | ... | 30s Spot A | DRAFT |
+| ↳ Ad 2 | ... | ... | 30s Spot B | DRAFT |
+| Ad Set 2 | ... | ... | US 25-54 Video (Copy) | DRAFT |
+| ↳ Ad 3 | ... | ... | 15s Video | DRAFT |
 
-Created: 1 campaign, 2 ad sets, 3 ads
+Staged: 1 campaign, 2 ad sets, 3 ads
 Skipped: 1 archived ad
 Failed: 0
+Validation: Passed
+Published: No
 ```
 
 ---
@@ -273,6 +279,8 @@ Ask the user where to place the cloned ad set:
 - Same campaign (default)
 - A different existing campaign (ask for campaign_id, or list campaigns to choose from)
 
+Create or reuse a draft from the selected published target campaign before adding the cloned draft ad set. If a draft already exists, disclose its pending state before adding to it.
+
 ### Step 3: Ask for Modifications
 
 Same modification options as campaign clone (name, dates, budget, targeting) but applied to the single ad set only.
@@ -287,23 +295,23 @@ the existing confirmation. Do not print a per-field checklist or add another gat
 
 ### Step 5: Execute
 
-Create the ad set, then create its ads:
+Create the draft ad set, then create its draft ads:
 
 ```bash
 # Create ad set
-api POST "ad_accounts/{ad_account_id}/ad_sets" \
+api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
   '{...}'
 ```
 
 ```bash
 # Create each ad under the new ad set
-api POST "ad_accounts/{ad_account_id}/ads" \
+api POST "ad_accounts/{ad_account_id}/drafts/ads" \
   '{...}'
 ```
 
-### Step 6: Display Summary
+### Step 6: Validate and Display Summary
 
-Same summary format as campaign clone, but without the campaign row.
+Fetch the target draft campaign's current version, validate it, and use the same staged summary format as campaign clone, but without a newly cloned campaign row.
 
 ---
 
@@ -311,7 +319,7 @@ Same summary format as campaign clone, but without the campaign row.
 
 | Entity | Fields Copied | Fields Generated/Modified |
 |--------|---------------|---------------------------|
-| Campaign | `objective`, `purchase_order` | `name` (appended " (Copy)"), new `id` |
+| Campaign | `delivery_goal_group`, `purchase_order` | `name` (appended " (Copy)"), new `id`; map a legacy source `objective` to `delivery_goal_group` |
 | Ad Set | `asset_format`, `category`, `targets`, `bid_strategy`, `bid_micro_amount`, `pacing`, `frequency_caps` | `name`, `campaign_id`, `start_time`, `end_time`, `budget`, new `id` |
 | Ad | `tagline`, `advertiser_name`, `assets`, `call_to_action`, `third_party_tracking` | `name` (kept same), `ad_set_id`, new `id` |
 
@@ -325,6 +333,8 @@ Same summary format as campaign clone, but without the campaign row.
 - If campaign creation fails, stop entirely — no ad sets or ads can be created without a campaign.
 - If an ad set creation fails, skip its ads but continue with remaining ad sets. Show what was created and what failed in the summary.
 - If an ad creation fails, continue with remaining ads. Never automatically retry POST requests — the ad may have been created despite the error. Check for it first if retrying manually.
+- Never publish a clone automatically. Publishing is a separate operation and requires explicit confirmation immediately before `PUBLISH`.
+- Use published creation endpoints only when the user explicitly asks to clone directly to live entities. If a direct write is denied, do not infer that the credentials are read-only; offer the draft clone workflow instead.
 
 ## Cross-references
 

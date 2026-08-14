@@ -179,6 +179,8 @@ The draft flow creates staging entities, validates everything at once, then publ
 
 ### Step 1: Create Draft Campaign
 
+Use `delivery_goal_group`, not the deprecated `objective` field, on draft campaigns.
+
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
@@ -186,7 +188,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Summer Sale 2025",
-    "objective": "REACH"
+    "delivery_goal_group": "AWARENESS"
   }' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns"
 ```
@@ -196,7 +198,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
 {
   "id": "d1e2f3a4-b5c6-7890-abcd-ef1234567890",
   "name": "Summer Sale 2025",
-  "objective": "REACH",
+  "delivery_goal_group": "AWARENESS",
   "draft_hierarchy_version": 1,
   "created_at": "2025-06-01T12:00:00Z"
 }
@@ -341,7 +343,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
     "id": "published-campaign-uuid",
     "name": "Summer Sale 2025",
     "status": "ACTIVE",
-    "objective": "REACH"
+    "delivery_goal_group": "AWARENESS"
   },
   "validation_errors": null
 }

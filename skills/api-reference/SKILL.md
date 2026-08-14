@@ -50,7 +50,7 @@ Business
 
 Every CRUD operation on campaigns, ad sets, ads, assets, and audiences is scoped under an **ad account ID**.
 
-**Draft workflow (preferred for new campaigns):** Create draft entities → validate the entire hierarchy → publish. See the Drafts endpoint group below.
+**Draft workflow (default for campaign hierarchy writes):** Create drafts for new entities or from published entities → edit → validate → publish only after explicit confirmation. Use this flow for campaign, ad set, and ad creation or modification unless the user explicitly requests a direct live write.
 
 For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately before the action and use its current `draft_hierarchy_version`. `PUBLISH` creates live entities and always requires explicit user confirmation, even when automatic execution is enabled.
 
@@ -61,13 +61,13 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - **IDs**: UUID format (e.g., `ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a`).
 - **Pagination**: All list endpoints support `limit` (1-50, default 50) and `offset` (default 0).
 - **Sorting**: Most list endpoints support `sort_direction` (ASC/DESC) and entity-specific sort fields.
-- **Updates use PATCH**: Partial updates with minimum 1 property required.
+- **Updates use PATCH**: Partial updates with minimum 1 property required. For campaign, ad set, and ad changes, PATCH the draft endpoint by default.
 - **No DELETE on live campaigns/ad sets/ads**: Use status changes (ARCHIVED, PAUSED) instead. Draft entities _can_ be deleted.
 
 ## Public Endpoint Groups
 
 ### Campaigns
-- `POST /ad_accounts/{id}/campaigns` — Create campaign (required: name, objective)
+- `POST /ad_accounts/{id}/campaigns` — Create a live campaign (required: name and deprecated `objective`; prefer drafts with `delivery_goal_group`)
 - `GET /ad_accounts/{id}/campaigns` — List campaigns (filterable by status, name, IDs)
 - `GET /ad_accounts/{id}/campaigns/{campaign_id}` — Get campaign by ID
 - `PATCH /ad_accounts/{id}/campaigns/{campaign_id}` — Update campaign (name, status)
@@ -93,7 +93,38 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 ### Audiences
 - `POST /ad_accounts/{id}/audiences` — Create audience (CUSTOM or LOOKALIKE)
 - `GET /ad_accounts/{id}/audiences` — List audiences
+- `GET/PATCH /ad_accounts/{id}/audiences/{audience_id}` — Get or edit an audience
 - `DELETE /ad_accounts/{id}/audiences/{audience_id}` — Delete audience
+- `POST /ad_accounts/{id}/audiences/upload_url` — Get a signed customer-list upload URL
+- `POST /ad_accounts/{id}/audiences/upload_url/{audience_id}` — Replace an audience file
+- `GET /ad_accounts/{id}/audiences/datasets` — List datasets eligible for custom audiences
+
+### Measurement Setup
+- `GET/POST /businesses/{id}/mobile_apps` — List or register mobile apps
+- `GET/PATCH /businesses/{id}/mobile_apps/{mobile_app_id}` — Get or update a mobile app
+- `POST/DELETE /businesses/{id}/mobile_apps/{mobile_app_id}/ad_accounts/{ad_account_id}` — Share or unshare an app
+- `GET/POST /businesses/{id}/pixels` — List or create Pixels
+- `GET/PATCH /businesses/{id}/pixels/{pixel_id}` — Get or update a Pixel
+- `POST /businesses/{id}/capi` — Create a CAPI integration
+- `GET/PATCH /businesses/{id}/capi/{connection_id}` — Get or update CAPI
+- `POST/GET/DELETE /businesses/{id}/capi/{connection_id}/tokens[...]` — Manage CAPI auth tokens
+- `GET/POST /businesses/{id}/datasets` — List or create datasets
+- `GET/PATCH /businesses/{id}/datasets/{dataset_id}` — Get or update a dataset
+- `GET /businesses/{id}/datasets/{dataset_id}/diagnostics` — Inspect received events
+- `POST/DELETE /businesses/{id}/datasets/{dataset_id}/ad_accounts/{ad_account_id}` — Share or unshare a dataset
+
+### Account Administration
+- `GET/POST /businesses` — List or create businesses
+- `GET/PATCH /businesses/{id}` — Get or update a business
+- `GET /businesses/{id}/members` — List members and invited users
+- `GET/PATCH/DELETE /businesses/{id}/members/{member_id}` — Inspect, edit, or remove a member
+- `PATCH /businesses/{id}/members/{member_id}/role` — Update a business role
+- `GET/POST /businesses/{id}/invitations` — List or create invitations
+- `DELETE /businesses/{id}/invitations/{invitation_id}` — Cancel an invitation
+- `GET/POST /businesses/{id}/ad_accounts` — List or create ad accounts
+- `GET/PATCH /ad_accounts/{id}` — Get or update supported ad-account fields
+- `GET/POST /ad_accounts/{id}/members` — List or add ad-account members
+- `PATCH/DELETE /ad_accounts/{id}/members/{member_id}` — Update a role or remove access
 
 ### Reports
 - `GET /ad_accounts/{id}/aggregate_reports` — Aggregated metrics by entity
@@ -101,10 +132,12 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - `POST /ad_accounts/{id}/async_reports` — Create async CSV report
 - `GET /ad_accounts/{id}/async_reports/{report_id}` — Check async report status
 
-### Drafts (Preferred for New Campaigns)
+### Drafts (Default for Campaign Hierarchy Writes)
 
 Draft entities are staging versions that are not live until explicitly published. The full lifecycle:
 create drafts → edit → validate → publish.
+
+For changes to published campaigns, ad sets, or ads, first check whether a same-ID draft already exists. Reuse and disclose an existing draft rather than recreating or overwriting pending work. If none exists, use the create-from-published endpoint, PATCH the draft endpoint, and validate the parent draft campaign. A denied direct write does not by itself mean the credentials are read-only; draft staging may still be available.
 
 **Campaign drafts:**
 - `POST /ad_accounts/{id}/drafts/campaigns` — Create draft campaign
@@ -156,8 +189,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 # GET
 api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 
-# POST with JSON body
-api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"..."}'
+# Draft-first POST with JSON body
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"...","delivery_goal_group":"AWARENESS"}'
 
 # Retrieve settings values for use outside API calls
 eval $(api --env)

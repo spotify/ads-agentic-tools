@@ -10,7 +10,8 @@ Create a new campaign.
 
 **Request Body:** `CreateCampaignRequest`
 - `name` (string, 2-200 chars, required)
-- `objective` (string, required) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS
+- `objective` (string, required but deprecated for direct v3 creation) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS
+- `delivery_goal_group` (string, optional) — AWARENESS, WEBSITE_TRAFFIC, APP_PROMOTION, ENGAGEMENT_ON_SPOTIFY, or LEAD_GEN
 - `purchase_order` (string, optional)
 - `measurement_partner` (string, optional)
 
@@ -200,9 +201,9 @@ Update an ad.
 
 ---
 
-## Drafts (Preferred for New Campaigns)
+## Drafts (Default for Campaign Hierarchy Writes)
 
-Draft entities are staging versions of campaigns, ad sets, and ads. Nothing goes live until you publish. The workflow: create drafts → edit → validate → publish.
+Draft entities are staging versions of campaigns, ad sets, and ads. Nothing goes live until you publish. Default campaign hierarchy writes to drafts unless the user explicitly requests a direct live operation. The workflow: create or reuse drafts → edit → validate → publish.
 
 ### POST /ad_accounts/{ad_account_id}/drafts/campaigns
 Create a draft campaign.
@@ -210,8 +211,8 @@ Create a draft campaign.
 **Request Body:** `CampaignDraftRequestProperties`
 - `name` (string, max 200 chars)
 - `purchase_order` (string, max 45 chars, optional)
-- `objective` (string, optional) — REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, PODCAST_STREAMS
-- `delivery_goal_group` (string, optional) — AWARENESS, CONSIDERATION
+- `delivery_goal_group` (string, recommended) — AWARENESS, WEBSITE_TRAFFIC, APP_PROMOTION, ENGAGEMENT_ON_SPOTIFY, or LEAD_GEN. Use this instead of `objective`.
+- `objective` (string, deprecated) — REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, or PODCAST_STREAMS
 - `status` (string, optional)
 
 **Response:** 200 — `CampaignDraft` (includes `id`, `draft_hierarchy_version`)
