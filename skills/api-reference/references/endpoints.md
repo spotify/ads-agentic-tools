@@ -692,6 +692,100 @@ Create a new ad account under a business.
 
 ---
 
+## Ad Product Catalog
+
+### GET /ad_product_catalog
+Returns the live validation rules for externally available ad products: AUCTION,
+CONTENT, and FPMNG. These product-specific rules layer on top of the OpenAPI request
+shape and field types.
+
+Fetch the catalog once for each create or update workflow and reuse it only during that
+workflow. Do not maintain a timed session cache; the endpoint response is delivered
+with `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`.
+
+Resolve the product from the new campaign request or known hierarchy context. An
+omitted, `UNSET`, or `UNKNOWN` campaign product maps to AUCTION. Campaign responses do
+not consistently expose `ad_product`, so do not silently classify an existing hierarchy
+as AUCTION when its configuration or request context indicates CONTENT or FPMNG. See
+`ad-product-validation.md` for the complete resolution and interaction procedure.
+
+**Response:** 200 — Ad product catalog with validation rules per product type.
+
+**Response structure:**
+
+Each product has `campaign`, `ad_set`, and `ad` sections. Rules are separated by
+operation: use `create` plus `both` for POST requests and `update` plus `both` for PATCH
+requests. Some products omit an operation section when they have no additional rules
+for it.
+
+The following is an abbreviated structural example. Always use values from the live
+response rather than treating this sample as an exhaustive catalog.
+
+```json
+{
+  "description": "Ad product validation rules that layer on top of the OpenAPI spec...",
+  "ad_products": {
+    "AUCTION": {
+      "display_name": "...",
+      "description": "...",
+      "campaign": {
+        "create": {
+          "allowed_values": { "objective": ["<live product-specific values>"] }
+        },
+        "update": {
+          "allowed_values": { "status": ["ACTIVE", "PAUSED"] },
+          "restrictions": ["field: cannot change after creation"]
+        },
+        "both": {
+          "constraints": ["end_time must be within 365 days of start_time"],
+          "cross_field_rules": ["When X: Y"]
+        }
+      },
+      "ad_set": {
+        "create": {
+          "allowed_values": { "...": "..." },
+          "required_fields": ["..."],
+          "forbidden_fields": ["..."],
+          "cross_field_rules": ["..."]
+        },
+        "update": {
+          "allowed_values": { "...": "..." },
+          "restrictions": ["..."],
+          "cross_field_rules": ["..."]
+        },
+        "both": {
+          "frequency_caps": { "max_impressions": { "DAY": 5, "WEEK": 35, "MONTH": 50 } },
+          "constraints": ["..."],
+          "cross_field_rules": ["..."]
+        }
+      },
+      "ad": {
+        "create": {
+          "required_fields": ["assets.asset_id: primary asset required; must not be archived"]
+        },
+        "update": { "restrictions": ["Cannot edit an archived creative"] },
+        "both": {
+          "constraints": ["Audio creative duration: max 31,000 ms"]
+        }
+      }
+    }
+  }
+}
+```
+
+**How to apply rules:**
+- For a **POST**: apply every rule category present in `create` and `both`.
+- For a **PATCH**: fetch the current entity, deep-merge the patch, then apply every rule category present in `update` and `both` to the effective entity.
+- Match the entity type to the correct key: `campaign`, `ad_set`, or `ad`.
+- Treat `required_fields`, `forbidden_fields`, `constraints`, `restrictions`, and
+  `cross_field_rules` as semantic rules, not merely field-name arrays.
+- Retrieve parent entities, assets, estimates, prices, or reporting state when a rule
+  depends on them.
+- Do not report runtime or server-only conditions as passed unless the required state
+  was actually checked.
+
+---
+
 ## Estimates
 
 **Important:** These are top-level endpoints — they are NOT nested under `/ad_accounts/{ad_account_id}/`. The `ad_account_id` is passed in the request body instead.

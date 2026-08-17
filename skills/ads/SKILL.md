@@ -38,6 +38,12 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
 
 ### `ad-sets create`
+Collect the required fields below first. Before the POST, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, parent campaign, and any runtime inputs required by its rules, then validate
+the final ad set body against `ad_set.create` plus `ad_set.both`. Do not add a separate
+validation confirmation.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **campaign_id** (uuid — suggest listing campaigns first)
@@ -189,6 +195,14 @@ api GET "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID"
 ```
 
 ### `ad-sets update <id>`
+
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad set, parent campaign, and runtime state required by applicable
+rules. Deep-merge the proposed PATCH into the current ad set and validate the effective
+entity against `ad_set.update` plus `ad_set.both`. Do not add a separate validation
+confirmation.
+
 Prompt for fields to update (min 1). Same fields as create, all optional.
 
 Read the published ad set, then check `GET /drafts/ad_sets/{id}`. If it returns 404, create a draft with `POST /ad_sets/{id}/drafts`. If a draft already exists, disclose its pending state before combining changes. PATCH `/drafts/ad_sets/{id}`, resolve its draft `campaign_id`, fetch the draft campaign's current hierarchy version, and validate it. Keep the result staged.
@@ -202,6 +216,12 @@ api GET "ad_accounts/{ad_account_id}/ads?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Ad Set ID | Status | Delivery
 
 ### `ads create`
+Collect the required fields and asset selections below first. Before the POST, read and
+follow `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch
+the live catalog, current parent ad set and campaign, and referenced assets, then
+validate the final ad body against `ad.create` plus `ad.both`. Do not add a separate
+validation confirmation.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **ad_set_id** (uuid — suggest listing ad sets first)
@@ -240,6 +260,13 @@ api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 ```
 
 ### `ads update <id>`
+Before the update, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad, parent ad set and campaign, and any referenced assets. Deep-merge
+the proposed changes into the current ad and validate the effective entity against
+`ad.update` (when present) plus `ad.both`. Do not add a separate validation
+confirmation.
+
 Read the published ad, then check `GET /drafts/ads/{id}`. If it returns 404, create a draft with `POST /ads/{id}/drafts`. If a draft already exists, disclose its pending state before combining changes. PATCH `/drafts/ads/{id}`, fetch its parent draft ad set to resolve the draft campaign, fetch the campaign's current hierarchy version, and validate it. Keep the result staged.
 
 Draft ad updates support `name`, `advertiser_name`, `tagline`, `assets`, `asset_format`, `call_to_action`, `third_party_tracking`, `placements`, `weight`, and `status`. Always preserve third-party tracking entries the user did not explicitly remove or replace, and set `measurement_event` explicitly on every entry.

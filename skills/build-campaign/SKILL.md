@@ -47,6 +47,7 @@ use the defaults noted below. If a required field cannot be inferred, ask the us
 |-------|----------|---------|
 | name | yes | — |
 | objective | yes | REACH |
+| ad_product | no | UNSET (resolves to AUCTION) |
 
 Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`, `PODCAST_STREAMS`, `APP_INSTALLS`, `WEBSITE_VISITS`
 
@@ -94,9 +95,16 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | call_to_action.clickthrough_url | yes (optional for drafts) | Landing page URL |
 | delivery | no | `ON` (default) or `OFF` |
 
+## Step 1.5: Load Ad Product Rules
+
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this workflow, resolve the planned campaign's product, and use the
+applicable rules while constructing the plan. Do not display a per-field checklist.
+
 ## Step 2: Confirm the Parsed Plan
 
-Before making any API calls, present the full parsed plan as a visual tree:
+Before making any mutating API calls, present the full parsed plan as a visual tree:
 
 ```
 Campaign: "My Campaign" (objective: REACH)
@@ -171,11 +179,26 @@ Present audio/video assets and image assets separately in tables, and ask the us
 - **logo_asset_id** — a logo image
 - **companion_asset_id** — a companion image (required for AUDIO format ads)
 
+## Step 3.5: Validate the Final Hierarchy
+
+Using the catalog loaded in Step 1.5, validate the complete campaign, ad set, and ad
+request bodies now that assets and all dependent fields are known. Apply the canonical
+procedure's static and runtime checks, including asset lookups and the audience estimate
+above. Never send a known-invalid request.
+
+Do not add another confirmation or print per-field successes. If the existing plan
+summary is still visible, one compact validation status line is sufficient. Surface a
+failure only when an explicit user choice must change or no safe compliant value can be
+inferred.
+
 ## Step 4: Execute API Calls Sequentially
 
 Execute each step in order, passing IDs forward from each response.
 
 ### 4a. Create Campaign
+
+Include `ad_product` when the resolved destination product is CONTENT or FPMNG. Omit it
+for the default AUCTION flow.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/campaigns" \
@@ -185,8 +208,6 @@ api POST "ad_accounts/{ad_account_id}/campaigns" \
 Extract the campaign `id` from the response.
 
 ### 4b. Create Ad Sets (using campaign_id from 4a)
-
-For each ad set:
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ad_sets" \
@@ -214,8 +235,6 @@ api POST "ad_accounts/{ad_account_id}/ad_sets" \
 Extract each ad set `id` for use in ad creation.
 
 ### 4c. Create Ads (using ad_set_id from 4b)
-
-For each ad:
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ads" \

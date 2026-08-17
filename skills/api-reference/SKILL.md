@@ -172,6 +172,7 @@ For changes to published campaigns, ad sets, or ads, first check whether a same-
 - `GET /businesses/{id}` — Get business by ID
 - `GET /targets/artists` — Search artist targets
 - `GET /ad_categories` — List ad categories
+- `GET /ad_product_catalog` — Get live product-specific validation rules for AUCTION, CONTENT, and FPMNG. Fetch once per create or update workflow and do not retain a timed cross-operation cache. Follow `references/ad-product-validation.md` before mutating campaigns, ad sets, or ads.
 - `POST /estimates/audience` — Estimate audience size for targeting parameters (recommended before creating ad sets to validate reach)
 - `POST /estimates/bid` — Get bid recommendations
 - `POST /ad_accounts/{id}/reserved_prices` — Get pricing for reserved ad products (fCPM)
@@ -222,6 +223,7 @@ For detailed request/response schemas and field definitions, consult:
 - **`references/endpoints.md`** — Complete endpoint details with all parameters and response schemas
 - **`references/schemas.md`** — Request/response body schemas with field types, constraints, and required fields
 - **`references/enums.md`** — All enum values for status fields, asset formats, targeting options, report dimensions/metrics
+- **`references/ad-product-validation.md`** — Mandatory catalog-validation procedure for campaign, ad set, and ad mutations
 
 ### Example Files
 

@@ -103,6 +103,14 @@ Given a plain-text campaign description, create the full draft hierarchy: draft 
 
 Extract fields exactly as documented in the `build-campaign` skill. The same field requirements, defaults, and validation guardrails apply (micro-amounts, bid_strategy as plain string, geo_targets as flat object, platform enums, etc.).
 
+#### Step 1.5: Load Ad Product Rules
+
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this draft-build workflow, resolve the planned campaign product, and
+use the applicable rules while constructing the draft plan. Do not display a per-field
+checklist.
+
 #### Step 2: Confirm the Parsed Plan
 
 Present the plan as a visual tree, clearly labeled as **DRAFT**:
@@ -124,6 +132,17 @@ Fetch available assets from the account and present them for selection, just lik
 ```bash
 api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 ```
+
+#### Step 3.5: Validate Against Ad Product Rules
+
+Using the catalog loaded in Step 1.5, validate the complete draft hierarchy now that
+assets and dependent fields are known. Apply resolvable runtime checks as well as
+static rules.
+
+Do not print per-field successes or add another confirmation. Add a compact validation
+status to the existing draft plan, and interrupt only for an explicit incompatible user
+choice or when no safe compliant value can be inferred. Catalog preflight does not
+replace the draft hierarchy `VALIDATE` action in Step 5.
 
 #### Step 4: Create Draft Entities Sequentially
 
@@ -298,6 +317,14 @@ Display all fields in a readable format. Note that `draft_hierarchy_version` is 
 ### `edit <campaign|ad-set|ad> <draft_id>` — Update a Draft
 
 Use the entity type from the command to select the endpoint, then prompt the user for fields to update. The same field validations as create apply.
+
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog and current draft entity, then traverse its actual parent chain: draft ad →
+draft ad set → draft campaign, or draft ad set → draft campaign. Deep-merge the PATCH
+into the current entity and validate the effective result against the matching entity's
+`update` (when present) plus `both` rules. Do not print a checklist or add another
+confirmation.
 
 **Update draft campaign:**
 ```bash

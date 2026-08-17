@@ -63,9 +63,24 @@ Ask the user to select entities. Support these selection formats:
 - All: `all`
 - Mixed: `1-3, 5`
 
-### 3. Confirm changes
+### 3. Validate against ad product rules
+
+Before showing the final change summary, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for the batch, fetch each current entity, resolve each distinct parent
+campaign once, and validate the final effective entities. Group validation by campaign
+and product instead of repeating catalog or campaign requests for every entity.
+
+For budget decreases, retrieve any available spend and pacing state needed to apply the
+catalog's delivery floor. Treat cooldowns or account exemptions that the public API
+does not expose as server-only checks; do not claim they passed and do not add a user
+confirmation for them.
+
+### 4. Confirm changes
 
 Show a summary of what will change. For budget operations, show before/after values. For status changes, show entity names and the target state.
+Include one compact catalog-validation status in this existing summary. Do not print
+per-field checklists or add a separate confirmation.
 
 ### 4. Stage changes
 
@@ -73,7 +88,7 @@ Group selected entities by parent campaign. For each target, check for an existi
 
 After staging all selected changes, fetch each affected draft campaign's current `draft_hierarchy_version` and validate once per campaign. Continue on per-entity staging failures, but do not validate a campaign until all successful edits for that campaign are staged.
 
-### 5. Show results
+### 6. Show results
 
 Display a final summary table:
 
@@ -317,6 +332,9 @@ Ask the user to select which ads to update and which new asset to use. The new a
 ```bash
 api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 ```
+
+The batch validation step must include the current ad, its parent ad set and campaign,
+the replacement asset, and the final replacement-ad body.
 
 **Check for or create the draft:**
 

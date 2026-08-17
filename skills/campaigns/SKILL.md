@@ -38,6 +38,12 @@ Prompt the user for a name and campaign goal. Map the goal to `delivery_goal_gro
 - **name** (string, 2-200 chars)
 - **delivery_goal_group** (`AWARENESS`, `WEBSITE_TRAFFIC`, `APP_PROMOTION`, `ENGAGEMENT_ON_SPOTIFY`, or `LEAD_GEN`)
 
+Then read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this operation. Validate the final campaign body against `campaign.create`
+plus `campaign.both`. An omitted, `UNSET`, or `UNKNOWN` `ad_product` resolves to
+`AUCTION`. Do not add a separate validation confirmation.
+
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
   '{"name":"...","delivery_goal_group":"..."}'
@@ -58,6 +64,12 @@ Display all campaign fields in a readable format.
 Prompt the user for fields to update (at least 1 required):
 - **name** (string, optional)
 - **status** (ACTIVE, PAUSED, ARCHIVED, optional)
+
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog and current campaign once for this operation, deep-merge the proposed changes,
+and validate the effective campaign against `campaign.update` plus `campaign.both`.
+This applies to status-only updates too. Do not add a separate validation confirmation.
 
 ```bash
 api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"

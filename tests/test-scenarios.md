@@ -1,6 +1,6 @@
 # Test Scenarios
 
-34 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors. For a concise prompt-per-capability view, see [`prompt-catalog.md`](prompt-catalog.md).
+35 structured test scenarios for validating the Spotify Ads API plugin. Each scenario covers specific API quirks and plugin behaviors. For a concise prompt-per-capability view, see [`prompt-catalog.md`](prompt-catalog.md).
 
 **Important:** All entity names (campaigns, ad sets, ads) must be prefixed with `[Test reject]` so they are automatically rejected by ad review and never serve live impressions.
 
@@ -804,28 +804,31 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 
 ## Scenario 21: Draft Validation Error Recovery
 
-**Prompt:** Build a draft audio campaign that is intentionally missing `companion_asset_id` on the ad, then validate and fix
+**Prompt:** Validate an existing draft audio campaign whose ad is missing
+`companion_asset_id`, then fix it
 
 **Quirks tested:** Validation error display, edit to fix, re-validation cycle
 
-**Setup:** Create a draft hierarchy (campaign + ad set + audio ad) but omit `companion_asset_id` from the ad's assets.
+**Setup:** Use a pre-existing incomplete draft fixture created outside this validation
+workflow. Normal plugin-driven draft creation must not intentionally send this known
+catalog violation.
 
 **Expected behavior:**
-1. Draft hierarchy created (campaign, ad set, audio ad without `companion_asset_id`) — the draft create endpoint accepts incomplete data; validation only runs on explicit VALIDATE
-2. Validation returns HTTP 400 with `validation_errors` array: `AD` entity missing `companion_asset_id` for AUDIO format
-3. Agent displays error with entity type, ID, and message
-4. User says "fix it" or provides the missing asset
-5. Agent PATCHes the draft ad with the corrected `assets` object
-6. Agent re-validates — this time validation passes (HTTP 200, `validation_errors: null`)
-7. Asks user to publish or keep as draft
+1. Agent loads the existing incomplete draft hierarchy.
+2. Validation returns HTTP 400 with `validation_errors` array: `AD` entity missing `companion_asset_id` for AUDIO format.
+3. Agent displays error with entity type, ID, and message.
+4. User says "fix it" or provides the missing asset.
+5. Agent applies catalog validation to the effective draft ad, then PATCHes it with the corrected `assets` object.
+6. Agent re-validates — this time validation passes (HTTP 200, `validation_errors: null`).
+7. Agent asks the user to publish or keep the hierarchy as a draft.
 
 **Success criteria:**
-- Draft ad creation succeeds without `companion_asset_id` (drafts accept incomplete data — this is the key benefit over direct creation)
+- The plugin does not create a knowingly invalid draft merely to exercise recovery
 - Validation catches the error with HTTP 400 (not 200) and `validation_errors` array
 - Error display includes entity type (`AD`), entity ID, and descriptive message
 - Fix uses PATCH on `/drafts/ads/<id>` (not creating a new draft ad)
 - Re-validation uses fresh `draft_hierarchy_version` from the draft campaign (not the version from before the edit; `draft_hierarchy_version` is `null` on ad drafts)
-- Full cycle: create → validate (fail @ 400) → edit → validate (pass @ 200) → offer publish
+- Full cycle: load existing draft → validate (fail @ 400) → edit → validate (pass @ 200) → offer publish
 
 ---
 
@@ -1131,3 +1134,60 @@ The create-from-published POST is omitted when the initial draft GET succeeds.
 - No inference about specific organizational roles, user types, tools, or permission systems.
 - No recommendation to use a proprietary UI or ask a specially privileged user.
 - Draft staging is presented as the compatible alternative in generic, public-facing language.
+
+---
+
+## Scenario 35: Ad Product Catalog Validation Behavior
+
+**Prompts:** Run these as separate subcases:
+
+1. Create a valid AUCTION campaign and ad set using inferred defaults.
+2. Request `MOBILE` as the platform for an ad set.
+3. Update one field on an existing ad set while leaving related fields unchanged.
+4. Decrease a started lifetime ad set's budget.
+5. Build a draft hierarchy and publish it.
+
+**Quirks tested:** Live catalog freshness, product resolution, static versus runtime
+rules, effective PATCH validation, minimal user interruption, and draft validation.
+
+**Expected behavior:**
+
+1. Each independent mutation workflow calls the catalog once:
+   ```bash
+   api GET "ad_product_catalog"
+   ```
+   It may reuse that response within the same multi-entity workflow, but does not reuse
+   a response from an earlier prompt or maintain a 15-minute cache.
+2. An omitted, `UNSET`, or `UNKNOWN` campaign product resolves to AUCTION. A known
+   CONTENT or FPMNG destination is validated against that product instead.
+3. For the inferred valid plan, validation adds no separate confirmation and no
+   per-field pass checklist. The existing plan or change summary may contain one compact
+   line such as `Ad product validation: static AUCTION rules passed`.
+4. `MOBILE` is never sent. If it was assistant-inferred, replace it with IOS and ANDROID
+   and disclose the adjustment in the existing summary. If the user explicitly insists
+   on the literal API value `MOBILE`, explain the catalog rule and ask one focused
+   question offering IOS, ANDROID, or both.
+5. For PATCH, fetch the current entity and required parents, deep-merge the proposed
+   changes, and validate the effective result. Do not validate only the outgoing patch
+   fields.
+6. For the lifetime budget decrease, retrieve available spend/pacing state before
+   applying the catalog floor. Do not claim that an unobservable cooldown or account
+   exemption passed; leave the authoritative check to the mutation endpoint.
+7. Draft creation still runs the draft campaign `VALIDATE` action after catalog
+   preflight. Catalog validation does not add another publish gate; explicit publish
+   confirmation remains required.
+8. If the catalog GET fails, no dependent campaign/ad set/ad mutation is executed. A
+   strategy-only request may continue but must be labeled `catalog validation deferred`
+   rather than API-ready.
+
+**Success criteria:**
+
+- Exactly one catalog GET per independent workflow, not one per entity and not a timed
+  cross-workflow cache
+- No mutation containing a known catalog violation
+- No fabricated success for runtime or server-only conditions
+- No `✅/❌` field dump and no validation-only confirmation
+- Explicit incompatible user choices cause at most one focused remediation question
+- PATCH validation uses current entity + patch + required parent context
+- Clone validation follows the destination campaign product
+- Draft hierarchy validation and explicit publish confirmation remain intact

@@ -35,6 +35,8 @@ Run scenarios 22-32 to exercise campaign strategy, monitoring, export, bulk oper
 
 Run scenarios 33-34 to verify that implicit tracking edits use drafts and that an explicitly requested direct write handles permission denial without overstating the credentials' restrictions. Scenario 33 requires existing published ads with tracking entries; Scenario 34 may use a mocked 403 response.
 
+Run scenario 35 to verify ad product catalog validation behavior across creates, updates, and draft workflows.
+
 ## Validation checklist
 
 For every scenario, verify:
@@ -49,6 +51,7 @@ For every scenario, verify:
 - [ ] Destructive or externally consequential actions receive explicit confirmation at the required boundary.
 - [ ] POST and PATCH requests are not automatically retried after ambiguous failures.
 - [ ] Results are summarized clearly, including partial failures in batch workflows.
+- [ ] Mutating campaign/ad set/ad workflows fetch the live ad product catalog once per workflow, block known violations, and do not add per-field success checklists or redundant confirmations.
 
 ## Test fixtures
 

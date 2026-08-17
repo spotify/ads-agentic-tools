@@ -5,7 +5,7 @@ description: Generate Spotify Ads campaign strategy from a landing page, product
 
 # Spotify Ads API - Campaign Strategy
 
-Plan campaign structure and targeting before creating entities. This skill researches the offer, checks current Spotify Advertising guidance, validates targetability through the Ads API, and returns an API-ready plan. Do not create campaigns, ad sets, ads, assets, or audiences unless the user explicitly asks to execute after reviewing the plan.
+Plan campaign structure and targeting before creating entities. This skill researches the offer, checks current Spotify Advertising guidance, validates targetability through the Ads API, and returns an API-ready plan when credentials permit live validation. Otherwise, it clearly marks validation as deferred. Do not create campaigns, ad sets, ads, assets, or audiences unless the user explicitly asks to execute after reviewing the plan.
 
 For detailed planning heuristics, read `references/planning-framework.md`.
 
@@ -39,6 +39,8 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - Choose CTA and landing URL based on the page and asset. Use `LEARN_MORE` when conversion intent is informational or regulated.
 
 4. Validate API targetability.
+   - Read and follow `skills/api-reference/references/ad-product-validation.md` from the plugin root. When credentials are available, fetch `GET /ad_product_catalog` once for this strategy workflow and use it to validate the final plan. Do not print a per-field checklist.
+   - When credentials are unavailable, still provide the strategy, label it **catalog validation deferred**, and do not call it API-validated or ready to execute. The execution skill must fetch the live catalog before any mutation.
    - Fetch valid ad categories from `GET /ad_categories`; use the closest exact category code.
    - Look up every requested geo with `GET /targets/geos?country_code=<code>&q=<query>&limit=20`; never fall back to country-only without saying so.
    - Use only targeting dimensions available in the Ads API. If recommending interests, genres, artists, playlists, or languages, validate them with the matching target endpoint before presenting IDs. **Only `/targets/geos` accepts `limit`/`offset` parameters.** All other target endpoints (`/targets/genres`, `/targets/interests`, `/targets/artists`, `/targets/playlists`, `/targets/languages`) accept only `q` and/or `ids` — passing `limit` will cause a 400 error.
@@ -64,7 +66,7 @@ Return a compact strategy package:
 - **Recommended structure:** campaign objective, ad sets, budget split, asset format, placements, frequency cap, pacing, bid strategy, CTA, and ad rotation.
 - **Validated targeting:** category code, geo IDs, and any other target IDs. Mark unvalidated ideas clearly.
 - **Forecasts:** audience estimate, likely-to-deliver flag, reach/impression/CPM ranges, and bid estimate when available.
-- **API-ready plan:** campaign tree plus JSON skeletons for campaign and ad sets.
+- **API-ready plan:** campaign tree plus JSON skeletons for campaign and ad sets when live catalog validation completed; otherwise label this section as a proposed plan with validation deferred.
 - **Next step:** what to confirm before handing off to `/spotify-ads-api:drafts build` (preferred) or `/spotify-ads-api:build-campaign`. Recommend the draft flow so the user can review and validate the full hierarchy before going live.
 
 ## Guardrails
