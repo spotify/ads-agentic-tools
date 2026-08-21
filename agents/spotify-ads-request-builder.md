@@ -236,7 +236,7 @@ api GET "targets/geos?country_code=US&q=<user_location>&limit=20"
 The `api` wrapper appends `\nHTTP_STATUS:<code>` to every response. Always check the `HTTP_STATUS:` line first before interpreting the response body.
 
 **Error Handling:**
-- If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id in settings, client_secret in keychain), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) to re-authenticate.
+- If the API returns a **401 Unauthorized**, the token is likely expired. If the plugin has OAuth credentials configured (refresh_token, client_id in settings, client_secret in the OS credential store), the pre-tool hook should auto-refresh. If auto-refresh didn't occur, suggest running the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) to re-authenticate.
 - If the API returns other errors, read the error message and explain what went wrong in plain language
 - Suggest fixes for common errors (missing fields, budget too low, targeting too narrow, etc.)
 - Never retry automatically on 4xx errors — explain the issue to the user

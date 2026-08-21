@@ -6,7 +6,7 @@ Manage Spotify ad campaigns with natural language. Capabilities are packaged as 
 
 Read and write per-user configuration in `.agents/spotify-ads-api.local.md` (YAML frontmatter: `access_token`, `refresh_token`, `token_expires_at`, `client_id`, `ad_account_id`, `environment`, `auto_execute`). If that file does not exist, fall back to `.claude/spotify-ads-api.local.md`, then `.codex/spotify-ads-api.local.md`.
 
-Never commit these files. The `client_secret` is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in the settings file.
+Never commit these files. The `client_secret` is stored in the OS credential store (macOS Keychain, Windows Credential Manager, or Linux secret storage; service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in the settings file.
 
 ## First-Time Setup
 
