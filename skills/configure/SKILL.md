@@ -129,7 +129,7 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
 PYTHON=$(command -v python3 || command -v python || command -v py)
 client_secret=$($PYTHON "${PLUGIN_ROOT}/scripts/credential-helper.py" get)
 curl -s -X POST "https://accounts.spotify.com/api/token" \
-  -H "Authorization: Basic $(echo -n '<client_id>:'"$client_secret"'' | base64)" \
+  -u "<client_id>:${client_secret}" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=authorization_code&code=<CODE>&redirect_uri=http://127.0.0.1:8080/callback"
 ```
