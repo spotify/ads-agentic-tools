@@ -1028,10 +1028,10 @@ catalog violation.
 **Quirks tested:** Reference routing, no-execution constraint, critical schema quirks
 
 **Expected behavior:**
-1. Routes to `api-reference` and answers from the committed API documentation/spec.
+1. Routes to `api-reference`, fetches the public OpenAPI document, and answers from the relevant operation and component definitions.
 2. Identifies required ad-set category, placements, flat `geo_targets`, valid platforms, and bid strategy shape.
 3. Identifies `call_to_action.key`, `clickthrough_url`, and required AUDIO `companion_asset_id`.
-4. Makes no network or Ads API call.
+4. Fetches the public OpenAPI document but makes no Ads API call.
 
 **Success criteria:**
 - `bid_strategy` is described as a string enum, not an object.

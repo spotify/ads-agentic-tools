@@ -32,6 +32,13 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 
 To set up authentication, run the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity), which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
+## Current API Contract
+
+Before answering a schema question or making an Ads API v3 call, read and follow
+`references/live-openapi.md`. Fetch the public OpenAPI document once for the workflow and
+use the relevant operation and component definitions as the source of truth for paths,
+parameters, request bodies, responses, and enums.
+
 ## Resource Hierarchy
 
 ```
@@ -220,6 +227,7 @@ For error response format and common HTTP status codes, see `references/endpoint
 ### Reference Files
 
 For detailed request/response schemas and field definitions, consult:
+- **`references/live-openapi.md`** — Mandatory workflow for fetching and inspecting the current public OpenAPI document
 - **`references/endpoints.md`** — Complete endpoint details with all parameters and response schemas
 - **`references/schemas.md`** — Request/response body schemas with field types, constraints, and required fields
 - **`references/enums.md`** — All enum values for status fields, asset formats, targeting options, report dimensions/metrics
