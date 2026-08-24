@@ -123,6 +123,9 @@ PATH_ARG="${PATH_ARG//\{ad_account_id\}/$AD_ACCOUNT_ID}"
 
 URL="${BASE_URL}/${PATH_ARG}"
 
+# --- Verify the operation against the current public OpenAPI schema ---
+"$PLUGIN_ROOT/scripts/check-openapi-schema.sh" "$METHOD" "$PATH_ARG" || exit 1
+
 # --- Build and execute curl ---
 CURL_ARGS=(-s -w "\nHTTP_STATUS:%{http_code}")
 CURL_ARGS+=(-X "$METHOD")

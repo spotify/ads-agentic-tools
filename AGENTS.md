@@ -31,7 +31,8 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/api-reference/` — Comprehensive API v3 reference documentation with `references/` (endpoints, schemas, enums) and `examples/` (full flows). Activates automatically when the Spotify Ads API is mentioned.
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Scripts** (`scripts/`) — Shared shell scripts used by skills and agents:
-  - `scripts/api-request.sh` — Request wrapper that handles settings discovery, authentication, SDK/skill tracking headers, and curl execution. Skills define a local `api()` function that delegates to this script: `api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }`. Usage: `api <METHOD> <path> [json_body]` or `api --env` for settings. Paths use `{ad_account_id}` as a placeholder (auto-substituted from settings).
+  - `scripts/api-request.sh` — Request wrapper that handles settings discovery, authentication, live OpenAPI operation checks, SDK/skill tracking headers, and curl execution. Skills define a local `api()` function that delegates to this script: `api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }`. Usage: `api <METHOD> <path> [json_body]` or `api --env` for settings. Paths use `{ad_account_id}` as a placeholder (auto-substituted from settings).
+  - `scripts/check-openapi-schema.sh` — Fetches the public Ads API v3 OpenAPI document and verifies that a method/path is currently documented. `api-request.sh` invokes it before every standard API request, so schema fetch or operation-check failures prevent the API call.
 - **Hooks** — Per-platform hook configs invoking `hooks/check-token.sh` to automatically refresh expired OAuth tokens before Spotify API calls. `hooks.json` at the plugin root contains the Antigravity `PreToolUse` event, auto-discovered by both Antigravity CLI (`agy plugin install`) and Antigravity 2.0 (`.agents/plugins/` workspace discovery). `.claude-plugin/hooks.json` and `.codex-plugin/hooks.json` contain the Claude/Codex `PreToolUse` event, declared via the `hooks` field in each platform's `plugin.json`. Note: the hook payload and response formats differ across platforms — Claude/Codex use `.tool_input.command` and support command rewriting via `updatedInput`, while Antigravity uses `.toolCall.args.CommandLine` and only supports allow/deny with `decision`/`reason` (the hook refreshes the token in the settings file and tells the agent to re-read it).
 - **Commands** (`commands/configure.toml`) — An Antigravity CLI custom command exposing `/configure` as an explicit entry point to the configure skill. Other skills auto-activate on Antigravity via its native Agent Skills support.
 - **Settings** (`.codex/spotify-ads-api.local.md`, `.claude/spotify-ads-api.local.md`, or `.agents/spotify-ads-api.local.md`, with each platform preferring its own file and falling back to the other two) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
@@ -69,7 +70,7 @@ These non-obvious API quirks were discovered through real testing and are critic
 
 ## OpenAPI Spec
 
-- `skills/api-reference/references/external-v3.yaml` — Public OpenAPI v3 spec (~8.6K lines), committed to repo.
+- `https://developer.spotify.com/reference/ads-api/v3/api.yaml` is the authoritative OpenAPI v3 spec. The plugin fetches it at runtime and does not bundle a static copy.
 
 ## Preferred Campaign Creation: Draft → Validate → Publish
 
@@ -100,7 +101,7 @@ api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"..."}'
 ```
 
-The wrapper handles settings discovery (platform-ordered fallback), authentication, SDK/skill tracking headers, and `\nHTTP_STATUS:<code>` capture. If `auto_execute` is false, the skill presents the command and asks for confirmation before executing. Exceptions (asset file uploads, OAuth token exchange) use raw curl — see the relevant skill for details.
+The wrapper handles settings discovery (platform-ordered fallback), authentication, live OpenAPI method/path verification, SDK/skill tracking headers, and `\nHTTP_STATUS:<code>` capture. It fetches the public OpenAPI document and stops before the Ads API request if the schema cannot be fetched, is invalid, or does not contain the requested operation. If `auto_execute` is false, the skill presents the command and asks for confirmation before executing. Exceptions (asset file uploads, OAuth token exchange) use raw curl — see the relevant skill for details.
 
 In skills, agents, documentation, and test scenarios, express standard Ads API v3 requests with the shared `api()` helper, never as expanded raw HTTP-client commands. This keeps authentication, tracking headers, settings lookup, and status capture centralized. Only the documented asset-upload and OAuth implementations may use their required raw transport commands; do not use those exceptions as patterns for ordinary API examples.
 

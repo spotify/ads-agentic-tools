@@ -29,8 +29,8 @@ The catalog layers product-specific restrictions on top of the OpenAPI schema:
   applies.
 
 When the catalog explicitly lists product-specific allowed values, use that live list
-for product validation; some deprecated enums in the committed OpenAPI may lag the
-catalog. OpenAPI still governs whether the field exists and what shape and type it has.
+for product validation; some deprecated enums in OpenAPI may lag the catalog. The live
+OpenAPI document still governs whether the field exists and what shape and type it has.
 If the catalog requires a field or shape that OpenAPI cannot represent, do not invent a
 payload or claim that validation passed. Stop before the mutation and explain the
 conflict.

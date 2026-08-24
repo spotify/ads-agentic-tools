@@ -13,6 +13,21 @@ The Spotify Ads API v3 enables programmatic management of advertising campaigns 
 
 `https://api-partner.spotify.com/ads/v3`
 
+## Live OpenAPI Schema
+
+The public OpenAPI schema at `https://developer.spotify.com/reference/ads-api/v3/api.yaml` is the source of truth for endpoints, methods, parameters, request and response shapes, and enums. Do not rely on a bundled schema copy.
+
+For an endpoint, field, enum, or schema question, fetch a fresh copy for the current workflow and inspect the relevant operation and referenced component definitions:
+
+```bash
+OPENAPI_FILE=$(mktemp "${TMPDIR:-/tmp}/spotify-ads-api-openapi.XXXXXX")
+"$PLUGIN_ROOT/scripts/check-openapi-schema.sh" --fetch "$OPENAPI_FILE"
+```
+
+Remove `OPENAPI_FILE` after answering. If the fetch fails or the document is invalid, explain that the current public schema could not be checked; do not substitute the prose reference files as authoritative schema definitions.
+
+Every standard Ads API request goes through `scripts/api-request.sh`. Immediately before sending the authenticated request, the wrapper fetches the public schema and verifies that the requested HTTP method and path are present. A fetch, document-validation, or operation-check failure stops the request before any Ads API call is sent.
+
 ## Authentication
 
 All requests require a Bearer token and tracking headers:
@@ -213,16 +228,16 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
 
 </details>
 
-For error response format and common HTTP status codes, see `references/endpoints.md` (Error Responses section).
+For operational error-handling guidance, see `references/endpoints.md` (Error Responses section). Confirm current response schemas against the live OpenAPI document.
 
 ## Additional Resources
 
 ### Reference Files
 
-For detailed request/response schemas and field definitions, consult:
-- **`references/endpoints.md`** — Complete endpoint details with all parameters and response schemas
-- **`references/schemas.md`** — Request/response body schemas with field types, constraints, and required fields
-- **`references/enums.md`** — All enum values for status fields, asset formats, targeting options, report dimensions/metrics
+The live OpenAPI document is authoritative for request/response schemas and field definitions. These maintained references provide workflow context and explanations, but must not override the live schema:
+- **`references/endpoints.md`** — Endpoint usage and error-handling guidance
+- **`references/schemas.md`** — Explanations of commonly used request and response bodies
+- **`references/enums.md`** — Explanations of commonly used status, format, targeting, and reporting values
 - **`references/ad-product-validation.md`** — Mandatory catalog-validation procedure for campaign, ad set, and ad mutations
 
 ### Example Files

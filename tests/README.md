@@ -4,6 +4,7 @@ Use this directory for two related jobs:
 
 - [`prompt-catalog.md`](prompt-catalog.md) gives users and internal testers a representative prompt for every plugin capability.
 - [`test-scenarios.md`](test-scenarios.md) defines the deeper behavioral checks for API routing, safety, schemas, and multi-step execution.
+- [`test-openapi-check.sh`](test-openapi-check.sh) verifies that standard requests check the public OpenAPI document before calling the Ads API and fail closed when that check cannot complete.
 
 The prompt catalog is the quickest smoke-test surface. The scenarios are the source of truth when validating a release.
 
