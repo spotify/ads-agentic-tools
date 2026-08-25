@@ -2,18 +2,27 @@
 """Unit tests for the standard-library PKCE OAuth helpers."""
 
 import contextlib
+import datetime
 import importlib.util
 import io
 import json
 import pathlib
+import stat
+import sys
+import tempfile
 import threading
 import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
 from http.server import HTTPServer
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "skills/configure/scripts"
+sys_path_entry = str(SCRIPTS)
+if sys_path_entry not in sys.path:
+    sys.path.insert(0, sys_path_entry)
 
 
 def load_module(name, path):
@@ -23,8 +32,9 @@ def load_module(name, path):
     return module
 
 
-oauth = load_module("oauth_flow", ROOT / "skills/configure/scripts/oauth-flow.py")
-refresh = load_module("refresh_token", ROOT / "skills/configure/scripts/refresh-token.py")
+settings = load_module("settings_file", SCRIPTS / "settings_file.py")
+oauth = load_module("oauth_flow", SCRIPTS / "oauth-flow.py")
+refresh = load_module("refresh_token", SCRIPTS / "refresh-token.py")
 
 
 class FakeResponse:
@@ -140,6 +150,58 @@ class PkceTests(unittest.TestCase):
         self.assertNotIn(code, output)
         self.assertNotIn("access refresh", output)
 
+    def test_success_writes_tokens_without_emitting_them(self):
+        captured = {}
+
+        class FakeServer:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def server_close(self):
+                pass
+
+        def fake_handler(path, state, result, received):
+            captured["result"] = result
+            return object
+
+        def fake_wait(server, received, timeout):
+            captured["result"]["code"] = "authorization-code"
+            received.set()
+            return True
+
+        with tempfile.TemporaryDirectory() as directory:
+            settings_path = pathlib.Path(directory) / "spotify-ads-api.local.md"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            argv = [
+                "oauth-flow.py",
+                "--client-id",
+                "team-client",
+                "--settings-file",
+                str(settings_path),
+            ]
+            tokens = {
+                "access_token": "access-sensitive-value",
+                "refresh_token": "refresh-sensitive-value",
+                "expires_in": 3600,
+            }
+            with mock.patch.object(oauth, "HTTPServer", FakeServer), \
+                    mock.patch.object(oauth, "make_callback_handler", fake_handler), \
+                    mock.patch.object(oauth, "wait_for_callback", fake_wait), \
+                    mock.patch.object(oauth, "exchange_code", return_value=tokens), \
+                    mock.patch.object(oauth.webbrowser, "open", return_value=False), \
+                    mock.patch.object(sys, "argv", argv), \
+                    contextlib.redirect_stdout(stdout), \
+                    contextlib.redirect_stderr(stderr):
+                self.assertEqual(oauth.main(), 0)
+
+            self.assertNotIn(tokens["access_token"], stdout.getvalue())
+            self.assertNotIn(tokens["refresh_token"], stdout.getvalue())
+            self.assertNotIn(tokens["access_token"], stderr.getvalue())
+            self.assertNotIn(tokens["refresh_token"], stderr.getvalue())
+            self.assertEqual(settings.read_settings(settings_path)["access_token"], tokens["access_token"])
+            self.assertEqual(stat.S_IMODE(settings_path.stat().st_mode), 0o600)
+
 
 class RefreshTests(unittest.TestCase):
     def test_refresh_request_uses_client_id_without_basic_auth(self):
@@ -172,6 +234,81 @@ class RefreshTests(unittest.TestCase):
         self.assertIsNone(tokens)
         self.assertEqual(error, 1)
         self.assertNotIn(token, stderr.getvalue())
+
+
+class SettingsTests(unittest.TestCase):
+    def test_oauth_settings_replace_insecure_file_with_mode_0600(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "spotify-ads-api.local.md"
+            path.write_text(
+                '---\nad_account_id: "existing-account"\nauto_execute: true\n---\n',
+                encoding="utf-8",
+            )
+            path.chmod(0o644)
+            now = datetime.datetime(2026, 8, 25, tzinfo=datetime.timezone.utc)
+            settings.write_oauth_settings(
+                path,
+                {"access_token": 'access\\sensitive"value', "refresh_token": "refresh-sensitive", "expires_in": 3600},
+                "team-client",
+                now=now,
+            )
+
+            values = settings.read_settings(path)
+            self.assertEqual(values["access_token"], 'access\\sensitive"value')
+            self.assertEqual(values["refresh_token"], "refresh-sensitive")
+            self.assertEqual(values["token_expires_at"], "2026-08-25T01:00:00Z")
+            self.assertEqual(values["client_id"], "team-client")
+            self.assertEqual(values["auth_flow"], "authorization_code_pkce")
+            self.assertEqual(values["ad_account_id"], "existing-account")
+            self.assertEqual(values["auto_execute"], "true")
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+
+    def test_pending_oauth_file_is_private_and_deleted_after_finalize(self):
+        pending = settings.create_pending_oauth_file(
+            {"access_token": "access-sensitive", "refresh_token": "refresh-sensitive", "expires_in": 3600},
+            "team-client",
+            "false",
+        )
+        self.addCleanup(lambda: pending.unlink() if pending.exists() else None)
+        self.assertEqual(stat.S_IMODE(pending.stat().st_mode), 0o600)
+
+        with tempfile.TemporaryDirectory() as directory:
+            settings_path = pathlib.Path(directory) / "spotify-ads-api.local.md"
+            now = datetime.datetime(2026, 8, 25, tzinfo=datetime.timezone.utc)
+            settings.finalize_pending_oauth_file(pending, settings_path, now=now)
+            self.assertFalse(pending.exists())
+            values = settings.read_settings(settings_path)
+            self.assertEqual(values["access_token"], "access-sensitive")
+            self.assertEqual(values["auth_flow"], "authorization_code_pkce")
+
+    def test_failed_finalize_retains_private_pending_file(self):
+        pending = settings.create_pending_oauth_file(
+            {"access_token": "access-sensitive", "refresh_token": "refresh-sensitive", "expires_in": 3600},
+            "team-client",
+        )
+        self.addCleanup(lambda: pending.unlink() if pending.exists() else None)
+        with mock.patch.object(settings, "write_oauth_settings", side_effect=PermissionError("managed write denied")):
+            with self.assertRaises(PermissionError):
+                settings.finalize_pending_oauth_file(pending, "/managed/settings.md")
+        self.assertTrue(pending.exists())
+        self.assertEqual(stat.S_IMODE(pending.stat().st_mode), 0o600)
+
+    def test_finalize_rejects_insecure_pending_file(self):
+        pending = settings.create_pending_oauth_file(
+            {"access_token": "access-sensitive", "refresh_token": "refresh-sensitive"},
+            "team-client",
+        )
+        self.addCleanup(lambda: pending.unlink() if pending.exists() else None)
+        pending.chmod(0o644)
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "mode-0600"):
+                settings.finalize_pending_oauth_file(pending, pathlib.Path(directory) / "settings.md")
+
+    def test_safe_receipt_contains_no_tokens(self):
+        receipt = settings._safe_receipt(".codex/spotify-ads-api.local.md")
+        self.assertNotIn("access-sensitive", receipt)
+        self.assertNotIn("refresh-sensitive", receipt)
+        self.assertEqual(json.loads(receipt)["settings_file"], ".codex/spotify-ads-api.local.md")
 
 
 if __name__ == "__main__":

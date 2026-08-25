@@ -66,6 +66,11 @@ Record fixture IDs outside this repository. Useful fixtures include:
 
 Token-refresh testing requires `auth_flow: "authorization_code_pkce"`, a valid refresh token, and the team-owned client ID. Set `token_expires_at` to a past timestamp. No application secret or platform credential store is involved.
 
+Initial OAuth authorization must leave token values out of captured helper
+stdout and atomically replace the active settings file with mode 0600. Codex
+hook tests must also assert the manifest uses `${PLUGIN_ROOT}` without a cwd
+fallback.
+
 Run the automated OAuth regressions with:
 
 ```bash

@@ -37,15 +37,19 @@ Never substitute a plugin-global client ID; this plugin does not provide one.
    do not silently replace it. If none exists or the user declines reuse, prompt
    for the client ID from the team's Spotify Developer application.
 
-3. Remind the user that the exact loopback redirect URI above must already be
-   registered, then run the helper. On Antigravity, resolve `PLUGIN_ROOT` to the
-   plugin root (two directories above this skill) because no plugin-root variable
-   is set.
+3. Prompt for `auto_execute` (default `false`). Remind the user that the exact
+   loopback redirect URI above must already be registered, then run the helper.
+   Pass the active settings path so tokens are written directly to a securely
+   created file and never enter captured stdout. On Antigravity, resolve
+   `PLUGIN_ROOT` to the plugin root (two directories above this skill) because
+   no plugin-root variable is set.
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
 python3 "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
-  --client-id "<team_client_id>"
+  --client-id "<team_client_id>" \
+  --settings-file "<active_settings_file>" \
+  --auto-execute "<true_or_false>"
 ```
 
 If `python3` is unavailable, try:
@@ -53,7 +57,9 @@ If `python3` is unavailable, try:
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
 uv run "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
-  --client-id "<team_client_id>"
+  --client-id "<team_client_id>" \
+  --settings-file "<active_settings_file>" \
+  --auto-execute "<true_or_false>"
 ```
 
 The helper prints the authorization URL before trying to open a browser. If
@@ -66,20 +72,38 @@ If neither Python 3 nor `uv` is available, explain that initial PKCE
 authorization requires the bundled Python helper. Offer direct-token mode as a
 legacy fallback; it has no automatic refresh.
 
-4. Parse the helper's stdout JSON:
+4. Confirm the helper's non-sensitive stdout receipt:
 
 ```json
-{"access_token":"...","refresh_token":"...","expires_in":3600}
+{"settings_file":"<active_settings_file>","auth_flow":"authorization_code_pkce"}
 ```
 
-Keep diagnostics from stderr separate. Never display a full token. Calculate
-`token_expires_at` as the current time plus `expires_in`, in UTC ISO 8601 format.
+The helper writes `access_token`, `refresh_token`, `token_expires_at`,
+`client_id`, and `auth_flow` directly to the settings file through an atomic
+mode-0600 creation. It does not print tokens and does not require a later
+`chmod`. Keep diagnostics from stderr separate.
 
-5. Prompt for `auto_execute` (default `false`) and write the active settings
-file with the new OAuth values, `auth_flow: "authorization_code_pkce"`, and the
-existing ad account ID or an empty value. Restrict the file to the current user.
+If a managed workspace denies the settings write, the helper exits with code 5
+and returns only safe paths:
 
-6. Define the request wrapper, then discover and select the ad account:
+```json
+{"settings_file":"<active_settings_file>","pending_token_file":"<private_mode_0600_file>","requires_settings_write":true}
+```
+
+Do not read or print the pending file. Request the scoped workspace permission
+needed to run this token-free finalization command:
+
+```bash
+python3 "${PLUGIN_ROOT}/skills/configure/scripts/settings_file.py" oauth-result \
+  --settings-file "<active_settings_file>" \
+  --pending-token-file "<pending_token_file>"
+```
+
+On success the writer atomically installs the settings file and deletes the
+pending token file. If configuration is abandoned, delete that exact pending
+file after telling the user; it contains live OAuth tokens.
+
+5. Define the request wrapper, then discover and select the ad account:
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
@@ -92,9 +116,15 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" configure "$@"; }
       exactly one account exists across all businesses.
    4. If discovery fails or returns no accounts, ask for the ad account ID.
 
-   Update `ad_account_id` in the active settings file after selection.
+   Update `ad_account_id` atomically without printing tokens:
 
-7. Verify the selected account:
+```bash
+python3 "${PLUGIN_ROOT}/skills/configure/scripts/settings_file.py" update-account \
+  --settings-file "<active_settings_file>" \
+  --ad-account-id "<selected_ad_account_id>"
+```
+
+6. Verify the selected account:
 
 ```bash
 api GET "ad_accounts/<ad_account_id>"
@@ -111,9 +141,18 @@ Legacy direct-token mode for an already-issued bearer token.
 
 1. Accept the token argument and warn that it normally expires in about one
    hour and cannot refresh automatically.
-2. Prompt for `auto_execute` (default `false`) and write the settings file with
-   `auth_flow: "direct_token"`; leave `refresh_token`, `token_expires_at`, and
-   `client_id` empty.
+2. Prompt for `auto_execute` (default `false`) and pass the token to the secure
+   settings writer through stdin. Do not echo it or place its literal value in
+   the command. The writer sets `auth_flow: "direct_token"` and leaves
+   `refresh_token`, `token_expires_at`, and `client_id` empty.
+
+```bash
+printf '%s' "$SPOTIFY_ADS_ACCESS_TOKEN" | \
+  python3 "${PLUGIN_ROOT}/skills/configure/scripts/settings_file.py" direct-token \
+    --settings-file "<active_settings_file>" \
+    --access-token-stdin \
+    --auto-execute "<true_or_false>"
+```
 3. Use the same businesses → ad accounts discovery flow, or ask for an account
    ID if discovery fails, then update `ad_account_id`.
 4. Verify the selected account with the request wrapper.
@@ -156,6 +195,8 @@ For direct-token mode, set `auth_flow: "direct_token"` and leave
   ID is public application metadata required for refresh.
 - The PKCE verifier and state are generated cryptographically. The verifier is
   never printed or persisted.
+- OAuth tokens are written directly to a securely created settings file and
+  never emitted on helper stdout.
 - Never request, read, store, log, or transmit an application secret.
 - Never display full access or refresh tokens; show only a short suffix when
   confirmation is necessary.

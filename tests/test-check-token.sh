@@ -223,6 +223,9 @@ echo ""
 echo "=== hook JSON output ==="
 
 if command -v jq &>/dev/null; then
+  codex_hook_command=$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$PWD/.codex-plugin/hooks.json")
+  assert_eq "Codex hook uses installed plugin root" 'bash "${PLUGIN_ROOT}/hooks/check-token.sh"' "$codex_hook_command"
+  assert_eq "Codex hook has no cwd fallback" "false" "$([[ "$codex_hook_command" == *':-.'* ]] && echo true || echo false)"
 
   # Antigravity: decision + reason
   json=$(jq -n --arg msg "token refreshed" '{
@@ -290,6 +293,7 @@ if command -v jq &>/dev/null; then
   assert_eq "credential store never invoked" "false" "$([ -e "$TMPDIR/security-called" ] && echo true || echo false)"
   assert_eq "rotated access token stored" 'access_token: "new_access"' "$(grep '^access_token:' "$project/.codex/spotify-ads-api.local.md")"
   assert_eq "rotated refresh token stored" 'refresh_token: "rotated_refresh"' "$(grep '^refresh_token:' "$project/.codex/spotify-ads-api.local.md")"
+  assert_eq "refreshed settings created mode 600" "600" "$(stat -f '%Lp' "$project/.codex/spotify-ads-api.local.md" 2>/dev/null || stat -c '%a' "$project/.codex/spotify-ads-api.local.md")"
   assert_contains "Codex command rewritten" "Bearer new_access" "$(echo "$output" | jq -r '.hookSpecificOutput.updatedInput.command')"
 
   rm -f "$TMPDIR/python-called"

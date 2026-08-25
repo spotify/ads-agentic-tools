@@ -8,10 +8,12 @@ Starts a loopback callback server, opens Spotify authorization, validates the
 callback, and exchanges the code without a client secret.
 
 Usage:
-    python3 oauth-flow.py --client-id ID
-    uv run oauth-flow.py --client-id ID
+    python3 oauth-flow.py --client-id ID --settings-file PATH
+    uv run oauth-flow.py --client-id ID --settings-file PATH
 
-Structured token JSON is written to stdout. Diagnostics are written to stderr.
+Tokens are written directly to a mode-0600 settings file and are never emitted
+to stdout. A non-sensitive settings receipt is written to stdout. Diagnostics
+are written to stderr.
 """
 
 import argparse
@@ -29,6 +31,8 @@ import urllib.parse
 import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
+
+from settings_file import create_pending_oauth_file, finalize_pending_oauth_file
 
 AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -188,6 +192,8 @@ def wait_for_callback(server, callback_received, timeout_seconds):
 def main():
     parser = argparse.ArgumentParser(description="Spotify OAuth 2.0 Authorization Code with PKCE flow")
     parser.add_argument("--client-id", required=True, help="Team-owned Spotify app client ID")
+    parser.add_argument("--settings-file", required=True, help="Active platform settings path")
+    parser.add_argument("--auto-execute", choices=("true", "false"), help="Confirmation preference to store")
     parser.add_argument("--redirect-uri", default=DEFAULT_REDIRECT_URI, help=f"OAuth redirect URI (default: {DEFAULT_REDIRECT_URI})")
     parser.add_argument("--timeout", type=int, default=TIMEOUT_SECONDS, help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -243,15 +249,28 @@ def main():
 
     print("Exchanging authorization code for tokens...", file=sys.stderr)
     tokens = exchange_code(callback_result["code"], args.client_id, args.redirect_uri, verifier)
-    if not tokens or "access_token" not in tokens:
+    if not tokens or not isinstance(tokens.get("access_token"), str) or not tokens["access_token"]:
         print("Failed to exchange the authorization code for tokens.", file=sys.stderr)
         return 2
 
-    print(json.dumps({
-        "access_token": tokens["access_token"],
-        "refresh_token": tokens.get("refresh_token", ""),
-        "expires_in": tokens.get("expires_in", 3600),
-    }))
+    try:
+        pending_token_file = create_pending_oauth_file(tokens, args.client_id, args.auto_execute)
+    except (OSError, TypeError, ValueError, KeyError) as error:
+        print(f"Could not create a private OAuth result file: {error}", file=sys.stderr)
+        return 5
+
+    try:
+        finalize_pending_oauth_file(pending_token_file, args.settings_file)
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as error:
+        print(f"Could not write OAuth settings without additional workspace permission: {error}", file=sys.stderr)
+        print(json.dumps({
+            "settings_file": args.settings_file,
+            "pending_token_file": str(pending_token_file),
+            "requires_settings_write": True,
+        }))
+        return 5
+
+    print(json.dumps({"settings_file": args.settings_file, "auth_flow": "authorization_code_pkce"}))
     return 0
 
 

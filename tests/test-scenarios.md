@@ -25,17 +25,22 @@ The expanded curl snippets below describe the HTTP contract. The plugin should n
 **Expected behavior:**
 1. Plugin prompts for the team-owned `client_id` (or offers to reuse the existing one)
 2. Runs `oauth-flow.py` to generate an ephemeral PKCE verifier, print the authorization URL, open the browser, validate callback state, and complete authorization
-3. Parses JSON output with `access_token`, `refresh_token`, `expires_in`
+3. Receives only a non-sensitive settings-file receipt; token values never enter captured helper stdout
 4. Prompts for `ad_account_id`, `auto_execute`
 5. Writes tokens, the team client ID, and `auth_flow: "authorization_code_pkce"` to the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity)
 6. Verifies token with test API call
 
+If step 5 requires managed workspace permission, the helper returns only the
+private pending-file path. The plugin must finalize that file without reading
+or printing it, and the finalizer must delete it after the atomic settings write.
+
 **Success criteria:**
-- Settings file exists with all YAML fields populated
+- Settings file exists with all YAML fields populated and mode 0600
 - `token_expires_at` is a valid ISO 8601 timestamp in the future
 - Test API call returns 200
 - PKCE uses `S256`, validates callback state, and sends no HTTP Basic authorization
 - Access and refresh tokens are never displayed after capture; no application secret is requested
+- Codex resolves the hook through `${PLUGIN_ROOT}` even when `CODEX_PLUGIN_ROOT` is unset
 
 ---
 

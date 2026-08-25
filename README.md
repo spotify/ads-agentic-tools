@@ -116,7 +116,7 @@ The repository includes platform-specific marketplace metadata: `.agents/plugins
 The plugin supports two authentication modes:
 
 ### OAuth 2.0 with PKCE (Recommended)
-Run `/spotify-ads-api:configure` or `/spotify-ads-api:configure oauth [client_id]`. This launches Authorization Code with PKCE (`S256`) using Python 3 or `uv`. The verifier stays in memory, no application secret is requested, and tokens refresh automatically before API calls. If automatic browser opening fails, copy the printed authorization URL while the callback listener remains active.
+Run `/spotify-ads-api:configure` or `/spotify-ads-api:configure oauth [client_id]`. This launches Authorization Code with PKCE (`S256`) using Python 3 or `uv`. The verifier stays in memory, no application secret is requested, and tokens refresh automatically before API calls. The helper writes tokens directly to an atomically replaced mode-0600 settings file instead of printing them. If a managed workspace requires separate write approval, tokens remain in a private mode-0600 temporary file until a token-free finalization command succeeds. If automatic browser opening fails, copy the printed authorization URL while the callback listener remains active.
 
 ### Direct Token (Legacy)
 Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained access token. No automatic refresh — token expires in ~1 hour.
@@ -176,6 +176,10 @@ Settings are stored in `.codex/spotify-ads-api.local.md` on Codex, `.claude/spot
 | `auto_execute` | Skip confirmation prompts | `false` |
 
 Existing OAuth settings created before PKCE can keep using an unexpired access token, but cannot refresh. Run `/spotify-ads-api:configure` once to reauthorize. On macOS, the old `spotify-ads-api-client-secret` Keychain item is then unused and may be removed; the plugin does not delete it automatically.
+
+Codex resolves the installed token-refresh hook through its plugin manifest's
+`${PLUGIN_ROOT}` substitution, so the hook does not depend on the workspace
+directory or an exported `CODEX_PLUGIN_ROOT` variable.
 
 ## Troubleshooting
 

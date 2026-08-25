@@ -131,17 +131,17 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           # rotated refresh token, retain the existing value.
           effective_refresh="${new_refresh:-$refresh_token}"
           tmp="${SETTINGS_FILE}.tmp.$$"
-          if ACCESS_TOKEN="$new_token" TOKEN_EXPIRES_AT="$new_expires" REFRESH_TOKEN="$effective_refresh" awk '
-            BEGIN {
-              access=ENVIRON["ACCESS_TOKEN"]
-              expires=ENVIRON["TOKEN_EXPIRES_AT"]
-              refresh=ENVIRON["REFRESH_TOKEN"]
-            }
-            /^access_token: / && !seen_access { print "access_token: \""access"\""; seen_access=1; next }
-            /^token_expires_at: / && !seen_expires { print "token_expires_at: \""expires"\""; seen_expires=1; next }
-            /^refresh_token: / && !seen_refresh { print "refresh_token: \""refresh"\""; seen_refresh=1; next }
-            { print }
-          ' "$SETTINGS_FILE" > "$tmp" && chmod 600 "$tmp" && mv "$tmp" "$SETTINGS_FILE"; then
+          if (umask 077; ACCESS_TOKEN="$new_token" TOKEN_EXPIRES_AT="$new_expires" REFRESH_TOKEN="$effective_refresh" awk '
+              BEGIN {
+                access=ENVIRON["ACCESS_TOKEN"]
+                expires=ENVIRON["TOKEN_EXPIRES_AT"]
+                refresh=ENVIRON["REFRESH_TOKEN"]
+              }
+              /^access_token: / && !seen_access { print "access_token: \""access"\""; seen_access=1; next }
+              /^token_expires_at: / && !seen_expires { print "token_expires_at: \""expires"\""; seen_expires=1; next }
+              /^refresh_token: / && !seen_refresh { print "refresh_token: \""refresh"\""; seen_refresh=1; next }
+              { print }
+            ' "$SETTINGS_FILE" > "$tmp") && mv "$tmp" "$SETTINGS_FILE"; then
             if [ -n "$access_token" ]; then
               set -f
               modified_command="${modified_command//"$access_token"/$new_token}"
