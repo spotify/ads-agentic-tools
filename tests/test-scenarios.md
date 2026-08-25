@@ -23,19 +23,24 @@ The expanded curl snippets below describe the HTTP contract. The plugin should n
 **Quirks tested:** OAuth flow, settings file creation, token validation
 
 **Expected behavior:**
-1. Plugin prompts for `client_id` and `client_secret`
-2. Runs `oauth-flow.py` to open browser and complete authorization
-3. Parses JSON output with `access_token`, `refresh_token`, `expires_in`
+1. Plugin prompts for the team-owned `client_id` (or offers to reuse the existing one)
+2. Runs `oauth-flow.py` to generate an ephemeral PKCE verifier, print the authorization URL, open the browser, validate callback state, and complete authorization
+3. Receives only a non-sensitive settings-file receipt; token values never enter captured helper stdout
 4. Prompts for `ad_account_id`, `auto_execute`
-5. Stores `client_secret` in the macOS Keychain and writes the non-secret fields to the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity)
+5. Writes tokens, the team client ID, and `auth_flow: "authorization_code_pkce"` to the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity)
 6. Verifies token with test API call
 
+If step 5 requires managed workspace permission, the helper returns only the
+private pending-file path. The plugin must finalize that file without reading
+or printing it, and the finalizer must delete it after the atomic settings write.
+
 **Success criteria:**
-- Settings file exists with all YAML fields populated
+- Settings file exists with all YAML fields populated and mode 0600
 - `token_expires_at` is a valid ISO 8601 timestamp in the future
 - Test API call returns 200
-- The settings file does not contain `client_secret`
-- Access tokens and the client secret are never displayed after capture
+- PKCE uses `S256`, validates callback state, and sends no HTTP Basic authorization
+- Access and refresh tokens are never displayed after capture; no application secret is requested
+- Codex resolves the hook through `${PLUGIN_ROOT}` even when `CODEX_PLUGIN_ROOT` is unset
 
 ---
 
@@ -337,13 +342,13 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Quirks tested:** Auto-refresh hook, token update, retry with new token
 
 **Setup:**
-Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity) and set `token_expires_at` to any valid timestamp in the past. Ensure `refresh_token` and `client_id` are populated and the client secret exists in the macOS Keychain. The settings file must not contain `client_secret`.
+Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity) and set `token_expires_at` to any valid timestamp in the past. Ensure `refresh_token`, `client_id`, and `auth_flow: "authorization_code_pkce"` are populated.
 
 **Expected behavior:**
 1. User runs a command (e.g., "Show me all campaigns")
 2. The pre-tool hook (`PreToolUse` on Claude/Codex/Antigravity) detects the curl targets `api-partner.spotify.com`
 3. Hook reads settings, sees `token_expires_at` is in the past
-4. Hook runs `refresh-token.py` with stored credentials
+4. Hook runs `refresh-token.py` with the client ID and refresh token only
 5. Hook updates settings file with new `access_token` and `token_expires_at`
 6. Original API call proceeds with the new token
 7. API call succeeds
@@ -351,6 +356,8 @@ Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Cod
 **Success criteria:**
 - Token refresh happens automatically without user intervention
 - Settings file updated with new `access_token` and future `token_expires_at`
+- A rotated refresh token is stored, while an omitted replacement retains the existing token
+- The hook does not access a platform credential store or send HTTP Basic authentication
 - API call succeeds with the refreshed token
 - No manual re-authentication required
 

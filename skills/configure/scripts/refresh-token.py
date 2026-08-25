@@ -2,95 +2,94 @@
 # /// script
 # requires-python = ">=3.8"
 # ///
-"""Spotify Ads API token refresh.
-
-Exchanges a refresh token for a new access token.
+"""Refresh a Spotify Authorization Code with PKCE access token.
 
 Usage:
-    python3 refresh-token.py --client-id ID --client-secret SECRET --refresh-token TOKEN
-    uv run refresh-token.py --client-id ID --client-secret SECRET --refresh-token TOKEN
+    python3 refresh-token.py --client-id ID --refresh-token TOKEN
+    uv run refresh-token.py --client-id ID --refresh-token TOKEN
 
-Output (stdout):
-    {"access_token": "...", "expires_in": 3600, "refresh_token": "..."}
-    Note: refresh_token is only included if Spotify rotates it.
-
-Diagnostics go to stderr. Exit codes:
-    0  Success
-    1  Invalid refresh token (401/400 from Spotify)
-    2  Network or unexpected error
+Structured token JSON is written to stdout. Diagnostics are written to stderr.
 """
 
 import argparse
-import base64
 import json
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
 TOKEN_URL = "https://accounts.spotify.com/api/token"
 
 
-def refresh(client_id, client_secret, refresh_token):
-    credentials = base64.b64encode(
-        f"{client_id}:{client_secret}".encode()
-    ).decode()
-
+def build_refresh_request(client_id, refresh_token):
     data = urllib.parse.urlencode({
         "grant_type": "refresh_token",
         "refresh_token": refresh_token,
-    }).encode()
-
-    req = urllib.request.Request(
+        "client_id": client_id,
+    }).encode("ascii")
+    return urllib.request.Request(
         TOKEN_URL,
         data=data,
-        headers={
-            "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
 
+
+def _redact(text, sensitive_values):
+    redacted = text
+    for value in sensitive_values:
+        if value:
+            redacted = redacted.replace(value, "[REDACTED]")
+    return redacted
+
+
+def refresh(client_id, refresh_token, opener=urllib.request.urlopen):
+    request = build_refresh_request(client_id, refresh_token)
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read().decode()), None
-    except urllib.error.HTTPError as e:
-        body = e.read().decode() if e.fp else ""
-        if e.code in (400, 401):
-            print(f"Invalid refresh token (HTTP {e.code}): {body}", file=sys.stderr)
+        with opener(request, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8")), None
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8", errors="replace") if error.fp else ""
+        try:
+            payload = json.loads(body)
+            oauth_error = payload.get("error", "")
+        except (json.JSONDecodeError, AttributeError):
+            oauth_error = ""
+        if oauth_error == "invalid_grant":
+            print("Refresh token is no longer valid (invalid_grant). Run configure to authorize again.", file=sys.stderr)
             return None, 1
-        print(f"Token refresh HTTP {e.code}: {body}", file=sys.stderr)
+        if isinstance(oauth_error, str) and oauth_error and len(oauth_error) <= 64 and all(
+            character.isalnum() or character in "_-" for character in oauth_error
+        ):
+            detail = oauth_error
+        else:
+            detail = "OAuth request rejected"
+        print(f"Token refresh failed (HTTP {error.code}): {detail}", file=sys.stderr)
         return None, 2
-    except Exception as e:
-        print(f"Token refresh error: {e}", file=sys.stderr)
+    except Exception as error:
+        detail = _redact(str(error), (refresh_token,))
+        print(f"Token refresh failed: {detail}", file=sys.stderr)
         return None, 2
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Refresh a Spotify OAuth 2.0 access token"
-    )
-    parser.add_argument("--client-id", required=True, help="Spotify app client ID")
-    parser.add_argument("--client-secret", required=True, help="Spotify app client secret")
-    parser.add_argument("--refresh-token", required=True, help="Refresh token from initial OAuth flow")
+    parser = argparse.ArgumentParser(description="Refresh a Spotify OAuth 2.0 PKCE access token")
+    parser.add_argument("--client-id", required=True, help="Team-owned Spotify app client ID")
+    parser.add_argument("--refresh-token", required=True, help="Refresh token from the PKCE authorization flow")
     args = parser.parse_args()
 
-    tokens, error_code = refresh(args.client_id, args.client_secret, args.refresh_token)
-
+    tokens, error_code = refresh(args.client_id, args.refresh_token)
     if error_code is not None:
-        sys.exit(error_code)
-
+        return error_code
     if not tokens or "access_token" not in tokens:
-        print("No access token in response.", file=sys.stderr)
-        sys.exit(2)
+        print("No access token in refresh response.", file=sys.stderr)
+        return 2
 
-    output = {
-        "access_token": tokens["access_token"],
-        "expires_in": tokens.get("expires_in", 3600),
-    }
-    if "refresh_token" in tokens:
+    output = {"access_token": tokens["access_token"], "expires_in": tokens.get("expires_in", 3600)}
+    if tokens.get("refresh_token"):
         output["refresh_token"] = tokens["refresh_token"]
     print(json.dumps(output))
-    sys.exit(0)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
