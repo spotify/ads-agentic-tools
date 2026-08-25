@@ -91,7 +91,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
   token_expires_at=$(get_setting "token_expires_at")
   refresh_token=$(get_setting "refresh_token")
   client_id=$(get_setting "client_id")
-  client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w 2>/dev/null || echo "")
+  auth_flow=$(get_setting "auth_flow")
 
   # Determine if token needs refresh
   needs_refresh=false
@@ -108,50 +108,69 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
     fi
   fi
 
-  if [ "$needs_refresh" = true ]; then
-    if [ -z "$refresh_token" ] || [ -z "$client_id" ] || [ -z "$client_secret" ]; then
-      system_message="Spotify API token may be expired but no refresh credentials are configured. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to set up OAuth."
+  if [ "$auth_flow" = "authorization_code_pkce" ] && [ "$needs_refresh" = true ]; then
+    if [ -z "$refresh_token" ] || [ -z "$client_id" ]; then
+      system_message="Spotify API token is expired but PKCE refresh settings are incomplete. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
+    elif ! command -v python3 &>/dev/null; then
+      system_message="Spotify API token is expired, but Python 3 is required for automatic PKCE refresh. Install Python 3 or run the configure skill to authorize again."
     else
       REFRESH_SCRIPT="${PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
       if refresh_result=$(python3 "$REFRESH_SCRIPT" \
         --client-id "$client_id" \
-        --client-secret "$client_secret" \
         --refresh-token "$refresh_token" 2>/dev/null); then
 
         new_token=$(echo "$refresh_result" | jq -r '.access_token // ""')
-        expires_in=$(echo "$refresh_result" | jq -r '.expires_in // 3600')
+        expires_in=$(echo "$refresh_result" | jq -r 'if (.expires_in | type) == "number" then .expires_in else 3600 end')
         new_refresh=$(echo "$refresh_result" | jq -r '.refresh_token // ""')
 
         if [ -n "$new_token" ]; then
           new_expires=$(date -u -v+"${expires_in}"S +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
                         date -u -d "+${expires_in} seconds" +"%Y-%m-%dT%H:%M:%SZ")
 
-          # Replace "key: ..." line in settings file via awk to avoid sed metacharacter injection
-          update_setting() {
-            local key="$1" val="$2" file="$3"
-            local tmp="${file}.tmp.$$"
-            AWK_KEY="$key" AWK_VAL="$val" awk '
-              BEGIN { k=ENVIRON["AWK_KEY"]; v=ENVIRON["AWK_VAL"]; found=0 }
-              { if ($0 ~ "^"k": " && !found) { print k": \""v"\""; found=1 } else print }
-            ' "$file" > "$tmp" && mv "$tmp" "$file"
-          }
-
-          update_setting "access_token" "$new_token" "$SETTINGS_FILE"
-          update_setting "token_expires_at" "$new_expires" "$SETTINGS_FILE"
-          if [ -n "$new_refresh" ]; then
-            update_setting "refresh_token" "$new_refresh" "$SETTINGS_FILE"
+          # Replace all OAuth values in one atomic rename. If Spotify omits a
+          # rotated refresh token, retain the existing value.
+          effective_refresh="${new_refresh:-$refresh_token}"
+          tmp="${SETTINGS_FILE}.tmp.$$"
+          if ACCESS_TOKEN="$new_token" TOKEN_EXPIRES_AT="$new_expires" REFRESH_TOKEN="$effective_refresh" awk '
+            BEGIN {
+              access=ENVIRON["ACCESS_TOKEN"]
+              expires=ENVIRON["TOKEN_EXPIRES_AT"]
+              refresh=ENVIRON["REFRESH_TOKEN"]
+            }
+            /^access_token: / && !seen_access { print "access_token: \""access"\""; seen_access=1; next }
+            /^token_expires_at: / && !seen_expires { print "token_expires_at: \""expires"\""; seen_expires=1; next }
+            /^refresh_token: / && !seen_refresh { print "refresh_token: \""refresh"\""; seen_refresh=1; next }
+            { print }
+          ' "$SETTINGS_FILE" > "$tmp" && chmod 600 "$tmp" && mv "$tmp" "$SETTINGS_FILE"; then
+            if [ -n "$access_token" ]; then
+              set -f
+              modified_command="${modified_command//"$access_token"/$new_token}"
+              set +f
+            fi
+            system_message="Spotify API token was expired and has been refreshed automatically. Re-read the access_token from the settings file before retrying."
+          else
+            rm -f "$tmp"
+            system_message="Spotify API token refreshed, but the settings file could not be updated atomically. Run the configure skill before retrying."
           fi
-
-          if [ -n "$access_token" ]; then
-            set -f
-            modified_command="${modified_command//"$access_token"/$new_token}"
-            set +f
-          fi
-          system_message="Spotify API token was expired and has been refreshed automatically. Re-read the access_token from the settings file before retrying."
+        else
+          system_message="Spotify token refresh returned no access token. Run the configure skill to authorize again."
         fi
       else
-        system_message="Failed to refresh Spotify API token. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to re-authenticate."
+        refresh_status=$?
+        if [ "$refresh_status" -eq 1 ]; then
+          system_message="Spotify OAuth refresh was rejected (invalid_grant). Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
+        else
+          system_message="Failed to refresh Spotify API token. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
+        fi
       fi
+    fi
+  elif [ "$auth_flow" = "direct_token" ] && [ "$needs_refresh" = true ]; then
+    system_message="This direct Spotify API token is expired or has no expiry metadata and cannot refresh automatically. Configure OAuth with PKCE or provide a new direct token."
+  elif [ -z "$auth_flow" ]; then
+    if [ "$needs_refresh" = true ]; then
+      system_message="This legacy Spotify OAuth configuration is expired and cannot refresh without reauthorization. Run the configure skill to migrate to PKCE."
+    else
+      system_message="Legacy Spotify OAuth configuration detected. The current token can be used until it expires; run the configure skill once to migrate to PKCE."
     fi
   fi
 fi

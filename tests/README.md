@@ -11,7 +11,7 @@ The prompt catalog is the quickest smoke-test surface. The scenarios are the sou
 
 1. A Spotify Developer app with Ads API access
 2. A Spotify Ads business and ad account suitable for testing
-3. Python 3.8+ for the automated OAuth flow, or use the manual flow
+3. Python 3.8+ or `uv` for the PKCE OAuth flow, or use legacy direct-token mode
 4. Codex, Claude Code, or Antigravity with this source checkout installed
 5. Test creative files and a synthetic customer-list CSV when exercising uploads
 
@@ -64,4 +64,12 @@ Record fixture IDs outside this repository. Useful fixtures include:
 - a Pixel/CAPI/dataset topology with known diagnostics for read-only measurement tests
 - a non-owner account member whose access can be inspected; only mutate membership in a dedicated test business
 
-Token-refresh testing requires a valid refresh token and macOS Keychain entry. Set `token_expires_at` to a past timestamp, but never add `client_secret` to a settings file.
+Token-refresh testing requires `auth_flow: "authorization_code_pkce"`, a valid refresh token, and the team-owned client ID. Set `token_expires_at` to a past timestamp. No application secret or platform credential store is involved.
+
+Run the automated OAuth regressions with:
+
+```bash
+python3 tests/test-oauth-pkce.py
+bash tests/test-check-token.sh
+bash tests/test-pkce-runtime-guard.sh
+```

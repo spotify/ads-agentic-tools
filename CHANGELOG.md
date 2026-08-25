@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.9.0] - 2026-08-25
+
+### Added
+- Authorization Code with PKCE (`S256`) using team-owned client IDs, cryptographic verifier and state generation, exact loopback callback validation, and a printed-URL browser fallback
+- Unit and shell regressions for PKCE construction, callback validation, token refresh rotation, legacy migration, direct-token behavior, and forbidden secret-based runtime paths
+
+### Changed
+- Replaced application-secret and HTTP Basic token exchanges with public-client authorization and refresh requests containing `client_id`
+- Added the explicit `auth_flow` settings marker and cross-platform automatic PKCE refresh without a platform credential store
+- Kept legacy access tokens usable until expiry while requiring one-time PKCE reauthorization for future refreshes
+- Updated setup documentation to separate team application registration from individual authorization and explain client-level attribution and rate-limit isolation
+- Synced version `1.9.0` across the Claude Code, Codex, and Antigravity manifests
+
+### Removed
+- Application-secret collection, macOS Keychain access, secret-dependent refresh, and the shell-based manual OAuth flow
+
 ## [1.8.0] - 2026-08-13
 
 ### Added

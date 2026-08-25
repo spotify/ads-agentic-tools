@@ -9,7 +9,7 @@ Check out our post on the [Spotify Engineering Blog](https://engineering.atspoti
 - Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), or [Antigravity CLI](https://antigravity.google/)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
-- Python 3.8+ (for automated OAuth flow; optional — manual flow available as fallback)
+- Python 3.8+ or `uv` (required for initial PKCE authorization; direct-token mode is the fallback)
 
 ## Install
 
@@ -41,7 +41,7 @@ Use `codex plugin marketplace upgrade` later to refresh installed marketplace so
 agy plugin install https://github.com/spotify/ads-agentic-tools
 ```
 
-Restart Antigravity CLI, then verify with `/plugins`. On Antigravity, skills activate automatically from natural language (or browse them with `/skills list`); run `/configure` for first-time setup instead of `/spotify-ads-api:configure`. Note: automatic OAuth token refresh uses the macOS Keychain, so auto-refresh is macOS-only.
+Restart Antigravity CLI, then verify with `/plugins`. On Antigravity, skills activate automatically from natural language (or browse them with `/skills list`); run `/configure` for first-time setup instead of `/spotify-ads-api:configure`.
 
 ## Install from source
 
@@ -81,36 +81,42 @@ The repository includes platform-specific marketplace metadata: `.agents/plugins
 
 ## Configure
 
-1. Create a Spotify Developer app:
+### Team administrator: register the application
+
+1. Create or select the team's Spotify Developer app:
    - Go to [developer.spotify.com](https://developer.spotify.com/) and log in
    - Click **Create App**
    - Enter a name (e.g. "Ads Agentic Tools") and a simple description
    - Under **Redirect URIs**, enter `http://127.0.0.1:8080/callback` and remember to click **Add**
    - Under **Which API/SDKs are you planning to use?**, check **Ads API**
-   - Save the app and note your **Client ID** and **Client Secret**
+   - Save the app and note its **Client ID**
    - Open [https://adsmanager.spotify.com/api-terms](https://adsmanager.spotify.com/api-terms) and make sure the ad account you want to use is selected. Accept the terms to authorize your client id to access your ad account through Ads API.
 
-2. Configure OAuth credentials:
+2. Share the client ID with the team's plugin users. A client ID is public
+   application metadata; do not distribute an application secret. Keeping a
+   team-owned client ID preserves that team's client-level attribution, quotas,
+   and rate-limit isolation. The plugin has no global fallback client ID.
+
+### Individual user: authorize the plugin
+
+1. Configure OAuth with the team's client ID:
    ```
    /spotify-ads-api:configure
    ```
    (On Antigravity CLI, run `/configure` instead — the skill names below all apply, but the slash-command prefix is Claude Code/Codex syntax.)
-   This opens your browser for Spotify authorization, then saves your tokens locally with automatic refresh.
+   This opens your browser for PKCE authorization, then saves your tokens locally with automatic refresh. The authorization URL is also printed so it can be copied if the browser does not open automatically.
 
-3. Create your first campaign:
+2. Create your first campaign:
    ```
    /spotify-ads-api:build-campaign Create an audio campaign called Summer Promo targeting US listeners aged 25-44 with $100/day budget
    ```
 
 ## Authentication
 
-The plugin supports three authentication modes:
+The plugin supports two authentication modes:
 
-### OAuth 2.0 (Recommended)
-Run `/spotify-ads-api:configure` or `/spotify-ads-api:configure oauth`. This launches an automated OAuth flow using a local Python script. Your tokens are stored locally and refresh automatically before API calls.
-
-### Manual OAuth
-Run `/spotify-ads-api:configure manual` if Python is not available. You'll manually open the authorization URL, copy the redirect, and the plugin exchanges the code for tokens via curl.
+### OAuth 2.0 with PKCE (Recommended)
+Run `/spotify-ads-api:configure` or `/spotify-ads-api:configure oauth [client_id]`. This launches Authorization Code with PKCE (`S256`) using Python 3 or `uv`. The verifier stays in memory, no application secret is requested, and tokens refresh automatically before API calls. If automatic browser opening fails, copy the printed authorization URL while the callback listener remains active.
 
 ### Direct Token (Legacy)
 Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained access token. No automatic refresh — token expires in ~1 hour.
@@ -165,10 +171,11 @@ Settings are stored in `.codex/spotify-ads-api.local.md` on Codex, `.claude/spot
 | `refresh_token` | Token for automatic renewal | — |
 | `token_expires_at` | ISO 8601 expiry timestamp | — |
 | `client_id` | Spotify app client ID | — |
+| `auth_flow` | `authorization_code_pkce` or `direct_token` | — |
 | `ad_account_id` | Default ad account UUID | — |
 | `auto_execute` | Skip confirmation prompts | `false` |
 
-The client secret is stored in the **macOS Keychain** (not in the settings file) for security. It is saved during `/spotify-ads-api:configure` and retrieved automatically by the token refresh hook.
+Existing OAuth settings created before PKCE can keep using an unexpired access token, but cannot refresh. Run `/spotify-ads-api:configure` once to reauthorize. On macOS, the old `spotify-ads-api-client-secret` Keychain item is then unused and may be removed; the plugin does not delete it automatically.
 
 ## Troubleshooting
 

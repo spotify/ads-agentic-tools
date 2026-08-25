@@ -1,7 +1,7 @@
 ---
 name: configure
-description: Configure Spotify Ads API credentials via OAuth 2.0 or direct token. Sets up authentication, ad account, and execution preferences.
-argument-hint: "[oauth | manual | token <access_token>]"
+description: Configure Spotify Ads API credentials via OAuth 2.0 with PKCE or a direct token. Sets up authentication, ad account, and execution preferences.
+argument-hint: "[oauth [client_id] | token <access_token>]"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
@@ -11,151 +11,122 @@ Set up or update the plugin's local settings file for the active platform.
 
 ## Modes
 
-Parse the user's argument to determine the configuration mode:
+### `oauth [client_id]` (default)
 
-### `oauth` (default if no argument)
+Use Authorization Code with PKCE (`S256`). The client ID belongs to the user's
+team and determines client-level attribution, quotas, and rate-limit isolation.
+Never substitute a plugin-global client ID; this plugin does not provide one.
 
-Full OAuth 2.0 authorization flow with automatic token refresh.
+**Prerequisites**
 
-**Prerequisite:** The user must have added `http://127.0.0.1:8080/callback` as a redirect URI in their app settings at [developer.spotify.com](https://developer.spotify.com/). Remind the user of this before starting the flow.
+- A team administrator has created or selected a Spotify Developer application,
+  enabled the Ads API, completed applicable Ads API authorization steps, and
+  registered `http://127.0.0.1:8080/callback` exactly.
+- Python 3.8+ or `uv` is available for the standard-library PKCE helper.
 
 1. Choose the active settings file:
-   - Codex: write `.codex/spotify-ads-api.local.md`.
-   - Claude: write `.claude/spotify-ads-api.local.md`.
-   - Antigravity: write `.agents/spotify-ads-api.local.md`.
-   Read that file if it exists. If it does not exist, read another platform's settings file as defaults, but do not overwrite it unless the user asks.
+   - Codex: `.codex/spotify-ads-api.local.md`
+   - Claude: `.claude/spotify-ads-api.local.md`
+   - Antigravity: `.agents/spotify-ads-api.local.md`
 
-2. Prompt the user for OAuth credentials using AskUserQuestion:
-   - **client_id** (required) — Spotify app client ID from the developer dashboard
-   - **client_secret** (required) — Spotify app client secret
+   Read that file if it exists. If it does not, read another platform's settings
+   file as defaults, but do not overwrite the other platform's file.
 
-3. Store the client_secret securely in the macOS Keychain:
+2. Resolve the team-owned client ID. Use the optional command argument when
+   supplied. Otherwise, if local settings contain `client_id`, offer to reuse it;
+   do not silently replace it. If none exists or the user declines reuse, prompt
+   for the client ID from the team's Spotify Developer application.
 
-```bash
-security add-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w "<client_secret>" -U
-```
-
-   **Do NOT write client_secret to the settings file.** It must only be stored in the keychain.
-
-4. Attempt the automated OAuth flow by running the helper script. On Antigravity, no plugin-root env var is set — this skill's files live at `<plugin root>/skills/configure/`, so set `PLUGIN_ROOT` to the plugin root (two directories up from this skill's directory) instead of using the snippet below.
+3. Remind the user that the exact loopback redirect URI above must already be
+   registered, then run the helper. On Antigravity, resolve `PLUGIN_ROOT` to the
+   plugin root (two directories above this skill) because no plugin-root variable
+   is set.
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
-client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
 python3 "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
-  --client-id "<client_id>" \
-  --client-secret "$client_secret"
+  --client-id "<team_client_id>"
 ```
 
-If `python3` is not available, try `uv run`:
+If `python3` is unavailable, try:
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
-client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
 uv run "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
-  --client-id "<client_id>" \
-  --client-secret "$client_secret"
+  --client-id "<team_client_id>"
 ```
 
-5. If Python is not available at all, fall back to the **manual** flow (see below).
+The helper prints the authorization URL before trying to open a browser. If
+automatic browser opening fails, tell the user to copy that URL into a browser
+while the loopback listener continues waiting. Do not recreate the PKCE flow in
+shell or ask the user to paste a redirect URL: the verifier is ephemeral and
+must remain only in the helper's memory.
 
-6. Parse the JSON output from the script:
-   ```json
-   {"access_token": "...", "refresh_token": "...", "expires_in": 3600}
-   ```
+If neither Python 3 nor `uv` is available, explain that initial PKCE
+authorization requires the bundled Python helper. Offer direct-token mode as a
+legacy fallback; it has no automatic refresh.
 
-7. Calculate `token_expires_at` as the current time + `expires_in` seconds, formatted as ISO 8601.
+4. Parse the helper's stdout JSON:
 
-8. Prompt for remaining settings:
-   - **ad_account_id** (required) — Discover the user's ad accounts using this two-step flow:
-     1. Fetch businesses: `GET /businesses` → returns `{ "businesses": [...] }` with each business having an `id` and `name`.
-     2. For each business (or the one the user selects), fetch its ad accounts: `GET /businesses/{business_id}/ad_accounts` → returns `{ "ad_accounts": [...] }` with each account having an `id`, `name`, and `status`.
-     3. Present the list and let the user select. If only one ad account exists across all businesses, select it automatically.
-     4. If the API calls fail or return empty, ask the user to paste their ad account ID manually.
-   - **auto_execute** (optional, default: false) — Whether to execute API calls without confirmation
+```json
+{"access_token":"...","refresh_token":"...","expires_in":3600}
+```
 
-9. Write the active platform settings file (see Settings File Format below).
+Keep diagnostics from stderr separate. Never display a full token. Calculate
+`token_expires_at` as the current time plus `expires_in`, in UTC ISO 8601 format.
 
-10. Set the plugin root and define the request wrapper:
+5. Prompt for `auto_execute` (default `false`) and write the active settings
+file with the new OAuth values, `auth_flow: "authorization_code_pkce"`, and the
+existing ad account ID or an empty value. Restrict the file to the current user.
+
+6. Define the request wrapper, then discover and select the ad account:
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" configure "$@"; }
 ```
 
-11. Verify with a test API call:
+   1. `api GET "businesses"`
+   2. For each selected business, `api GET "businesses/<business_id>/ad_accounts"`
+   3. Present account names, IDs, and statuses. Select automatically only when
+      exactly one account exists across all businesses.
+   4. If discovery fails or returns no accounts, ask for the ad account ID.
+
+   Update `ad_account_id` in the active settings file after selection.
+
+7. Verify the selected account:
+
 ```bash
 api GET "ad_accounts/<ad_account_id>"
 ```
-A successful response (HTTP 200) confirms the token and ad account are valid.
 
-### `manual`
-
-Manual OAuth flow for environments where the automated script cannot run.
-
-**Prerequisite:** The user must have added `http://127.0.0.1:8080/callback` as a redirect URI in their app settings at [developer.spotify.com](https://developer.spotify.com/). Remind the user of this before starting the flow.
-
-1. Prompt for **client_id** and **client_secret** using AskUserQuestion.
-
-2. Store the client_secret securely in the macOS Keychain:
-
-```bash
-security add-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w "<client_secret>" -U
-```
-
-   **Do NOT write client_secret to the settings file.**
-
-3. Display the authorization URL for the user to open in their browser:
-   ```
-   https://accounts.spotify.com/authorize?client_id=<CLIENT_ID>&response_type=code&redirect_uri=http://127.0.0.1:8080/callback
-   ```
-
-4. Instruct the user to:
-   - Open the URL in their browser
-   - Authorize the application
-   - Copy the full redirect URL from the browser address bar (it will show an error page since no server is running, but the URL contains the code)
-
-5. Ask the user to paste the redirect URL, then extract the `code` parameter from it.
-
-6. Exchange the code for tokens:
-```bash
-client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
-curl -s -X POST "https://accounts.spotify.com/api/token" \
-  -H "Authorization: Basic $(echo -n '<client_id>:'"$client_secret"'' | base64)" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=authorization_code&code=<CODE>&redirect_uri=http://127.0.0.1:8080/callback"
-```
-
-7. Parse the response for `access_token`, `refresh_token`, and `expires_in`.
-
-8. Continue from step 7 of the `oauth` flow (calculate expiry, prompt for settings, write file, verify).
+After a successful migration from an older OAuth setup, tell macOS users that
+the legacy `spotify-ads-api-client-secret` Keychain item is unused and may be
+removed. Do not delete it automatically because an older installed plugin may
+still need it.
 
 ### `token <access_token>`
 
-Legacy direct token mode for users who already have an access token.
+Legacy direct-token mode for an already-issued bearer token.
 
-1. Accept the access token from the argument.
-
-2. Warn the user: "Direct token mode — this token will expire in ~1 hour with no automatic refresh. For auto-refresh, re-run the configure skill in oauth mode (`/spotify-ads-api:configure oauth` on Claude/Codex, `/configure oauth` on Antigravity) using your client credentials."
-
-3. Read existing settings or prompt for:
-   - **ad_account_id** (required) — Use the same businesses → ad accounts discovery flow as the oauth mode (`GET /businesses` then `GET /businesses/{business_id}/ad_accounts`), or ask the user to paste it.
-   - **auto_execute** (optional, default: false)
-
-4. Write the settings file with the token but without refresh credentials. Set `token_expires_at` to empty.
-
-5. Verify with a test API call.
+1. Accept the token argument and warn that it normally expires in about one
+   hour and cannot refresh automatically.
+2. Prompt for `auto_execute` (default `false`) and write the settings file with
+   `auth_flow: "direct_token"`; leave `refresh_token`, `token_expires_at`, and
+   `client_id` empty.
+3. Use the same businesses → ad accounts discovery flow, or ask for an account
+   ID if discovery fails, then update `ad_account_id`.
+4. Verify the selected account with the request wrapper.
 
 ## Settings File Format
-
-Write the active platform settings file in this exact format (`.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, `.agents/spotify-ads-api.local.md` on Antigravity):
 
 ```markdown
 ---
 access_token: "<token>"
 refresh_token: "<refresh_token>"
 token_expires_at: "<ISO 8601 timestamp>"
-client_id: "<client_id>"
+client_id: "<team_client_id>"
+auth_flow: "authorization_code_pkce"
 ad_account_id: "<uuid>"
 environment: "production"
 auto_execute: false
@@ -165,25 +136,29 @@ auto_execute: false
 
 Local configuration for the spotify-ads-api plugin.
 Do not commit this file to version control.
-Client secret is stored in the macOS Keychain, not in this file.
 ```
 
-**Note:** `client_secret` is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file.
-
-For the `token` mode, leave `refresh_token`, `token_expires_at`, and `client_id` as empty strings.
+For direct-token mode, set `auth_flow: "direct_token"` and leave
+`refresh_token`, `token_expires_at`, and `client_id` empty.
 
 ## Verification Results
 
-Report the test API call result:
 - **200**: Configuration saved and verified successfully.
-- **401/403**: Token may be invalid or expired. Settings saved but token needs updating.
-- **404**: Ad account ID may be incorrect. Settings saved but check the account ID.
-- Other errors: Report the status code and suggest troubleshooting.
+- **401/403**: Token may be invalid, expired, or unauthorized for the account.
+- **404**: The selected ad account ID may be incorrect.
+- Other errors: report the status and the response error without exposing tokens.
 
-## Security Notes
+## Security and Migration
 
-- The settings file is gitignored via `.codex/*.local.md`, `.claude/*.local.md`, and `.agents/*.local.md`.
-- If the active settings directory (`.codex/`, `.claude/`, or `.agents/`) doesn't exist, create it.
-- **client_secret is stored in the macOS Keychain**, not in the settings file. Use `security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w` to retrieve it when needed.
-- Never log or display the full access token or client_secret — show only the last 8 characters for confirmation.
-- Never write client_secret to the settings file or any other plaintext file.
+- Settings files are gitignored through `.codex/*.local.md`,
+  `.claude/*.local.md`, and `.agents/*.local.md`.
+- Access and refresh tokens stay in the active local settings file. The client
+  ID is public application metadata required for refresh.
+- The PKCE verifier and state are generated cryptographically. The verifier is
+  never printed or persisted.
+- Never request, read, store, log, or transmit an application secret.
+- Never display full access or refresh tokens; show only a short suffix when
+  confirmation is necessary.
+- An existing OAuth configuration without `auth_flow` may use an unexpired
+  access token, but it cannot refresh. Run OAuth configuration once to replace
+  it with PKCE-issued tokens.

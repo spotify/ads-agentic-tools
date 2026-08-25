@@ -9,7 +9,7 @@ Replace values in angle brackets with safe test fixtures. Prompts that create, p
 
 | Capability | External example | Internal probe | Expected routing or behavior |
 |---|---|---|---|
-| Configure | “Help me connect my Spotify Ads account.” | “Configure OAuth and let me choose from the ad accounts you discover.” | `configure`; businesses → ad accounts discovery; secret goes to Keychain |
+| Configure | “Help me connect my Spotify Ads account.” | “Configure PKCE OAuth with my team's client ID and let me choose from the ad accounts you discover.” | `configure`; S256 PKCE; businesses → ad accounts discovery; no application secret |
 | Campaigns | “Show me my active campaigns.” | “Create `[Test reject] Reach smoke test` with a reach objective.” | `campaigns`; correct objective enum and safe test prefix |
 | Ad sets and ads | “Create an audio ad set for US listeners ages 25–44.” | “Target West Hartford, CT on iOS, Android, and desktop with $50/day and a $15 max bid.” | `ads`; geo lookup, platform enums, micro-amounts, category, estimate |
 | Campaign strategy | “Recommend a Spotify campaign plan for this product page.” | “Plan, but do not create, a two-ad-set launch using these assets and a $5,000 budget.” | `campaign-strategy`; research/estimates allowed, no entity creation |
