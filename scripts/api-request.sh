@@ -10,7 +10,10 @@ set -uo pipefail
 # Examples:
 #   api-request.sh campaigns GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 #   api-request.sh drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"My Campaign"}'
-#   api-request.sh --env   # prints TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL
+#   api-request.sh --env   # prints TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL,
+#                          # SDK_HEADER, PLUGIN_VERSION (and SKILL_HEADER when a
+#                          # skill name is given). Output is eval-safe:
+#                          # eval $(api-request.sh assets --env)
 
 BASE_URL="https://api-partner.spotify.com/ads/v3"
 
@@ -94,13 +97,28 @@ esac
 SDK_HEADER="X-Spotify-Ads-Sdk: ${SDK_PRODUCT}/${PLUGIN_VERSION}"
 
 # --- --env mode: print settings and exit ---
+#
+# Values are single-quoted so `eval $(api --env)` assigns them intact. Unquoted,
+# the space inside SDK_HEADER splits the assignment and eval treats every line
+# as a prefix assignment to a bogus command, silently setting nothing at all.
 if [ "${1:-}" = "--env" ] || [ "${2:-}" = "--env" ]; then
-  printf 'TOKEN=%s\n' "$TOKEN"
-  printf 'AD_ACCOUNT_ID=%s\n' "$AD_ACCOUNT_ID"
-  printf 'AUTO_EXECUTE=%s\n' "${AUTO_EXECUTE:-false}"
-  printf 'BASE_URL=%s\n' "$BASE_URL"
-  printf 'SDK_HEADER=%s\n' "$SDK_HEADER"
-  printf 'PLUGIN_VERSION=%s\n' "$PLUGIN_VERSION"
+  ENV_SKILL="${1:-}"
+  [ "$ENV_SKILL" = "--env" ] && ENV_SKILL=""
+
+  print_env() {
+    # Escape any embedded single quote so the value survives eval intact.
+    printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")"
+  }
+
+  print_env TOKEN "$TOKEN"
+  print_env AD_ACCOUNT_ID "$AD_ACCOUNT_ID"
+  print_env AUTO_EXECUTE "${AUTO_EXECUTE:-false}"
+  print_env BASE_URL "$BASE_URL"
+  print_env SDK_HEADER "$SDK_HEADER"
+  print_env PLUGIN_VERSION "$PLUGIN_VERSION"
+  if [ -n "$ENV_SKILL" ]; then
+    print_env SKILL_HEADER "X-Spotify-Ads-Skill: $ENV_SKILL"
+  fi
   exit 0
 fi
 

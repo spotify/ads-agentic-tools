@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- `SKILL_HEADER` to the output of `api-request.sh --env`, so raw-curl call sites no longer construct the skill attribution header by hand
+- `tests/test-api-request.sh`, covering `--env` output quoting, `SKILL_HEADER` scoping, and values containing shell metacharacters
+
+### Fixed
+- `eval $(api --env)` silently set nothing. The printed values were unquoted, so the space inside `SDK_HEADER` split the assignment and every line became a prefix assignment to a nonexistent command. Raw-curl paths that follow the documented flow, including asset and audience uploads, were therefore sending an empty `Authorization` header along with empty tracking headers. All values are now single-quoted, with embedded single quotes escaped
+
 ## [1.8.0] - 2026-08-13
 
 ### Added

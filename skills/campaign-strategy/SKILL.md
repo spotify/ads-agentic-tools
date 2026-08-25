@@ -55,7 +55,7 @@ If budget, dates, or market are missing, make a conservative recommendation and 
      ```
    - Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
    - Use `api GET`, `api POST`, etc. for all API calls. The wrapper handles authentication, SDK/skill headers, and status code capture.
-   - To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
+   - To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
    - Treat `POST /estimates/audience` and `POST /estimates/bid` as non-mutating planning calls. Do not run entity-creation POSTs in this skill unless the user explicitly asks.
 
 ## Output
