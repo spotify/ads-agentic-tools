@@ -4,7 +4,7 @@ This is the canonical instruction file for agents working in this repository. Co
 
 ## What This Is
 
-A Codex, Claude Code, and Antigravity CLI plugin package for the Spotify Ads API v3. All source files are markdown — there is no compiled code, no package manager, no build step, no tests. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
+A Codex, Claude Code, and Antigravity CLI plugin package for the Spotify Ads API v3. Plugin source is markdown and shell; there is no compiled code, package manager, or build step. Lightweight shell regression tests live under `tests/`. The plugin translates natural language into REST API calls for managing campaigns, ad sets, ads, assets, audiences, and reporting.
 
 ## Architecture
 
@@ -18,6 +18,10 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/drafts/` — Draft campaign lifecycle: create, edit, validate, and publish draft campaigns, ad sets, and ads. **Preferred flow** for creating new campaigns — builds the full hierarchy as drafts, validates everything at once, then publishes only after review.
   - `skills/report/` — Aggregate, insight, and async CSV reporting
   - `skills/assets/` — Upload, list, and manage creative assets (audio, video, images)
+  - `skills/audiences/` — Customer-list uploads and custom, engagement, event, and lookalike audiences
+  - `skills/measurement-setup/` — Pixel, CAPI, datasets, event planning, advanced matching, mobile apps, and sharing
+  - `skills/measurement-debug/` — Read-only-first Pixel, CAPI, dataset, deduplication, and attribution troubleshooting
+  - `skills/account-admin/` — Business/ad-account discovery and account membership, roles, invitations, and details
   - `skills/dashboard/` — Quick performance overview with pacing for active campaigns
   - `skills/monitor/` — Campaign health diagnostics for pacing, delivery, stalled entities, and underdelivery
   - `skills/export/` — Denormalized CSV exports of campaigns, ad sets, ads, targeting, budgets, and optional metrics
@@ -28,6 +32,7 @@ The plugin follows the agent plugin structure with four component types:
 - **Agent** (`agents/spotify-ads-request-builder.md`) — A natural language agent that triggers automatically when users describe advertising tasks conversationally. Handles multi-step operations (campaign -> ad set -> ad) by chaining API calls and passing IDs between steps.
 - **Scripts** (`scripts/`) — Shared shell scripts used by skills and agents:
   - `scripts/api-request.sh` — Request wrapper that handles settings discovery, authentication, SDK/skill tracking headers, and curl execution. Skills define a local `api()` function that delegates to this script: `api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }`. Usage: `api <METHOD> <path> [json_body]` or `api --env` for settings. Paths use `{ad_account_id}` as a placeholder (auto-substituted from settings).
+  - `scripts/fetch-openapi-schema.sh` — Downloads the current public Ads API v3 OpenAPI document to a caller-provided temporary path and rejects failed or structurally invalid responses.
 - **Hooks** — Per-platform hook configs invoking `hooks/check-token.sh` to automatically refresh expired OAuth tokens before Spotify API calls. `hooks.json` at the plugin root contains the Antigravity `PreToolUse` event, auto-discovered by both Antigravity CLI (`agy plugin install`) and Antigravity 2.0 (`.agents/plugins/` workspace discovery). `.claude-plugin/hooks.json` and `.codex-plugin/hooks.json` contain the Claude/Codex `PreToolUse` event, declared via the `hooks` field in each platform's `plugin.json`. Note: the hook payload and response formats differ across platforms — Claude/Codex use `.tool_input.command` and support command rewriting via `updatedInput`, while Antigravity uses `.toolCall.args.CommandLine` and only supports allow/deny with `decision`/`reason` (the hook refreshes the token in the settings file and tells the agent to re-read it).
 - **Commands** (`commands/configure.toml`) — An Antigravity CLI custom command exposing `/configure` as an explicit entry point to the configure skill. Other skills auto-activate on Antigravity via its native Agent Skills support.
 - **Settings** (`.codex/spotify-ads-api.local.md`, `.claude/spotify-ads-api.local.md`, or `.agents/spotify-ads-api.local.md`, with each platform preferring its own file and falling back to the other two) — Per-user local config with YAML frontmatter storing OAuth credentials (access_token, refresh_token, client_id, token_expires_at), ad_account_id, and auto_execute. The client_secret is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file. Template lives in `templates/settings-template.md`. These files are gitignored.
@@ -48,7 +53,7 @@ When updating marketplace metadata, keep the plugin name, source path, category,
 These non-obvious API quirks were discovered through real testing and are critical when modifying any command or agent:
 
 - **Micro-amounts**: Budget and bid values in entity payloads (`budget.micro_amount`, `bid_micro_amount`) are in micro-units (1 unit of the ad account's billing currency = 1,000,000 micro-units; e.g., $1 USD = 1,000,000, ¥1 JPY = 1,000,000). However, SPEND values returned by `aggregate_reports` are already in the billing currency — do NOT divide those by 1,000,000.
-- **`bid_strategy`** is a plain string enum (`MAX_BID`, `COST_PER_RESULT`, `UNSET`), not an object. Default to `MAX_BID` with a required `bid_micro_amount`.
+- **`bid_strategy`** is a plain string enum (`MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, `UNSET`), not an object. Default to `MAX_BID` with a required `bid_micro_amount`; use `AUTOBID` for automatic bidding without `bid_micro_amount`. Do not choose `UNSET` for new ad sets.
 - **`geo_targets`** is a flat object (not an array) with a required `country_code` and optional refinement arrays (`region_ids`, `city_ids`, `postal_code_ids`). Use `GET /targets/geos?country_code=<code>&q=<query>` to look up geo IDs. Geo types returned by lookup: `REGION` (states/provinces), `DMA_REGION` (media markets), `CITY`, `POSTAL_CODE` — note that `dma_ids` is no longer a valid targeting field; DMA-level targeting is not supported. Example: `{"country_code": "US", "region_ids": ["4831725"]}` targets Connecticut. NEVER fall back to country-only without looking up the user's requested location first.
 - **`platforms`** valid values are `ANDROID`, `DESKTOP`, `IOS` — not "MOBILE" or "CONNECTED_DEVICE".
 - **`category`** is required on ad sets — must be a valid `ADV_X_Y` code from `GET /ad_categories`.
@@ -61,10 +66,11 @@ These non-obvious API quirks were discovered through real testing and are critic
 - **Tracking headers**: The request wrapper (`scripts/api-request.sh`) injects `X-Spotify-Ads-Sdk: <sdk-product>/<version>` and `X-Spotify-Ads-Skill: <skill-name>` on every API call. Skills never construct these headers manually — the wrapper reads the plugin version from the platform manifest and takes the skill name as its first argument. This eliminates malformed-header errors seen in production logs (e.g., doubled `X-Spotify-Ads-Sdk: X-Spotify-Ads-Sdk: ...`).
 - **`entity_status_type` must match `entity_type`** in `aggregate_reports` queries. For example, use `entity_status_type=AD_SET` when `entity_type=AD_SET` — using `entity_status_type=CAMPAIGN` with `entity_type=AD_SET` causes a filter validation error.
 - **Audience estimates**: The build-campaign and ads skills run `POST /estimates/audience` before creating ad sets to validate targeting. This catches "min audience threshold" errors before they happen.
+- **Ad product catalog validation**: Before every campaign, ad set, or ad POST/PATCH, follow `skills/api-reference/references/ad-product-validation.md`. Fetch `GET /ad_product_catalog` once per workflow; do not maintain a timed cross-workflow cache because the endpoint returns `Cache-Control: no-cache, no-store`. Validate final creates and deep-merged effective updates, including required parent/runtime context. Never send a known violation, but do not add per-field success checklists or validation-only confirmation gates. Campaign responses do not consistently expose `ad_product`, so use known workflow context and do not silently infer a reserved CONTENT/FPMNG product.
 
 ## OpenAPI Spec
 
-- `skills/api-reference/references/external-v3.yaml` — Public OpenAPI v3 spec (~8.6K lines), committed to repo.
+- `https://developer.spotify.com/reference/ads-api/v3/api.yaml` is the authoritative OpenAPI v3 document. Before the first Ads API call in every workflow, follow `skills/api-reference/references/live-openapi.md`: fetch it once, inspect every planned operation's parameters and request body, reuse it throughout that workflow, and remove the temporary file afterward.
 
 ## Preferred Campaign Creation: Draft → Validate → Publish
 
@@ -95,7 +101,9 @@ api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"..."}'
 ```
 
-The wrapper handles settings discovery (platform-ordered fallback), authentication, SDK/skill tracking headers, and `\nHTTP_STATUS:<code>` capture. If `auto_execute` is false, the skill presents the command and asks for confirmation before executing. Exceptions (asset file uploads, OAuth token exchange) use raw curl — see the relevant skill for details.
+Before using the wrapper, each workflow fetches the current public OpenAPI document once and uses it to check the complete operation contract as described in `skills/api-reference/references/live-openapi.md`. The wrapper then handles settings discovery (platform-ordered fallback), authentication, SDK/skill tracking headers, and `\nHTTP_STATUS:<code>` capture without downloading the document again for each request. If `auto_execute` is false, the skill presents the command and asks for confirmation before executing. Exceptions (asset file uploads, OAuth token exchange) use raw curl — see the relevant skill for details.
+
+In skills, agents, documentation, and test scenarios, express standard Ads API v3 requests with the shared `api()` helper, never as expanded raw HTTP-client commands. This keeps authentication, tracking headers, settings lookup, and status capture centralized. Only the documented asset-upload and OAuth implementations may use their required raw transport commands; do not use those exceptions as patterns for ordinary API examples.
 
 After execution, check the `HTTP_STATUS:` line first:
 - **2xx**: Request succeeded — parse and display the response body.

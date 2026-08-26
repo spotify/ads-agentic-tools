@@ -83,6 +83,8 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" configure "$@"; }
 ```
 
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
 11. Verify with a test API call:
 ```bash
 api GET "ad_accounts/<ad_account_id>"

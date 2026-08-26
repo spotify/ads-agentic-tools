@@ -126,10 +126,14 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           new_expires=$(date -u -v+"${expires_in}"S +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
                         date -u -d "+${expires_in} seconds" +"%Y-%m-%dT%H:%M:%SZ")
 
+          # Replace "key: ..." line in settings file via awk to avoid sed metacharacter injection
           update_setting() {
             local key="$1" val="$2" file="$3"
-            sed -i '' "s|^${key}: .*|${key}: \"${val}\"|" "$file" 2>/dev/null || \
-            sed -i "s|^${key}: .*|${key}: \"${val}\"|" "$file"
+            local tmp="${file}.tmp.$$"
+            AWK_KEY="$key" AWK_VAL="$val" awk '
+              BEGIN { k=ENVIRON["AWK_KEY"]; v=ENVIRON["AWK_VAL"]; found=0 }
+              { if ($0 ~ "^"k": " && !found) { print k": \""v"\""; found=1 } else print }
+            ' "$file" > "$tmp" && mv "$tmp" "$file"
           }
 
           update_setting "access_token" "$new_token" "$SETTINGS_FILE"
@@ -139,7 +143,9 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
           fi
 
           if [ -n "$access_token" ]; then
-            modified_command="${modified_command//$access_token/$new_token}"
+            set -f
+            modified_command="${modified_command//"$access_token"/$new_token}"
+            set +f
           fi
           system_message="Spotify API token was expired and has been refreshed automatically. Re-read the access_token from the settings file before retrying."
         fi

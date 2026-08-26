@@ -19,8 +19,7 @@
 - `UNKNOWN`
 
 ### OptimizationPrefs (Campaign Objective — deprecated for drafts)
-**Deprecated on campaigns.** Use `delivery_goal_group` on draft campaigns instead. Still required for direct campaign creation (`POST /campaigns`) and estimate endpoints.
-
+Use `delivery_goal_group` on draft campaigns. `objective` remains required by direct v3 campaign creation and audience-estimate requests.
 - `REACH` — Maximize unique listeners who hear or see the ad. AUDIO and VIDEO formats. MAX_BID only.
 - `EVEN_IMPRESSION_DELIVERY` — Default. Distributes impressions evenly across the flight. All asset formats. MAX_BID only.
 - `CLICKS` — Drive users to a landing page. AUDIO and VIDEO. MAX_BID or COST_PER_RESULT.
@@ -31,11 +30,11 @@
 - `APP_INSTALLS` — Mobile app installs. IOS or ANDROID only (not both, no DESKTOP). Requires mobile_app_id. MAX_BID only.
 - `WEBSITE_VISITS` — Website visits. AUDIO and VIDEO formats. MAX_BID only.
 
-### DeliveryGoalGroup (replaces objective on draft campaigns)
-- `AWARENESS` — Brand awareness, reach, even impression delivery
-- `WEBSITE_TRAFFIC` — Drive clicks and website visits
-- `APP_PROMOTION` — Mobile app installs
-- `ENGAGEMENT_ON_SPOTIFY` — Video views, podcast streams, on-platform engagement
+### DeliveryGoalGroup
+- `AWARENESS` — Awareness, reach, and even impression delivery
+- `WEBSITE_TRAFFIC` — Click and website-visit goals
+- `APP_PROMOTION` — Mobile app promotion and installs
+- `ENGAGEMENT_ON_SPOTIFY` — Video views, podcast streams, and on-platform engagement
 - `LEAD_GEN` — Lead generation
 
 ---

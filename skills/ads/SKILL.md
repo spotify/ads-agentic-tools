@@ -1,7 +1,7 @@
 ---
 name: ads
-description: Manage Spotify Ads API ad sets and ads — list, create, get, or update.
-argument-hint: "ad-sets list | ad-sets create | ads list | ads create | ads get <id>"
+description: List or get Spotify Ads API ad sets and ads, and stage their creation or updates through drafts by default. Use direct live writes only when explicitly requested.
+argument-hint: "ad-sets list|create|get|update | ads list|create|get|update | *-live for explicit direct writes"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
 
@@ -18,6 +18,8 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" ads "$@"; }
 ```
 
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
 To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Parsing Arguments
@@ -26,6 +28,8 @@ The argument format is: `<resource> <operation> [id]`
 - Resource: `ad-sets` or `ads`
 - Operation: `list`, `create`, `get`, `update`
 - If no argument, ask which resource and operation.
+
+For `create` and `update`, default to draft endpoints even when the user does not mention drafts. `create-live` and `update-live` are explicit escape hatches for direct published writes.
 
 ## Ad Set Operations
 
@@ -36,6 +40,12 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
 
 ### `ad-sets create`
+Collect the required fields below first. Before the POST, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, parent campaign, and any runtime inputs required by its rules, then validate
+the final ad set body against `ad_set.create` plus `ad_set.both`. Do not add a separate
+validation confirmation.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **campaign_id** (uuid — suggest listing campaigns first)
@@ -172,10 +182,12 @@ If the audience is too small (low projected users or 400 error), warn the user a
 
 Ask whether to proceed, adjust targeting, or cancel before creating the ad set.
 
-**Create the ad set:**
+**Create the draft ad set:**
+
+The `campaign_id` must reference a draft campaign. If the supplied campaign is published, first check for and reuse its draft or create one with `POST /campaigns/{campaign_id}/drafts`.
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/ad_sets" \
+api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
   '{...}'
 ```
 
@@ -185,7 +197,17 @@ api GET "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID"
 ```
 
 ### `ad-sets update <id>`
+
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad set, parent campaign, and runtime state required by applicable
+rules. Deep-merge the proposed PATCH into the current ad set and validate the effective
+entity against `ad_set.update` plus `ad_set.both`. Do not add a separate validation
+confirmation.
+
 Prompt for fields to update (min 1). Same fields as create, all optional.
+
+Read the published ad set, then check `GET /drafts/ad_sets/{id}`. If it returns 404, create a draft with `POST /ad_sets/{id}/drafts`. If a draft already exists, disclose its pending state before combining changes. PATCH `/drafts/ad_sets/{id}`, resolve its draft `campaign_id`, fetch the draft campaign's current hierarchy version, and validate it. Keep the result staged.
 
 ## Ad Operations
 
@@ -196,6 +218,12 @@ api GET "ad_accounts/{ad_account_id}/ads?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Ad Set ID | Status | Delivery
 
 ### `ads create`
+Collect the required fields and asset selections below first. Before the POST, read and
+follow `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch
+the live catalog, current parent ad set and campaign, and referenced assets, then
+validate the final ad body against `ad.create` plus `ad.both`. Do not add a separate
+validation confirmation.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **ad_set_id** (uuid — suggest listing ad sets first)
@@ -222,9 +250,11 @@ Prompt for required fields:
     ```
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/ads" \
+api POST "ad_accounts/{ad_account_id}/drafts/ads" \
   '{...}'
 ```
+
+The `ad_set_id` must reference a draft ad set. If the supplied ad set is published, first check for and reuse its draft or create one with `POST /ad_sets/{ad_set_id}/drafts`.
 
 ### `ads get <id>`
 ```bash
@@ -232,7 +262,22 @@ api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 ```
 
 ### `ads update <id>`
-Updateable fields: `call_to_action`, `delivery`, `status`.
+Before the update, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad, parent ad set and campaign, and any referenced assets. Deep-merge
+the proposed changes into the current ad and validate the effective entity against
+`ad.update` (when present) plus `ad.both`. Do not add a separate validation
+confirmation.
+
+Read the published ad, then check `GET /drafts/ads/{id}`. If it returns 404, create a draft with `POST /ads/{id}/drafts`. If a draft already exists, disclose its pending state before combining changes. PATCH `/drafts/ads/{id}`, fetch its parent draft ad set to resolve the draft campaign, fetch the campaign's current hierarchy version, and validate it. Keep the result staged.
+
+Draft ad updates support `name`, `advertiser_name`, `tagline`, `assets`, `asset_format`, `call_to_action`, `third_party_tracking`, `placements`, `weight`, and `status`. Always preserve third-party tracking entries the user did not explicitly remove or replace, and set `measurement_event` explicitly on every entry.
+
+### Explicit direct writes
+
+Use `ad-sets create-live`, `ad-sets update-live <id>`, `ads create-live`, or `ads update-live <id>` only when the user explicitly requests an immediate/direct change to a published entity or asks to skip drafts.
+
+If a direct write returns HTTP 403 or an edit-permission error, do not retry it and do not conclude that the credentials are entirely read-only. State that direct editing of the published entity was denied and offer draft staging instead.
 
 ## Execution Behavior
 
@@ -242,3 +287,5 @@ Updateable fields: `call_to_action`, `delivery`, `status`.
 - Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
 - On error, show the error message from the response body. Never automatically retry POST or PATCH requests — they may have succeeded server-side despite an error response.
 - When converting budgets, always confirm the micro-amount with the user (e.g., "$50/day = 50,000,000 micro-amount").
+- Treat a 404 from a draft existence check as "no draft exists"; for any other error, stop and show the response.
+- Never publish a draft without a separate user request and explicit confirmation immediately before `PUBLISH`.

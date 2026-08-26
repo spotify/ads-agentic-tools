@@ -122,40 +122,38 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | Skill | Description |
 |-------|-------------|
 | `/spotify-ads-api:configure` | Set up OAuth credentials, ad account, and preferences |
-| `/spotify-ads-api:campaigns` | List, create, get, or update campaigns |
-| `/spotify-ads-api:ads` | Manage ad sets and ads (list, create, get, update) |
+| `/spotify-ads-api:campaigns` | List or get campaigns; stage creates and updates through drafts by default |
+| `/spotify-ads-api:ads` | List or get ad sets and ads; stage creates and updates through drafts by default |
 | `/spotify-ads-api:campaign-strategy` | Plan API-ready campaign structure and targeting from a landing page, business brief, or creative assets |
 | `/spotify-ads-api:build-campaign` | Create a full campaign hierarchy from a plain-text description |
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
 | `/spotify-ads-api:assets` | Upload, list, and manage creative assets |
+| `/spotify-ads-api:audiences` | Upload customer lists and manage custom, engagement, event, and lookalike audiences |
+| `/spotify-ads-api:measurement-setup` | Design and configure Pixel, CAPI, datasets, event mapping, advanced matching, mobile apps, and sharing |
+| `/spotify-ads-api:measurement-debug` | Diagnose missing, stale, duplicated, mismatched, or unattributed Pixel/CAPI events |
+| `/spotify-ads-api:account-admin` | Discover businesses/ad accounts and manage members, roles, invitations, and account details |
 | `/spotify-ads-api:dashboard` | Quick performance overview of active campaigns |
 | `/spotify-ads-api:monitor` | Diagnose pacing, delivery, stalled campaigns, and underdelivery issues |
 | `/spotify-ads-api:export` | Export campaign hierarchy, targeting, budget, and optional metrics to CSV |
-| `/spotify-ads-api:bulk` | Apply batch pause, resume, budget, delivery, archive, and creative-swap workflows |
-| `/spotify-ads-api:clone` | Clone campaigns or ad sets with optional date, budget, name, or targeting changes |
+| `/spotify-ads-api:bulk` | Stage batch pause, resume, budget, delivery, archive, creative, and tracking workflows through drafts |
+| `/spotify-ads-api:clone` | Clone campaigns or ad sets as validated drafts with optional changes |
 | `/spotify-ads-api:change-history` | View a timeline of changes — who changed what, when, and how |
 
 ## Natural Language Examples
 
-The plugin includes an agent that interprets natural language requests automatically:
+Ask for an outcome in ordinary language; you do not need to know endpoint names or request schemas. For example:
 
-- "Create a campaign called Summer Sale with a reach objective"
-- "Set up an audio ad targeting 18-34 year olds in the US with $50/day budget"
-- "Show me impressions, spend, and clicks for all campaigns last month"
-- "Pause the Summer Sale campaign"
-- "Generate a CSV report of daily spend by campaign for January"
-- "Build me a complete audio campaign targeting US listeners aged 25-44"
-- "Plan the best Spotify campaign structure for this product page"
-- "Use these creative assets to recommend targeting and ad sets"
-- "Clone last quarter's campaign and move the dates to next month"
-- "Export all campaigns with metrics for the last 30 days"
-- "Check which active campaigns are underpacing"
-- "Pause all active ad sets in the Summer Sale campaign"
-- "Upload my-audio.mp3 as a creative asset"
-- "How are my campaigns performing?"
-- "What changed in my ad account this week?"
-- "Show me all budget changes in the last 7 days"
-- "Who changed the Summer Sale campaign?"
+- **Plan and build:** “Recommend a Spotify campaign plan for this product page and a $5,000 budget.” or “Build an audio campaign for US listeners ages 25–44 and keep it as a validated draft.”
+- **Operate at scale:** “Pause every active ad set in my summer campaign.” or “Clone last quarter’s campaign for next month.”
+- **Measure performance:** “How are my active campaigns doing?” or “Export my campaign hierarchy and last-30-day metrics to CSV.”
+- **Manage creative and audiences:** “Upload this MP3 as an audio creative.” or “Upload this customer list and create a custom audience.”
+- **Set up and debug conversion tracking:** “Design Pixel and CAPI purchase tracking with deduplication.” or “Why did CAPI purchases stop arriving yesterday?”
+- **Administer access:** “Audit who can access my ad account and which roles they have.”
+- **Audit changes:** “What changed in my ad account this week?” or “Who changed the Summer Sale campaign?”
+
+Contributors and internal testers can use the fuller [prompt catalog](tests/prompt-catalog.md), which pairs a natural user example with a behavioral probe for every skill. The [test scenarios](tests/test-scenarios.md) cover exact routing, schema, safety, and recovery expectations.
+
+Campaign, ad set, and ad creation or modification is staged through the draft workflow by default, including requests that do not use the word “draft.” The plugin validates staged changes and publishes only after a separate request and explicit confirmation. Ask for an immediate or direct live change only when you intentionally want to bypass draft staging and your account permits published-entity writes.
 
 ## Configuration Reference
 

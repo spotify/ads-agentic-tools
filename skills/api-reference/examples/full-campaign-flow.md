@@ -179,7 +179,7 @@ The draft flow creates staging entities, validates everything at once, then publ
 
 ### Step 1: Create Draft Campaign
 
-Use `delivery_goal_group` (not the deprecated `objective` field) on draft campaigns.
+Use `delivery_goal_group`, not the deprecated `objective` field, on draft campaigns.
 
 ```bash
 curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \

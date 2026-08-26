@@ -1,7 +1,7 @@
 ---
 name: drafts
-description: "Create, edit, validate, and publish draft campaigns, ad sets, and ads via the Spotify Ads API. Drafts let you build a full campaign hierarchy without going live — review and iterate before publishing. Use when the user wants to draft a campaign, validate before publishing, edit drafts, list drafts, or publish drafts."
-argument-hint: "build <description> | list [campaigns|ad-sets|ads] | get <campaign|ad-set|ad> <draft_id> | edit <campaign|ad-set|ad> <draft_id> | validate <draft_campaign_id> | publish <draft_campaign_id> | delete <campaign|ad-set|ad> <draft_id> | draft-from <campaign|ad-set|ad> <entity_id>"
+description: "Default write workflow for Spotify Ads API campaigns, ad sets, and ads. Stage new entities or changes to published entities as drafts, validate them, and publish only after explicit confirmation. Use for create, change, update, adjust, fix, pause, resume, archive, creative, tracking, or other campaign-hierarchy writes even when the user does not say draft."
+argument-hint: "build <description> | stage-edit <campaign|ad-set|ad> <published_id> <changes> | list|get|edit|validate|publish|delete|draft-from"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
 
@@ -18,7 +18,7 @@ The draft flow is the **preferred** way to create campaigns because:
 - **Undo-friendly** — delete drafts at any time before publishing; no cleanup of live entities needed
 - **Incomplete data allowed** — drafts accept partial entities (e.g., an AUDIO ad without `companion_asset_id`). Fields like `asset_id`, `clickthrough_url`, and `tagline` are optional for draft ads and only required when publishing or creating live ads. Required fields are only enforced during VALIDATE or PUBLISH, so you can build the hierarchy incrementally
 
-The alternative (direct entity creation via `/campaigns`, `/ad_sets`, `/ads`) validates at each individual API call, so errors in later entities (e.g., ads) are discovered only after the campaign and ad sets are already live. Prefer the draft flow for any new campaign creation.
+The alternative (direct entity creation or updates via `/campaigns`, `/ad_sets`, `/ads`) writes to published entities immediately and may require permissions unavailable to some accounts or credentials. Prefer the draft flow for every campaign hierarchy create or modify request, not only complete campaign builds.
 
 ## Setup
 
@@ -29,11 +29,71 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" drafts "$@"; }
 ```
 
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
 To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
 
 ## Operations
 
-Parse the user's argument to determine the operation. For `get`, `edit`, `delete`, and `draft-from`, require an entity type (`campaign`, `ad-set`, or `ad`) with the ID. If the user provides only a bare UUID, infer the type only when the current conversation makes it unambiguous; otherwise ask which draft entity type they mean.
+Parse the user's argument to determine the operation. For `stage-edit`, `get`, `edit`, `delete`, and `draft-from`, require an entity type (`campaign`, `ad-set`, or `ad`) with the ID. If the user provides only a bare UUID, infer the type only when the current conversation makes it unambiguous; otherwise ask which entity type they mean.
+
+Use `stage-edit` automatically for ordinary requests to change a published campaign, ad set, or ad. The user does not need to mention drafts.
+
+---
+
+### `stage-edit <campaign|ad-set|ad> <published_id> <changes>` — Safely Stage Changes to a Published Entity
+
+This is the default operation for natural-language changes to published campaign hierarchy entities.
+
+#### Step 1: Read the published entity
+
+Use the corresponding published GET endpoint to verify the ID, capture the current values, and resolve parent IDs when needed.
+
+#### Step 2: Check for an existing draft
+
+Drafts created from published entities reuse the same entity ID. Check the corresponding draft GET endpoint before creating anything:
+
+```bash
+api GET "ad_accounts/{ad_account_id}/drafts/<campaigns|ad_sets|ads>/$ENTITY_ID"
+```
+
+- HTTP 200: a draft already exists. Display its current pending state and explain that the requested changes will be combined with it. Do not overwrite or discard fields that the user did not request to change.
+- HTTP 404: no draft exists; continue to Step 3.
+- Any other response: show the error and stop.
+
+#### Step 3: Create a draft when needed
+
+Only after a 404 from Step 2, create the draft from the published entity:
+
+```bash
+api POST "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID/drafts"
+api POST "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID/drafts"
+api POST "ad_accounts/{ad_account_id}/ads/$AD_ID/drafts"
+```
+
+Use only the endpoint matching the selected entity type. Do not send a request body.
+
+#### Step 4: Patch the draft
+
+Build a minimal patch containing only requested changes and send it to the corresponding draft endpoint:
+
+```bash
+api PATCH "ad_accounts/{ad_account_id}/drafts/campaigns/$CAMPAIGN_ID" '{...}'
+api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$AD_SET_ID" '{...}'
+api PATCH "ad_accounts/{ad_account_id}/drafts/ads/$AD_ID" '{...}'
+```
+
+For `third_party_tracking`, read and preserve every existing entry the user did not explicitly remove or replace. Send the complete intended tracking array and set `measurement_event` explicitly for every entry, especially `CLICKED` versus `IMPRESSION`.
+
+#### Step 5: Resolve and validate the parent draft campaign
+
+- Campaign draft: its ID is the draft campaign ID.
+- Ad set draft: use its returned `campaign_id`.
+- Ad draft: fetch its draft ad set by `ad_set_id`, then use the ad set's `campaign_id`.
+
+Fetch that draft campaign immediately before validation, use its current `draft_hierarchy_version`, and run `VALIDATE`. Report the change as **staged**, including the affected entity ID and validation result.
+
+Do not publish as part of `stage-edit`. Publishing is a separate operation that always requires explicit confirmation immediately before the request.
 
 ---
 
@@ -44,6 +104,14 @@ Given a plain-text campaign description, create the full draft hierarchy: draft 
 #### Step 1: Parse the Campaign Description
 
 Extract fields exactly as documented in the `build-campaign` skill. The same field requirements, defaults, and validation guardrails apply (micro-amounts, bid_strategy as plain string, geo_targets as flat object, platform enums, etc.).
+
+#### Step 1.5: Load Ad Product Rules
+
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this draft-build workflow, resolve the planned campaign product, and
+use the applicable rules while constructing the draft plan. Do not display a per-field
+checklist.
 
 #### Step 2: Confirm the Parsed Plan
 
@@ -67,6 +135,17 @@ Fetch available assets from the account and present them for selection, just lik
 api GET "ad_accounts/{ad_account_id}/assets?limit=50&sort_direction=DESC"
 ```
 
+#### Step 3.5: Validate Against Ad Product Rules
+
+Using the catalog loaded in Step 1.5, validate the complete draft hierarchy now that
+assets and dependent fields are known. Apply resolvable runtime checks as well as
+static rules.
+
+Do not print per-field successes or add another confirmation. Add a compact validation
+status to the existing draft plan, and interrupt only for an explicit incompatible user
+choice or when no safe compliant value can be inferred. Catalog preflight does not
+replace the draft hierarchy `VALIDATE` action in Step 5.
+
 #### Step 4: Create Draft Entities Sequentially
 
 **4a. Create Draft Campaign:**
@@ -76,16 +155,17 @@ api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
   '{"name":"...","delivery_goal_group":"..."}'
 ```
 
-**`delivery_goal_group` mapping** — translate the user's campaign goal to the correct enum value:
-| User goal | `delivery_goal_group` value |
-|-----------|---------------------------|
+Map the user's campaign goal to `delivery_goal_group`:
+
+| User goal | `delivery_goal_group` |
+|---|---|
 | Awareness, reach, brand recall, even impression delivery | `AWARENESS` |
 | Website traffic, clicks, website visits | `WEBSITE_TRAFFIC` |
-| App installs, mobile app promotion | `APP_PROMOTION` |
-| Video views, podcast streams, engagement | `ENGAGEMENT_ON_SPOTIFY` |
+| App installs or mobile app promotion | `APP_PROMOTION` |
+| Video views, podcast streams, or on-platform engagement | `ENGAGEMENT_ON_SPOTIFY` |
 | Lead generation | `LEAD_GEN` |
 
-Do NOT set the deprecated `objective` field on draft campaigns. Use `delivery_goal_group` instead.
+Do not set the deprecated `objective` field on draft campaigns.
 
 Extract the draft campaign `id` from the response. The response includes an initial `draft_hierarchy_version`, but do not rely on that value after creating child draft ad sets or ads because any hierarchy edit can increment the version.
 
@@ -240,13 +320,21 @@ Display all fields in a readable format. Note that `draft_hierarchy_version` is 
 
 Use the entity type from the command to select the endpoint, then prompt the user for fields to update. The same field validations as create apply.
 
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog and current draft entity, then traverse its actual parent chain: draft ad →
+draft ad set → draft campaign, or draft ad set → draft campaign. Deep-merge the PATCH
+into the current entity and validate the effective result against the matching entity's
+`update` (when present) plus `both` rules. Do not print a checklist or add another
+confirmation.
+
 **Update draft campaign:**
 ```bash
 api PATCH "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
   '{"name":"...","delivery_goal_group":"..."}'
 ```
 
-Updatable campaign fields: `name`, `purchase_order`, `delivery_goal_group`, `status`.
+Updatable campaign fields: `name`, `purchase_order`, `delivery_goal_group`, `status`. Do not introduce the deprecated `objective` field when editing drafts.
 
 **Update draft ad set:**
 ```bash
@@ -444,6 +532,7 @@ Unlike direct entity creation, draft creation accepts incomplete data — requir
 - Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
 - On error, show the error message from the response body. Never automatically retry POST or PATCH requests.
 - **Draft DELETE is safe to retry** — unlike POST/PATCH, DELETE on drafts is idempotent.
+- If an explicitly requested direct/live campaign hierarchy write fails with HTTP 403 or an edit-permission error, describe it as a denial of direct editing only. Do not infer that the credentials are entirely read-only or identify a specific organizational role. Offer `stage-edit` as the compatible alternative.
 
 ## Draft vs Direct Entity Creation
 
@@ -453,4 +542,4 @@ Unlike direct entity creation, draft creation accepts incomplete data — requir
 | Going live | Explicit publish step | Immediate on creation |
 | Editing | Free — edit any draft entity before publish | Requires PATCH on live entities |
 | Undo | Delete the draft — no cleanup needed | Must archive/pause live entities |
-| Use case | New campaigns, major changes | Quick single-entity updates |
+| Use case | Default for new entities and changes to published entities | Only explicit immediate/direct live writes |
