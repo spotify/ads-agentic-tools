@@ -67,6 +67,7 @@ get_setting() {
 TOKEN=$(get_setting "access_token")
 AD_ACCOUNT_ID=$(get_setting "ad_account_id")
 AUTO_EXECUTE=$(get_setting "auto_execute")
+CLIENT_ID=$(get_setting "client_id")
 
 if [ -z "$TOKEN" ]; then
   echo "ERROR: No access_token in settings file. Run the configure skill first." >&2
@@ -105,16 +106,24 @@ if [ "${1:-}" = "--env" ] || [ "${2:-}" = "--env" ]; then
 fi
 
 # --- Parse arguments ---
-if [ $# -lt 3 ]; then
-  echo "Usage: api-request.sh <skill> <METHOD> <path> [json_body]" >&2
+NO_DEDUP_KEY=false
+SKILL="$1"
+shift
+
+if [ "${1:-}" = "--no-dedup-key" ]; then
+  NO_DEDUP_KEY=true
+  shift
+fi
+
+if [ $# -lt 2 ]; then
+  echo "Usage: api-request.sh <skill> [--no-dedup-key] <METHOD> <path> [json_body]" >&2
   echo "       api-request.sh --env" >&2
   exit 1
 fi
 
-SKILL="$1"
-METHOD="$2"
-PATH_ARG="$3"
-BODY="${4:-}"
+METHOD="$1"
+PATH_ARG="$2"
+BODY="${3:-}"
 
 SKILL_HEADER="X-Spotify-Ads-Skill: ${SKILL}"
 
@@ -129,6 +138,17 @@ CURL_ARGS+=(-X "$METHOD")
 CURL_ARGS+=(-H "Authorization: Bearer ${TOKEN}")
 CURL_ARGS+=(-H "$SDK_HEADER")
 CURL_ARGS+=(-H "$SKILL_HEADER")
+
+# --- Auto-inject dedup key for supported create endpoints ---
+if [ "$METHOD" = "POST" ] && [ "$NO_DEDUP_KEY" = "false" ]; then
+  RESOLVED_PATH="${PATH_ARG%%\?*}"
+  if printf '%s' "$RESOLVED_PATH" | grep -qE "^ad_accounts/[^/]+/(drafts/)?(campaigns|ad_sets|ads)$"; then
+    DEDUP_KEY=$(python3 "$SCRIPT_DIR/canonical-hash.py" "$BODY" "$BASE_URL" "$RESOLVED_PATH" "$METHOD" "$CLIENT_ID" 2>/dev/null \
+      || uv run "$SCRIPT_DIR/canonical-hash.py" "$BODY" "$BASE_URL" "$RESOLVED_PATH" "$METHOD" "$CLIENT_ID" 2>/dev/null \
+      || printf '%s' "${BASE_URL}|${METHOD}|${RESOLVED_PATH}|${CLIENT_ID}|${BODY}" | shasum -a 256 | cut -d' ' -f1)
+    CURL_ARGS+=(-H "Idempotency-Key: ${DEDUP_KEY}")
+  fi
+fi
 
 if [ -n "$BODY" ]; then
   CURL_ARGS+=(-H "Content-Type: application/json")
