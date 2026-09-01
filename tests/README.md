@@ -36,7 +36,7 @@ Run scenarios 22-32 to exercise campaign strategy, monitoring, export, bulk oper
 
 Run scenarios 33-34 to verify that implicit tracking edits use drafts and that an explicitly requested direct write handles permission denial without overstating the credentials' restrictions. Scenario 33 requires existing published ads with tracking entries; Scenario 34 may use a mocked 403 response.
 
-Run scenario 35 to verify ad product catalog validation behavior across creates, updates, and draft workflows.
+Run scenario 35 to verify ad product catalog validation behavior across creates, updates, and draft workflows. Run scenario 36 with a synthetic multi-tab plan to verify source normalization, provenance, review gating, accepted incompleteness, and draft-only execution.
 
 ## Validation checklist
 

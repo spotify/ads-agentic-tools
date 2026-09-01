@@ -125,6 +125,7 @@ Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI
 | `/spotify-ads-api:campaigns` | List or get campaigns; stage creates and updates through drafts by default |
 | `/spotify-ads-api:ads` | List or get ad sets and ads; stage creates and updates through drafts by default |
 | `/spotify-ads-api:campaign-strategy` | Plan API-ready campaign structure and targeting from a landing page, business brief, or creative assets |
+| `/spotify-ads-api:media-plan-to-draft` | Convert a spreadsheet, PDF, document, presentation, or third-party media plan into a reviewed and validated Spotify Ads draft |
 | `/spotify-ads-api:build-campaign` | Create a full campaign hierarchy from a plain-text description |
 | `/spotify-ads-api:report` | Pull aggregate metrics, audience insights, or async CSV reports |
 | `/spotify-ads-api:assets` | Upload, list, and manage creative assets |

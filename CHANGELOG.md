@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Media-plan-to-draft orchestration for spreadsheet, document, presentation, PDF, and text plans, with source provenance, reconciliation, live Ads API enrichment and forecasts, explicit completeness states, a strict review gate, and handoff to the existing draft workflow without publishing
+
 ## [1.8.0] - 2026-08-13
 
 ### Added
