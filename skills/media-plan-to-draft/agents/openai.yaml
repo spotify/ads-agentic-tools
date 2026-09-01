@@ -1,0 +1,4 @@
+interface:
+  display_name: "Media Plan to Draft"
+  short_description: "Turn media plans into reviewed Spotify Ads drafts"
+  default_prompt: "Use $media-plan-to-draft to process this media plan, validate and forecast its Spotify structure, then wait for my approval before creating a draft."
