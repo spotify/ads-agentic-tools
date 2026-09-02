@@ -8,6 +8,15 @@ Use this directory for two related jobs:
 
 The prompt catalog is the quickest smoke-test surface. The scenarios are the source of truth when validating a release.
 
+Two shell suites cover the plugin's executable helpers. Both run offline with no credentials, no network, and no API calls:
+
+```bash
+bash tests/test-check-token.sh    # hooks/check-token.sh
+bash tests/test-api-request.sh    # scripts/api-request.sh --env
+```
+
+Run them after changing either script. They exit non-zero on failure.
+
 ## Prerequisites
 
 1. A Spotify Developer app with Ads API access

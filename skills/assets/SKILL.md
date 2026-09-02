@@ -20,7 +20,7 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" assets "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
-To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Parsing Arguments
 
@@ -65,7 +65,7 @@ Extract `id` from the response.
 
 #### Step 4: Upload the file
 
-> File uploads use raw curl (not the `api` wrapper) because they use multipart form data. Run `eval $(api --env)` before upload calls to set `TOKEN`, `AD_ACCOUNT_ID`, `SDK_HEADER`, and `BASE_URL`, and set `SKILL_HEADER="X-Spotify-Ads-Skill: assets"`.
+> File uploads use raw curl (not the `api` wrapper) because they use multipart form data. Run `eval $(api --env)` before upload calls: it sets `TOKEN`, `AD_ACCOUNT_ID`, `BASE_URL`, `SDK_HEADER`, and `SKILL_HEADER` (already scoped to this skill). Keep `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on every upload call so the request stays attributable in reporting.
 
 First, check the file size:
 
