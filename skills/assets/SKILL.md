@@ -70,8 +70,7 @@ Extract `id` from the response.
 First, check the file size:
 
 ```bash
-stat -f%z "/path/to/file"  # macOS
-# or: stat --printf="%s" "/path/to/file"  # Linux
+FILE_SIZE=$(stat -f%z "/path/to/file" 2>/dev/null || stat --printf="%s" "/path/to/file" 2>/dev/null || wc -c < "/path/to/file")
 ```
 
 **If file is <= 20MB** — Simple upload:
@@ -99,7 +98,8 @@ Extract `upload_session_id` and `max_chunk_size_mb` from the response.
 
 2. Split the file into chunks:
 ```bash
-split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file /tmp/chunk_
+CHUNK_DIR=$(mktemp -d)
+split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file "$CHUNK_DIR/chunk_"
 ```
 
 3. Upload each chunk (numbered starting from 1):
@@ -107,7 +107,7 @@ split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file /tmp/chunk_
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
-  -F "media=@/tmp/chunk_aa" \
+  -F "media=@$CHUNK_DIR/chunk_aa" \
   -F "upload_section=1" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/transfer"
 ```
@@ -124,7 +124,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 
 5. Clean up temp chunks:
 ```bash
-rm /tmp/chunk_*
+rm -rf "$CHUNK_DIR"
 ```
 
 #### Step 5: Poll for processing status

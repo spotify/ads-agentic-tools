@@ -14,7 +14,7 @@ Local configuration for the spotify-ads-api plugin. Store this file at
 `.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md`
 on Claude, or `.agents/spotify-ads-api.local.md` on Antigravity.
 Do not commit this file to version control.
-Client secret is stored in the macOS Keychain, not in this file.
+Client secret is stored in the OS credential store, not in this file.
 
 ## Fields
 
@@ -28,4 +28,4 @@ Client secret is stored in the macOS Keychain, not in this file.
 
 ## Client Secret
 
-The client secret is stored securely in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`) and is never written to this file.
+The client secret is stored securely in the OS credential store (macOS Keychain, Windows Credential Manager, or Linux secret storage; service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`) and is never written to this file.

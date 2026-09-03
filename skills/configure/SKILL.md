@@ -29,29 +29,33 @@ Full OAuth 2.0 authorization flow with automatic token refresh.
    - **client_id** (required) — Spotify app client ID from the developer dashboard
    - **client_secret** (required) — Spotify app client secret
 
-3. Store the client_secret securely in the macOS Keychain:
+3. Detect the Python command — try `python3`, then `python`, then `py`. Use whichever is found for all subsequent Python calls. Store the client_secret securely in the OS credential store:
 
 ```bash
-security add-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w "<client_secret>" -U
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
+PYTHON=$(command -v python3 || command -v python || command -v py)
+$PYTHON "${PLUGIN_ROOT}/scripts/credential-helper.py" set --secret "<client_secret>"
 ```
 
-   **Do NOT write client_secret to the settings file.** It must only be stored in the keychain.
+   **Do NOT write client_secret to the settings file.** It must only be stored in the OS credential store.
 
 4. Attempt the automated OAuth flow by running the helper script. On Antigravity, no plugin-root env var is set — this skill's files live at `<plugin root>/skills/configure/`, so set `PLUGIN_ROOT` to the plugin root (two directories up from this skill's directory) instead of using the snippet below.
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
-client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
-python3 "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
+PYTHON=$(command -v python3 || command -v python || command -v py)
+client_secret=$($PYTHON "${PLUGIN_ROOT}/scripts/credential-helper.py" get)
+$PYTHON "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
   --client-id "<client_id>" \
   --client-secret "$client_secret"
 ```
 
-If `python3` is not available, try `uv run`:
+If neither `python3` nor `python` is available, try `uv run`:
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
-client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
+PYTHON=$(command -v python3 || command -v python || command -v py)
+client_secret=$($PYTHON "${PLUGIN_ROOT}/scripts/credential-helper.py" get)
 uv run "${PLUGIN_ROOT}/skills/configure/scripts/oauth-flow.py" \
   --client-id "<client_id>" \
   --client-secret "$client_secret"
@@ -99,10 +103,12 @@ Manual OAuth flow for environments where the automated script cannot run.
 
 1. Prompt for **client_id** and **client_secret** using AskUserQuestion.
 
-2. Store the client_secret securely in the macOS Keychain:
+2. Store the client_secret securely in the OS credential store:
 
 ```bash
-security add-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w "<client_secret>" -U
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
+PYTHON=$(command -v python3 || command -v python || command -v py)
+$PYTHON "${PLUGIN_ROOT}/scripts/credential-helper.py" set --secret "<client_secret>"
 ```
 
    **Do NOT write client_secret to the settings file.**
@@ -121,9 +127,11 @@ security add-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-se
 
 6. Exchange the code for tokens:
 ```bash
-client_secret=$(security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w)
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
+PYTHON=$(command -v python3 || command -v python || command -v py)
+client_secret=$($PYTHON "${PLUGIN_ROOT}/scripts/credential-helper.py" get)
 curl -s -X POST "https://accounts.spotify.com/api/token" \
-  -H "Authorization: Basic $(echo -n '<client_id>:'"$client_secret"'' | base64)" \
+  -u "<client_id>:${client_secret}" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=authorization_code&code=<CODE>&redirect_uri=http://127.0.0.1:8080/callback"
 ```
@@ -167,10 +175,10 @@ auto_execute: false
 
 Local configuration for the spotify-ads-api plugin.
 Do not commit this file to version control.
-Client secret is stored in the macOS Keychain, not in this file.
+Client secret is stored in the OS credential store, not in this file.
 ```
 
-**Note:** `client_secret` is stored in the macOS Keychain (service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file.
+**Note:** `client_secret` is stored in the OS credential store (macOS Keychain, Windows Credential Manager, or Linux secret storage; service: `spotify-ads-api-client-secret`, account: `spotify-ads-api`), not in this file.
 
 For the `token` mode, leave `refresh_token`, `token_expires_at`, and `client_id` as empty strings.
 
@@ -186,6 +194,6 @@ Report the test API call result:
 
 - The settings file is gitignored via `.codex/*.local.md`, `.claude/*.local.md`, and `.agents/*.local.md`.
 - If the active settings directory (`.codex/`, `.claude/`, or `.agents/`) doesn't exist, create it.
-- **client_secret is stored in the macOS Keychain**, not in the settings file. Use `security find-generic-password -a "spotify-ads-api" -s "spotify-ads-api-client-secret" -w` to retrieve it when needed.
+- **client_secret is stored in the OS credential store** (macOS Keychain, Windows Credential Manager, or Linux secret storage), not in the settings file. Use `scripts/credential-helper.py get` to retrieve it when needed.
 - Never log or display the full access token or client_secret — show only the last 8 characters for confirmation.
 - Never write client_secret to the settings file or any other plaintext file.
