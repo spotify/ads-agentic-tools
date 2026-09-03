@@ -3,9 +3,16 @@ set -uo pipefail
 
 # Spotify Ads API pre-tool hook (PreToolUse on Claude/Codex/Antigravity)
 #
-# Auto-refreshes expired OAuth tokens before API calls.
-# Claude/Codex payload: .tool_input.command; supports command rewriting.
-# Antigravity payload: .toolCall.args.CommandLine; decision allow/deny only (no rewrite).
+# Two jobs, both before any command that targets the Spotify Ads API:
+#   1. Auto-refresh expired OAuth tokens.
+#   2. Enforce telemetry attribution, so per-skill usage and error-rate
+#      reporting is not blind to raw curl calls made outside a skill's api()
+#      wrapper. Logic lives in lib/attribution.sh.
+#
+# Claude/Codex payload: .tool_input.command; supports command rewriting, and
+#   carries .transcript_path (nullable on Codex).
+# Antigravity payload: .toolCall.args.CommandLine; decision allow/deny only (no
+#   rewrite), so attribution there is a nudge rather than an injection.
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PLUGIN_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
@@ -19,10 +26,14 @@ fi
 # Read all stdin (hook input JSON)
 input=$(cat)
 
-# Fast path: skip if not a Spotify API call
-if [[ "$input" != *"api-partner.spotify.com"* ]]; then
-  exit 0
-fi
+# Fast path: skip anything that cannot be a Spotify Ads API call. The literal
+# host covers most calls; $BASE_URL covers the variable form used by the assets
+# and audiences upload flows. Precise matching happens on the extracted command.
+case "$input" in
+  *api-partner.spotify.com*) ;;
+  *BASE_URL*) ;;
+  *) exit 0 ;;
+esac
 
 # Need jq for JSON parsing
 if ! command -v jq &>/dev/null; then
@@ -70,7 +81,31 @@ command=$(printf '%s' "$input" | jq -r '
   .toolCall.args.CommandLine //
   .toolCall.args.command //
   ""')
-if [[ -z "$command" ]] || [[ "$command" != *"api-partner.spotify.com"* ]]; then
+# Path to the session transcript, for best-effort skill inference.
+# Claude/Codex: .transcript_path (Codex may send null). Antigravity: .transcriptPath.
+transcript_path=$(printf '%s' "$input" | jq -r '
+  .transcript_path //
+  .transcriptPath //
+  ""')
+
+# Does this command actually target the Spotify Ads API? The literal host is
+# unambiguous. $BASE_URL is not, since any project may define it, so require
+# Spotify-specific corroboration before claiming the command as ours.
+is_spotify_api_call() {
+  case "$1" in
+    *api-partner.spotify.com*) return 0 ;;
+  esac
+  case "$1" in
+    *BASE_URL*)
+      case "$1" in
+        *X-Spotify-Ads-*|*SDK_HEADER*|*SKILL_HEADER*|*ad_accounts*) return 0 ;;
+      esac
+      ;;
+  esac
+  return 1
+}
+
+if [[ -z "$command" ]] || ! is_spotify_api_call "$command"; then
   exit 0
 fi
 
@@ -153,6 +188,29 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
         system_message="Failed to refresh Spotify API token. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to re-authenticate."
       fi
     fi
+  fi
+fi
+
+# --- Skill and SDK attribution ---
+#
+# Sourced here rather than at the top so an unrelated Bash call still exits on
+# the fast path without paying for it. This file owns the single command
+# rewrite, which now carries both the refreshed token and the attribution
+# headers; see lib/attribution.sh for why attribution must not be its own hook.
+#
+# SPOTIFY_ADS_ATTRIBUTION_LIB overrides the path so a deliberately broken copy
+# can be tested without editing the installed one.
+ATTRIBUTION_LIB="${SPOTIFY_ADS_ATTRIBUTION_LIB:-$SCRIPT_DIR/lib/attribution.sh}"
+
+if [ -f "$ATTRIBUTION_LIB" ]; then
+  # shellcheck source=lib/attribution.sh
+  . "$ATTRIBUTION_LIB"
+
+  apply_attribution "$command" "$modified_command" "$PLATFORM" "$transcript_path"
+  modified_command="$ATTRIBUTION_COMMAND"
+
+  if [ -n "$ATTRIBUTION_NOTE" ]; then
+    system_message="${system_message:+$system_message }$ATTRIBUTION_NOTE"
   fi
 fi
 

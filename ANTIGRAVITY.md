@@ -12,19 +12,33 @@ Never commit these files. The `client_secret` is stored in the macOS Keychain (s
 
 Run `/configure` (or ask to "configure Spotify Ads API credentials") to set up OAuth 2.0 authentication and select an ad account. Documentation elsewhere may reference `/spotify-ads-api:configure` — that is the Claude Code/Codex name for the same configure skill.
 
-## SDK Tracking Header
+## Tracking Headers
 
-Every Spotify Ads API request must include the SDK tracking header. Read the `version` from this plugin's `plugin.json` and set:
+Every Spotify Ads API request must carry both tracking headers, so usage and error rates can be attributed to the skill that made the call:
+
+- `X-Spotify-Ads-Sdk: antigravity-cli-plugin/<version>`
+- `X-Spotify-Ads-Skill: <skill-name>`
+
+The shared request wrapper sets both for you, and is the preferred way to call the API:
 
 ```bash
-SDK_HEADER="X-Spotify-Ads-Sdk: antigravity-cli-plugin/$PLUGIN_VERSION"
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
+api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 ```
 
-Include `-H "$SDK_HEADER"` on all curl commands to `api-partner.spotify.com`.
+When a call genuinely cannot use the wrapper, such as a multipart upload, pull the values into the shell first and pass them explicitly:
+
+```bash
+eval $(api --env)   # sets TOKEN, AD_ACCOUNT_ID, BASE_URL, SDK_HEADER, SKILL_HEADER
+curl -s -H "Authorization: Bearer $TOKEN" -H "$SDK_HEADER" -H "$SKILL_HEADER" ...
+```
+
+Do not hand-write curl to `api-partner.spotify.com` without both headers. Antigravity's PreToolUse contract cannot rewrite a command, so unlike Claude Code and Codex the hook cannot add missing headers for you. It will only warn, and the request stays unattributable.
 
 ## Token Expiry
 
-A PreToolUse hook refreshes expired OAuth tokens automatically before API calls. Both Antigravity CLI (`agy plugin install`) and Antigravity 2.0 auto-discover `hooks.json` at the plugin root.
+A PreToolUse hook refreshes expired OAuth tokens automatically before API calls, and warns when a call is missing its skill attribution header. Both Antigravity CLI (`agy plugin install`) and Antigravity 2.0 auto-discover `hooks.json` at the plugin root.
 
 If a request still returns 401, refresh the token per the configure skill's instructions or re-run `/configure`.
 
