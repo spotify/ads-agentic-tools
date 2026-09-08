@@ -240,6 +240,191 @@ else
   echo "  SKIP: jq not available, skipping hook JSON output tests"
 fi
 
+
+# ============================================================
+# Skill and SDK attribution (hooks/lib/attribution.sh)
+# ============================================================
+#
+# The library is sourced rather than copied, so these unit tests cannot drift
+# from the implementation the hook actually loads.
+
+ATTR_REPO_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+PLUGIN_ROOT="$ATTR_REPO_ROOT"
+# SPOTIFY_ADS_ATTRIBUTION_LIB lets these tests run against a deliberately
+# broken copy, to confirm the assertions below can actually fail.
+ATTR_LIB="${SPOTIFY_ADS_ATTRIBUTION_LIB:-$ATTR_REPO_ROOT/hooks/lib/attribution.sh}"
+# shellcheck source=../hooks/lib/attribution.sh
+. "$ATTR_LIB"
+
+yn() { if "$@"; then echo yes; else echo no; fi; }
+# A bare `case` inside $( ) does not parse: the pattern's `)` closes the
+# substitution. Wrap substring checks in a function instead.
+contains() { case "$2" in *"$1"*) echo yes ;; *) echo no ;; esac; }
+
+echo "=== attribution: already-attributed detection ==="
+
+assert_eq "literal skill header counts as attributed" "yes" \
+  "$(yn has_skill_attribution 'curl -H "X-Spotify-Ads-Skill: campaigns" https://api-partner.spotify.com/x')"
+assert_eq "\$SKILL_HEADER variable counts as attributed" "yes" \
+  "$(yn has_skill_attribution 'curl -H "$SKILL_HEADER" "$BASE_URL/ad_accounts/x/assets/1/upload"')"
+assert_eq "wrapper delegation counts as attributed" "yes" \
+  "$(yn has_skill_attribution 'api-request.sh campaigns GET "ad_accounts/x/campaigns"')"
+assert_eq "bare curl is not attributed" "no" \
+  "$(yn has_skill_attribution 'curl -s https://api-partner.spotify.com/ads/v3/x')"
+assert_eq "literal SDK header counts as attributed" "yes" \
+  "$(yn has_sdk_attribution 'curl -H "X-Spotify-Ads-Sdk: claude-code-plugin/1.0.0" https://x')"
+assert_eq "\$SDK_HEADER variable counts as attributed" "yes" \
+  "$(yn has_sdk_attribution 'curl -H "$SDK_HEADER" https://x')"
+assert_eq "bare curl has no SDK attribution" "no" \
+  "$(yn has_sdk_attribution 'curl -s https://api-partner.spotify.com/ads/v3/x')"
+
+echo "=== attribution: curl word boundaries ==="
+
+assert_eq "slash is a boundary"        "yes" "$(yn is_word_boundary '/')"
+assert_eq "space is a boundary"        "yes" "$(yn is_word_boundary ' ')"
+assert_eq "empty is a boundary"        "yes" "$(yn is_word_boundary '')"
+assert_eq "letter is not a boundary"   "no"  "$(yn is_word_boundary 'y')"
+assert_eq "hyphen is not a boundary"   "no"  "$(yn is_word_boundary '-')"
+
+echo "=== attribution: curl injection ==="
+
+H="-H 'X-Test: v'"
+assert_eq "single curl is rewritten" \
+  "curl -H 'X-Test: v' -s https://api-partner.spotify.com/x" \
+  "$(inject_curl_args 'curl -s https://api-partner.spotify.com/x' "$H")"
+assert_eq "curl-config is left alone" \
+  "curl-config --version; curl -H 'X-Test: v' -s https://x" \
+  "$(inject_curl_args 'curl-config --version; curl -s https://x' "$H")"
+assert_eq "mycurl is left alone" \
+  "mycurl foo; curl -H 'X-Test: v' -s https://x" \
+  "$(inject_curl_args 'mycurl foo; curl -s https://x' "$H")"
+assert_eq "absolute path to curl is rewritten" \
+  "/usr/bin/curl -H 'X-Test: v' -s https://x" \
+  "$(inject_curl_args '/usr/bin/curl -s https://x' "$H")"
+assert_eq "both curls in a chain are rewritten" "2" \
+  "$(inject_curl_args 'curl -s https://a && curl -s https://b' "$H" | grep -o "X-Test: v" | wc -l | tr -d ' ')"
+assert_eq "curl inside a single-quoted body is data, not a command" "1" \
+  "$(inject_curl_args "curl -d '{\"n\":\"how to curl\"}' https://x" "$H" | grep -o "X-Test: v" | wc -l | tr -d ' ')"
+body_out=$(inject_curl_args "curl -d '{\"n\":\"how to curl\"}' https://x" "$H")
+assert_eq "body containing curl is preserved verbatim" "yes" \
+  "$(contains '{"n":"how to curl"}' "$body_out")"
+inject_curl_args 'python3 -c "urlopen(...)"' "$H" >/dev/null
+assert_eq "returns non-zero when there is no curl to rewrite" "1" "$?"
+
+# Word-splitting is the thing that actually matters, so execute the result
+# against a stub curl and inspect argv rather than trusting the string shape.
+ATTR_STUB="$TMPDIR/stub-bin"
+mkdir -p "$ATTR_STUB"
+printf '#!/bin/bash\nfor a in "$@"; do printf "ARG[%%s]\\n" "$a"; done\n' > "$ATTR_STUB/curl"
+chmod +x "$ATTR_STUB/curl"
+
+multiline=$(printf 'curl -s -X POST \\\n  -H "Authorization: Bearer T" \\\n  -d %s{"name":"x"}%s \\\n  "https://api-partner.spotify.com/ads/v3/x"' "'" "'")
+assert_eq "multi-line fixture really has continuations" "3" \
+  "$(printf '%s' "$multiline" | grep -c '\\$')"
+argv=$(PATH="$ATTR_STUB:$PATH" bash -c "$(inject_curl_args "$multiline" "$H")" 2>&1)
+assert_eq "injected header arrives as one argv entry" "yes" \
+  "$(contains 'ARG[X-Test: v]' "$argv")"
+assert_eq "multi-line rewrite adds no stray single-space argument" "no" \
+  "$(contains 'ARG[ ]' "$argv")"
+assert_eq "request body survives as one argv entry" "yes" \
+  "$(contains 'ARG[{"name":"x"}]' "$argv")"
+
+echo "=== attribution: known-skill validation ==="
+
+assert_eq "a real skill directory is accepted"  "yes" "$(yn is_known_skill campaigns)"
+assert_eq "another real skill is accepted"      "yes" "$(yn is_known_skill drafts)"
+assert_eq "the request-builder agent is accepted" "yes" "$(yn is_known_skill spotify-ads-request-builder)"
+assert_eq "an invented name is rejected"        "no"  "$(yn is_known_skill totally-made-up)"
+assert_eq "an empty name is rejected"           "no"  "$(yn is_known_skill '')"
+assert_eq "a non-slug name is rejected"         "no"  "$(yn is_known_skill 'Campaigns; rm -rf /')"
+
+echo "=== attribution: skill inference ==="
+
+TR="$TMPDIR/transcript.jsonl"
+write_tr() { : > "$TR"; for l in "$@"; do printf '%s\n' "$l" >> "$TR"; done; }
+
+write_tr '{"skill":"spotify-ads-api:campaigns"}'
+assert_eq "infers from a Skill invocation" "campaigns" "$(infer_skill "$TR")"
+
+write_tr '{"cmd":"curl -H \"X-Spotify-Ads-Skill: drafts\" https://x"}'
+assert_eq "infers from a previous attributed call" "drafts" "$(infer_skill "$TR")"
+
+write_tr '{"cmd":"api() { \"$PLUGIN_ROOT/scripts/api-request.sh\" export \"$@\"; }"}'
+assert_eq "infers from a wrapper definition" "export" "$(infer_skill "$TR")"
+
+write_tr '{"skill":"spotify-ads-api:campaigns"}' '{"noise":"chatter"}' '{"skill":"spotify-ads-api:report"}'
+assert_eq "recency beats pattern strength" "report" "$(infer_skill "$TR")"
+
+write_tr '{"cmd":"curl -H \"X-Spotify-Ads-Skill: campaigns-inferred\" https://x"}'
+assert_eq "an existing -inferred suffix is stripped, not compounded" "campaigns" "$(infer_skill "$TR")"
+
+write_tr '{"cmd":"curl -H \"X-Spotify-Ads-Skill: totally-made-up\" https://x"}'
+infer_skill "$TR" >/dev/null
+assert_eq "a name that is not a real skill is rejected" "1" "$?"
+
+write_tr '{"noise":"no skill was ever invoked"}'
+infer_skill "$TR" >/dev/null
+assert_eq "no signal means no inference" "1" "$?"
+
+infer_skill "$TMPDIR/does-not-exist.jsonl" >/dev/null
+assert_eq "a missing transcript means no inference" "1" "$?"
+
+write_tr '{"skill":"spotify-ads-api:campaigns"}' '{"noise":"a"}' '{"noise":"b"}'
+LOOKBACK_LINES=2 
+infer_skill "$TR" >/dev/null
+assert_eq "the lookback window excludes older signals" "1" "$?"
+LOOKBACK_LINES=300
+
+echo "=== attribution: apply_attribution ==="
+
+ATTR_PROJECT="$TMPDIR/attr-project"
+mkdir -p "$ATTR_PROJECT/.claude"
+printf -- '---\naccess_token: "T"\nad_account_id: "acct"\nauto_execute: false\ntoken_expires_at: "2099-01-01T00:00:00Z"\n---\n' \
+  > "$ATTR_PROJECT/.claude/spotify-ads-api.local.md"
+export CLAUDE_PROJECT_DIR="$ATTR_PROJECT"
+attr_version=$(grep '"version"' "$ATTR_REPO_ROOT/.claude-plugin/plugin.json" | head -1 | sed 's/.*"version" *: *"\([^"]*\)".*/\1/')
+
+write_tr '{"skill":"spotify-ads-api:campaigns"}'
+bare='curl -s https://api-partner.spotify.com/ads/v3/ad_accounts/x/campaigns'
+
+apply_attribution "$bare" "$bare" claude "$TR"
+assert_eq "inferred skill header is injected with the -inferred suffix" "yes" \
+  "$(contains 'X-Spotify-Ads-Skill: campaigns-inferred' "$ATTRIBUTION_COMMAND")"
+assert_eq "deterministic SDK header is injected" "yes" \
+  "$(contains "X-Spotify-Ads-Sdk: claude-code-plugin/$attr_version" "$ATTRIBUTION_COMMAND")"
+assert_eq "the note names the injected value" "yes" \
+  "$(contains 'campaigns-inferred' "$ATTRIBUTION_NOTE")"
+
+apply_attribution "$ATTRIBUTION_COMMAND" "$ATTRIBUTION_COMMAND" claude "$TR"
+assert_eq "re-running on its own output changes nothing" "" "$ATTRIBUTION_NOTE"
+
+attributed='curl -H "X-Spotify-Ads-Sdk: x/1" -H "X-Spotify-Ads-Skill: campaigns" https://api-partner.spotify.com/ads/v3/x'
+apply_attribution "$attributed" "$attributed" claude "$TR"
+assert_eq "an already-attributed command is untouched" "$attributed" "$ATTRIBUTION_COMMAND"
+assert_eq "an already-attributed command produces no note" "" "$ATTRIBUTION_NOTE"
+
+apply_attribution "$bare" "$bare" antigravity "$TR"
+assert_eq "Antigravity gets no rewrite" "$bare" "$ATTRIBUTION_COMMAND"
+assert_eq "Antigravity gets a nudge instead" "yes" \
+  "$(contains 'cannot attribute it to a skill' "$ATTRIBUTION_NOTE")"
+
+write_tr '{"noise":"nothing to infer"}'
+apply_attribution "$bare" "$bare" claude "$TR"
+assert_eq "no inference means no invented skill header" "no" \
+  "$(contains 'X-Spotify-Ads-Skill' "$ATTRIBUTION_COMMAND")"
+assert_eq "no inference still backfills the SDK header" "yes" \
+  "$(contains 'X-Spotify-Ads-Sdk' "$ATTRIBUTION_COMMAND")"
+assert_eq "no inference produces the nudge" "yes" \
+  "$(contains 'cannot attribute it to a skill' "$ATTRIBUTION_NOTE")"
+
+nocurl='python3 -c "urlopen(1)" # api-partner.spotify.com'
+apply_attribution "$nocurl" "$nocurl" claude "$TR"
+assert_eq "a command with no curl is not rewritten" "$nocurl" "$ATTRIBUTION_COMMAND"
+assert_eq "a command with no curl still gets the nudge" "yes" \
+  "$(contains 'api() helper' "$ATTRIBUTION_NOTE")"
+
+unset CLAUDE_PROJECT_DIR
+
 # ============================================================
 # Summary
 # ============================================================
