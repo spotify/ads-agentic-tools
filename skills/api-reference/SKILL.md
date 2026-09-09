@@ -1,5 +1,5 @@
 ---
-name: Spotify Ads API Reference
+name: spotify-ads-api-reference
 description: This skill should be used when the user asks to "call the Spotify Ads API", "create a Spotify ad campaign", "manage Spotify ads", "pull Spotify ad reports", "set up ad sets or ads", "upload ad assets", "target audiences on Spotify", "check campaign status", "get ad account info", "look up API schema or fields", "check what targeting options exist", or asks about Spotify advertising endpoints, request/response formats, enum values, or authentication.
 ---
 
