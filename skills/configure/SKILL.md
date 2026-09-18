@@ -1,7 +1,7 @@
 ---
 name: configure
 description: Configure Spotify Ads API credentials via OAuth 2.0 with PKCE or a direct token. Sets up authentication, ad account, and execution preferences.
-argument-hint: "[oauth [client_id] | token <access_token>]"
+argument-hint: "[oauth [client_id] | token]"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
@@ -68,9 +68,9 @@ while the loopback listener continues waiting. Do not recreate the PKCE flow in
 shell or ask the user to paste a redirect URL: the verifier is ephemeral and
 must remain only in the helper's memory.
 
-If neither Python 3 nor `uv` is available, explain that initial PKCE
-authorization requires the bundled Python helper. Offer direct-token mode as a
-legacy fallback; it has no automatic refresh.
+If neither Python 3 nor `uv` is available, explain that configuration requires
+one of those runtimes and stop. Direct-token mode uses the same secure settings
+helper, so it is not a runtime-free fallback.
 
 4. Confirm the helper's non-sensitive stdout receipt:
 
@@ -135,24 +135,31 @@ the legacy `spotify-ads-api-client-secret` Keychain item is unused and may be
 removed. Do not delete it automatically because an older installed plugin may
 still need it.
 
-### `token <access_token>`
+### `token`
 
-Legacy direct-token mode for an already-issued bearer token.
+Legacy direct-token mode for an already-issued bearer token. Do not ask the
+user to include the token in the slash command or paste it into the chat.
 
-1. Accept the token argument and warn that it normally expires in about one
-   hour and cannot refresh automatically.
-2. Prompt for `auto_execute` (default `false`) and pass the token to the secure
-   settings writer through stdin. Do not echo it or place its literal value in
-   the command. The writer sets `auth_flow: "direct_token"` and leaves
-   `refresh_token`, `token_expires_at`, and `client_id` empty.
+1. Warn that a direct token normally expires in about one hour and cannot
+   refresh automatically.
+2. Prompt for `auto_execute` (default `false`). Ask the user to run the command
+   below in their terminal so the helper can collect the token through a
+   non-echoing prompt attached directly to that terminal. Do not execute this
+   command through an agent Bash tool: its secure prompt requires the user's
+   controlling terminal. The writer sets `auth_flow: "direct_token"` and
+   leaves `refresh_token`, `token_expires_at`, and `client_id` empty.
 
 ```bash
-printf '%s' "$SPOTIFY_ADS_ACCESS_TOKEN" | \
-  python3 "${PLUGIN_ROOT}/skills/configure/scripts/settings_file.py" direct-token \
-    --settings-file "<active_settings_file>" \
-    --access-token-stdin \
-    --auto-execute "<true_or_false>"
+python3 "<absolute_plugin_root>/skills/configure/scripts/settings_file.py" direct-token \
+  --settings-file "<absolute_active_settings_file>" \
+  --prompt \
+  --auto-execute "<true_or_false>"
 ```
+
+Resolve both absolute paths before presenting the command. If `python3` is
+unavailable, use `uv run` in place of `python3`. Wait for the user to confirm
+that the helper returned its token-free settings-file receipt before
+continuing.
 3. Use the same businesses → ad accounts discovery flow, or ask for an account
    ID if discovery fails, then update `ad_account_id`.
 4. Verify the selected account with the request wrapper.

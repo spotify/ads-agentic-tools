@@ -4,5 +4,5 @@ Activate the spotify-ads-api `configure` Agent Skill and follow its instructions
 exactly. If skill activation is unavailable, read and follow skills/configure/SKILL.md
 from this extension's directory.
 
-User arguments (mode selection: oauth [client_id] | token <access_token>): {{args}}
+User arguments (mode selection: oauth [client_id] | token): {{args}}
 """

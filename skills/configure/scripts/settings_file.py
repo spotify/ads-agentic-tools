@@ -3,6 +3,7 @@
 
 import argparse
 import datetime
+import getpass
 import json
 import os
 import pathlib
@@ -185,7 +186,9 @@ def main():
     direct = subparsers.add_parser("direct-token")
     direct.add_argument("--settings-file", required=True)
     direct.add_argument("--auto-execute", choices=("true", "false"))
-    direct.add_argument("--access-token-stdin", action="store_true", required=True)
+    direct_token_source = direct.add_mutually_exclusive_group(required=True)
+    direct_token_source.add_argument("--prompt", action="store_true")
+    direct_token_source.add_argument("--access-token-stdin", action="store_true")
 
     oauth_result = subparsers.add_parser("oauth-result")
     oauth_result.add_argument("--settings-file", required=True)
@@ -198,9 +201,12 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == "direct-token":
-            access_token = sys.stdin.read().strip()
+            if args.prompt:
+                access_token = getpass.getpass("Spotify Ads access token: ").strip()
+            else:
+                access_token = sys.stdin.read().strip()
             if not access_token:
-                parser.error("an access token must be provided on stdin")
+                parser.error("an access token must be provided")
             write_direct_token_settings(args.settings_file, access_token, args.auto_execute)
         elif args.command == "oauth-result":
             finalize_pending_oauth_file(args.pending_token_file, args.settings_file)

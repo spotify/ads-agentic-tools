@@ -237,6 +237,34 @@ class RefreshTests(unittest.TestCase):
 
 
 class SettingsTests(unittest.TestCase):
+    def test_direct_token_prompt_writes_without_emitting_token(self):
+        token = "direct-sensitive-value"
+        with tempfile.TemporaryDirectory() as directory:
+            settings_path = pathlib.Path(directory) / "spotify-ads-api.local.md"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            argv = [
+                "settings_file.py",
+                "direct-token",
+                "--settings-file",
+                str(settings_path),
+                "--prompt",
+                "--auto-execute",
+                "false",
+            ]
+            with mock.patch.object(settings.getpass, "getpass", return_value=token), \
+                    mock.patch.object(sys, "argv", argv), \
+                    contextlib.redirect_stdout(stdout), \
+                    contextlib.redirect_stderr(stderr):
+                self.assertEqual(settings.main(), 0)
+
+            self.assertNotIn(token, stdout.getvalue())
+            self.assertNotIn(token, stderr.getvalue())
+            values = settings.read_settings(settings_path)
+            self.assertEqual(values["access_token"], token)
+            self.assertEqual(values["auth_flow"], "direct_token")
+            self.assertEqual(stat.S_IMODE(settings_path.stat().st_mode), 0o600)
+
     def test_oauth_settings_replace_insecure_file_with_mode_0600(self):
         with tempfile.TemporaryDirectory() as directory:
             path = pathlib.Path(directory) / "spotify-ads-api.local.md"

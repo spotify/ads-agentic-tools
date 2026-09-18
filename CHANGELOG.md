@@ -17,6 +17,7 @@
 - Resolved the Codex `PreToolUse` hook from the installed `${PLUGIN_ROOT}` instead of falling back to the workspace directory when `CODEX_PLUGIN_ROOT` is unset
 - Prevented initial OAuth tokens from entering captured helper stdout by writing settings directly through an atomic mode-0600 file replacement
 - Replaced post-write permission changes with secure-at-creation settings files and a private pending-token handoff for managed workspaces that require separate settings-write approval
+- Replaced the undefined direct-token environment-variable handoff with a non-echoing terminal prompt, keeping bearer tokens out of chat and generated command arguments
 
 ### Removed
 - Application-secret collection, macOS Keychain access, secret-dependent refresh, and the shell-based manual OAuth flow

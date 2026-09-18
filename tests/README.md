@@ -11,7 +11,7 @@ The prompt catalog is the quickest smoke-test surface. The scenarios are the sou
 
 1. A Spotify Developer app with Ads API access
 2. A Spotify Ads business and ad account suitable for testing
-3. Python 3.8+ or `uv` for the PKCE OAuth flow, or use legacy direct-token mode
+3. Python 3.8+ or `uv` for the secure OAuth and direct-token configuration helpers
 4. Codex, Claude Code, or Antigravity with this source checkout installed
 5. Test creative files and a synthetic customer-list CSV when exercising uploads
 

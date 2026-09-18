@@ -9,7 +9,7 @@ Check out our post on the [Spotify Engineering Blog](https://engineering.atspoti
 - Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), or [Antigravity CLI](https://antigravity.google/)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
-- Python 3.8+ or `uv` (required for initial PKCE authorization; direct-token mode is the fallback)
+- Python 3.8+ or `uv` (required for the secure configuration helpers)
 
 ## Install
 
@@ -119,7 +119,7 @@ The plugin supports two authentication modes:
 Run `/spotify-ads-api:configure` or `/spotify-ads-api:configure oauth [client_id]`. This launches Authorization Code with PKCE (`S256`) using Python 3 or `uv`. The verifier stays in memory, no application secret is requested, and tokens refresh automatically before API calls. The helper writes tokens directly to an atomically replaced mode-0600 settings file instead of printing them. If a managed workspace requires separate write approval, tokens remain in a private mode-0600 temporary file until a token-free finalization command succeeds. If automatic browser opening fails, copy the printed authorization URL while the callback listener remains active.
 
 ### Direct Token (Legacy)
-Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained access token. No automatic refresh — token expires in ~1 hour.
+Run `/spotify-ads-api:configure token`. The helper securely prompts for a pre-obtained access token without placing it in chat or command arguments. There is no automatic refresh, so the token expires in about one hour.
 
 ## Available Skills
 
@@ -184,7 +184,7 @@ directory or an exported `CODEX_PLUGIN_ROOT` variable.
 ## Troubleshooting
 
 **"Token may be invalid or expired"**
-If using OAuth, the plugin auto-refreshes tokens. If the refresh token is also expired, re-run `/spotify-ads-api:configure`. If using direct token mode, obtain a new token and run `/spotify-ads-api:configure token <new-token>`.
+If using OAuth, the plugin auto-refreshes tokens. If the refresh token is also expired, re-run `/spotify-ads-api:configure`. If using direct token mode, obtain a new token and run `/spotify-ads-api:configure token`, then enter it at the secure terminal prompt.
 
 **"Ad account ID may be incorrect"**
 Verify your ad account UUID. You can find it in the Spotify Ads Manager or by asking the plugin to list accounts after configuring a valid token.
