@@ -111,13 +111,25 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
   if [ "$auth_flow" = "authorization_code_pkce" ] && [ "$needs_refresh" = true ]; then
     if [ -z "$refresh_token" ] || [ -z "$client_id" ]; then
       system_message="Spotify API token is expired but PKCE refresh settings are incomplete. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
-    elif ! command -v python3 &>/dev/null; then
-      system_message="Spotify API token is expired, but Python 3 is required for automatic PKCE refresh. Install Python 3 or run the configure skill to authorize again."
     else
       REFRESH_SCRIPT="${PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
-      if refresh_result=$(python3 "$REFRESH_SCRIPT" \
-        --client-id "$client_id" \
-        --refresh-token "$refresh_token" 2>/dev/null); then
+      refresh_runner=()
+      if command -v python3 &>/dev/null; then
+        refresh_runner=(python3)
+      elif command -v uv &>/dev/null; then
+        refresh_runner=(uv run)
+      else
+        system_message="Spotify API token is expired, but Python 3 or uv is required for automatic PKCE refresh. Install either runtime or run the configure skill to authorize again."
+      fi
+
+      refresh_status=0
+      if [ "${#refresh_runner[@]}" -gt 0 ]; then
+        refresh_result=$("${refresh_runner[@]}" "$REFRESH_SCRIPT" \
+          --client-id "$client_id" \
+          --refresh-token "$refresh_token" 2>/dev/null) || refresh_status=$?
+      fi
+
+      if [ "${#refresh_runner[@]}" -gt 0 ] && [ "$refresh_status" -eq 0 ]; then
 
         new_token=$(echo "$refresh_result" | jq -r '.access_token // ""')
         expires_in=$(echo "$refresh_result" | jq -r 'if (.expires_in | type) == "number" then .expires_in else 3600 end')
@@ -155,8 +167,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
         else
           system_message="Spotify token refresh returned no access token. Run the configure skill to authorize again."
         fi
-      else
-        refresh_status=$?
+      elif [ "${#refresh_runner[@]}" -gt 0 ]; then
         if [ "$refresh_status" -eq 1 ]; then
           system_message="Spotify OAuth refresh was rejected (invalid_grant). Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
         else

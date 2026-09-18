@@ -328,6 +328,28 @@ if command -v jq &>/dev/null; then
   printf '%s\n' 'access_token: "old_access"' 'refresh_token: "bad_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/.codex/spotify-ads-api.local.md"
   output=$(run_codex_hook "$project" '{}' invalid)
   assert_contains "invalid grant requests reauthorization" "invalid_grant" "$(echo "$output" | jq -r '.systemMessage')"
+
+  UV_ONLY_BIN="$TMPDIR/uv-only-bin"
+  mkdir -p "$UV_ONLY_BIN"
+  for utility in awk cat date dirname grep head jq mv rm sed tr; do
+    ln -s "$(command -v "$utility")" "$UV_ONLY_BIN/$utility"
+  done
+  printf '%s\n' '#!/bin/sh' 'test "$1" = "run" || exit 98' 'printf invoked > "$FAKE_UV_MARKER"' 'printf "%s\n" "$FAKE_REFRESH_JSON"' > "$UV_ONLY_BIN/uv"
+  chmod +x "$UV_ONLY_BIN/uv"
+
+  project="$TMPDIR/pkce-uv-only"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: "old_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(printf '%s' '{"tool_input":{"command":"curl -H '\''Authorization: Bearer old_access'\'' https://api-partner.spotify.com/ads/v3/businesses"}}' | \
+    PATH="$UV_ONLY_BIN" \
+    CODEX_PROJECT_DIR="$project" \
+    CODEX_PLUGIN_ROOT="$FAKE_PLUGIN" \
+    FAKE_UV_MARKER="$TMPDIR/uv-called" \
+    FAKE_REFRESH_JSON='{"access_token":"uv_access","expires_in":3600}' \
+    /bin/bash "$HOOK")
+  assert_eq "uv fallback invoked" "invoked" "$(cat "$TMPDIR/uv-called")"
+  assert_eq "uv fallback stores access token" 'access_token: "uv_access"' "$(grep '^access_token:' "$project/.codex/spotify-ads-api.local.md")"
+  assert_contains "uv fallback rewrites command" "Bearer uv_access" "$(echo "$output" | jq -r '.hookSpecificOutput.updatedInput.command')"
 else
   echo "  SKIP: jq not available, skipping PKCE hook integration tests"
 fi
