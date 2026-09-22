@@ -22,6 +22,19 @@ assert_eq() {
   fi
 }
 
+assert_contains() {
+  local label="$1" needle="$2" haystack="$3"
+  if [[ "$haystack" == *"$needle"* ]]; then
+    echo "  PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $label"
+    echo "    missing: $needle"
+    echo "    actual:  $haystack"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ============================================================
 # update_setting (awk-based YAML replacement)
 # ============================================================
@@ -210,6 +223,9 @@ echo ""
 echo "=== hook JSON output ==="
 
 if command -v jq &>/dev/null; then
+  codex_hook_command=$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$PWD/.codex-plugin/hooks.json")
+  assert_eq "Codex hook uses installed plugin root" 'bash "${PLUGIN_ROOT}/hooks/check-token.sh"' "$codex_hook_command"
+  assert_eq "Codex hook has no cwd fallback" "false" "$([[ "$codex_hook_command" == *':-.'* ]] && echo true || echo false)"
 
   # Antigravity: decision + reason
   json=$(jq -n --arg msg "token refreshed" '{
@@ -370,7 +386,7 @@ infer_skill "$TMPDIR/does-not-exist.jsonl" >/dev/null
 assert_eq "a missing transcript means no inference" "1" "$?"
 
 write_tr '{"skill":"spotify-ads-api:campaigns"}' '{"noise":"a"}' '{"noise":"b"}'
-LOOKBACK_LINES=2 
+LOOKBACK_LINES=2
 infer_skill "$TR" >/dev/null
 assert_eq "the lookback window excludes older signals" "1" "$?"
 LOOKBACK_LINES=300
@@ -424,6 +440,108 @@ assert_eq "a command with no curl still gets the nudge" "yes" \
   "$(contains 'api() helper' "$ATTRIBUTION_NOTE")"
 
 unset CLAUDE_PROJECT_DIR
+
+# ============================================================
+# PKCE hook integration
+# ============================================================
+
+echo ""
+echo "=== PKCE hook integration ==="
+
+if command -v jq &>/dev/null; then
+  HOOK="$PWD/hooks/check-token.sh"
+  FAKE_BIN="$TMPDIR/fake-bin"
+  FAKE_PLUGIN="$TMPDIR/plugin"
+  mkdir -p "$FAKE_BIN" "$FAKE_PLUGIN/skills/configure/scripts"
+  printf '%s\n' '#!/bin/sh' 'printf invoked > "$FAKE_PYTHON_MARKER"' 'cat > "$FAKE_REFRESH_INPUT"' 'if [ "${FAKE_REFRESH_MODE:-success}" = "invalid" ]; then exit 1; fi' 'printf "%s\n" "$FAKE_REFRESH_JSON"' > "$FAKE_BIN/python3"
+  printf '%s\n' '#!/bin/sh' 'printf invoked > "$FAKE_SECURITY_MARKER"' 'exit 99' > "$FAKE_BIN/security"
+  chmod +x "$FAKE_BIN/python3" "$FAKE_BIN/security"
+
+  run_codex_hook() {
+    local project="$1" refresh_json="$2" refresh_mode="${3:-success}"
+    printf '%s' '{"tool_input":{"command":"curl -H '\''Authorization: Bearer old_access'\'' https://api-partner.spotify.com/ads/v3/businesses"}}' | \
+      PATH="$FAKE_BIN:$PATH" \
+      CODEX_PROJECT_DIR="$project" \
+      CODEX_PLUGIN_ROOT="$FAKE_PLUGIN" \
+      FAKE_PYTHON_MARKER="$TMPDIR/python-called" \
+      FAKE_REFRESH_INPUT="$TMPDIR/refresh-input" \
+      FAKE_SECURITY_MARKER="$TMPDIR/security-called" \
+      FAKE_REFRESH_JSON="$refresh_json" \
+      FAKE_REFRESH_MODE="$refresh_mode" \
+      bash "$HOOK"
+  }
+
+  project="$TMPDIR/pkce-rotate"
+  mkdir -p "$project/.codex"
+  printf '%s\n' '---' 'access_token: "old_access"' 'refresh_token: "old_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' '---' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(run_codex_hook "$project" '{"access_token":"new_access","expires_in":3600,"refresh_token":"rotated_refresh"}')
+  assert_eq "PKCE helper invoked" "invoked" "$(cat "$TMPDIR/python-called")"
+  assert_eq "refresh token passed on stdin" "old_refresh" "$(cat "$TMPDIR/refresh-input")"
+  assert_eq "credential store never invoked" "false" "$([ -e "$TMPDIR/security-called" ] && echo true || echo false)"
+  assert_eq "rotated access token stored" 'access_token: "new_access"' "$(grep '^access_token:' "$project/.codex/spotify-ads-api.local.md")"
+  assert_eq "rotated refresh token stored" 'refresh_token: "rotated_refresh"' "$(grep '^refresh_token:' "$project/.codex/spotify-ads-api.local.md")"
+  assert_eq "refreshed settings created mode 600" "600" "$(stat -f '%Lp' "$project/.codex/spotify-ads-api.local.md" 2>/dev/null || stat -c '%a' "$project/.codex/spotify-ads-api.local.md")"
+  assert_contains "Codex command rewritten" "Bearer new_access" "$(echo "$output" | jq -r '.hookSpecificOutput.updatedInput.command')"
+
+  rm -f "$TMPDIR/python-called"
+  project="$TMPDIR/pkce-retain"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: "keep_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/.codex/spotify-ads-api.local.md"
+  run_codex_hook "$project" '{"access_token":"new_access","expires_in":3600}' >/dev/null
+  assert_eq "omitted rotation retains refresh token" 'refresh_token: "keep_refresh"' "$(grep '^refresh_token:' "$project/.codex/spotify-ads-api.local.md")"
+
+  rm -f "$TMPDIR/python-called"
+  project="$TMPDIR/legacy-valid"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: "legacy_refresh"' 'token_expires_at: "2099-01-01T00:00:00Z"' 'client_id: "team_client"' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(run_codex_hook "$project" '{}')
+  assert_contains "legacy token gets migration guidance" "until it expires" "$(echo "$output" | jq -r '.systemMessage')"
+  assert_eq "legacy token does not refresh" "false" "$([ -e "$TMPDIR/python-called" ] && echo true || echo false)"
+
+  project="$TMPDIR/direct-token"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: ""' 'token_expires_at: ""' 'client_id: ""' 'auth_flow: "direct_token"' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(run_codex_hook "$project" '{}')
+  assert_contains "direct token remains non-refreshable" "cannot refresh automatically" "$(echo "$output" | jq -r '.systemMessage')"
+
+  project="$TMPDIR/legacy-expired"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: "legacy_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(run_codex_hook "$project" '{}')
+  assert_contains "expired legacy token requires PKCE" "cannot refresh without reauthorization" "$(echo "$output" | jq -r '.systemMessage')"
+
+  project="$TMPDIR/pkce-invalid"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: "bad_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(run_codex_hook "$project" '{}' invalid)
+  assert_contains "invalid grant requests reauthorization" "invalid_grant" "$(echo "$output" | jq -r '.systemMessage')"
+
+  UV_ONLY_BIN="$TMPDIR/uv-only-bin"
+  mkdir -p "$UV_ONLY_BIN"
+  for utility in awk cat date dirname grep head jq mv rm sed tr; do
+    ln -s "$(command -v "$utility")" "$UV_ONLY_BIN/$utility"
+  done
+  printf '%s\n' '#!/bin/sh' 'test "$1" = "run" || exit 98' 'printf invoked > "$FAKE_UV_MARKER"' 'cat > "$FAKE_REFRESH_INPUT"' 'printf "%s\n" "$FAKE_REFRESH_JSON"' > "$UV_ONLY_BIN/uv"
+  chmod +x "$UV_ONLY_BIN/uv"
+
+  project="$TMPDIR/pkce-uv-only"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: "old_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(printf '%s' '{"tool_input":{"command":"curl -H '\''Authorization: Bearer old_access'\'' https://api-partner.spotify.com/ads/v3/businesses"}}' | \
+    PATH="$UV_ONLY_BIN" \
+    CODEX_PROJECT_DIR="$project" \
+    CODEX_PLUGIN_ROOT="$FAKE_PLUGIN" \
+    FAKE_UV_MARKER="$TMPDIR/uv-called" \
+    FAKE_REFRESH_INPUT="$TMPDIR/uv-refresh-input" \
+    FAKE_REFRESH_JSON='{"access_token":"uv_access","expires_in":3600}' \
+    /bin/bash "$HOOK")
+  assert_eq "uv fallback invoked" "invoked" "$(cat "$TMPDIR/uv-called")"
+  assert_eq "uv refresh token passed on stdin" "old_refresh" "$(cat "$TMPDIR/uv-refresh-input")"
+  assert_eq "uv fallback stores access token" 'access_token: "uv_access"' "$(grep '^access_token:' "$project/.codex/spotify-ads-api.local.md")"
+  assert_contains "uv fallback rewrites command" "Bearer uv_access" "$(echo "$output" | jq -r '.hookSpecificOutput.updatedInput.command')"
+else
+  echo "  SKIP: jq not available, skipping PKCE hook integration tests"
+fi
 
 # ============================================================
 # Summary
