@@ -235,6 +235,6 @@ For detailed request/response schemas and field definitions, consult:
 
 ### Example Files
 
-Working examples with complete curl commands and expected responses:
+Working examples with shared `api()` helper commands and expected responses:
 - **`examples/full-campaign-flow.md`** — End-to-end: create campaign, ad set, and ad with targeting
 - **`examples/aggregate-report.md`** — Pull aggregate metrics and create async CSV reports

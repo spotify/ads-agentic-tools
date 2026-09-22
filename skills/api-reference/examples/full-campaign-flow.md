@@ -1,6 +1,11 @@
 # Example: Full Campaign Setup Flow
 
-**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`, where `SDK_PRODUCT` is `codex-plugin` on Codex, `claude-code-plugin` on Claude, and `antigravity-cli-plugin` on Antigravity.
+These examples use the shared request helper, which loads settings and injects authentication and attribution headers:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" api-reference "$@"; }
+```
 
 This example shows the complete sequence of API calls to create a campaign, ad set, and ad.
 
@@ -15,15 +20,11 @@ The draft flow creates staging entities, validates everything at once, then publ
 Use `delivery_goal_group`, not the deprecated `objective` field, on draft campaigns.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns" \
+  '{
     "name": "Summer Sale 2025",
     "delivery_goal_group": "AWARENESS"
-  }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns"
+  }'
 ```
 
 **Expected Response (200):**
@@ -44,11 +45,8 @@ Save `id` and `draft_hierarchy_version`.
 Uses the draft `campaign_id` from Step 1.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
+  '{
     "campaign_id": "d1e2f3a4-b5c6-7890-abcd-ef1234567890",
     "name": "Summer Sale - Audio US 18-34",
     "start_time": "2025-06-15T00:00:00Z",
@@ -68,8 +66,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
     "bid_strategy": "MAX_BID",
     "bid_micro_amount": 15000000,
     "delivery_goal": "REACH"
-  }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets"
+  }'
 ```
 
 ### Step 3: Create Draft Ad
@@ -77,11 +74,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
 Uses the draft `ad_set_id` from Step 2.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/drafts/ads" \
+  '{
     "ad_set_id": "e2f3a4b5-c6d7-8901-bcde-f12345678901",
     "name": "Summer Sale - 30s Audio Spot",
     "tagline": "Summer deals up to 50% off",
@@ -95,8 +89,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
       "key": "SHOP_NOW",
       "clickthrough_url": "https://mybrand.com/summer-sale"
     }
-  }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/ads"
+  }'
 ```
 
 ### Step 4: Validate the Draft Hierarchy
@@ -104,21 +97,14 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
 Dry-run publish to check for errors across the entire hierarchy. First fetch the draft campaign to get the current `draft_hierarchy_version`; do not reuse the version returned before child draft ad sets or ads were created.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
 ```
 
 Set `CURRENT_DRAFT_HIERARCHY_VERSION` from the `draft_hierarchy_version` field in that response.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d "{\"action\":\"VALIDATE\",\"draft_hierarchy_version\":$CURRENT_DRAFT_HIERARCHY_VERSION}" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890" \
+  "{\"action\":\"VALIDATE\",\"draft_hierarchy_version\":$CURRENT_DRAFT_HIERARCHY_VERSION}"
 ```
 
 **Success (200, no errors; no live entities are created):**
@@ -153,21 +139,14 @@ Fix errors with PATCH on the draft entities, then re-validate.
 Once validation passes, publish to create live entities. Fetch the draft campaign again immediately before publishing. If the version has changed since validation, re-run validation with the new version before publishing.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+api GET "ad_accounts/{ad_account_id}/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
 ```
 
 Set `CURRENT_DRAFT_HIERARCHY_VERSION` from this latest response.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d "{\"action\":\"PUBLISH\",\"draft_hierarchy_version\":$CURRENT_DRAFT_HIERARCHY_VERSION}" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890"
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns/d1e2f3a4-b5c6-7890-abcd-ef1234567890" \
+  "{\"action\":\"PUBLISH\",\"draft_hierarchy_version\":$CURRENT_DRAFT_HIERARCHY_VERSION}"
 ```
 
 **Expected Response (200):**
@@ -198,15 +177,11 @@ The shared schema pitfalls listed below also apply to drafts (`bid_strategy` is 
 ### Step 1: Create Campaign
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/campaigns" \
+  '{
     "name": "Summer Sale 2025",
     "objective": "REACH"
-  }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/campaigns"
+  }'
 ```
 
 **Expected Response (201):**
@@ -229,11 +204,8 @@ Save the `id` from the response — it's needed for the ad set.
 Uses the `campaign_id` from Step 1. Note: budget `micro_amount` is in micro-units ($50 = 50000000).
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/ad_sets" \
+  '{
     "name": "Summer Sale - Audio US 18-34",
     "campaign_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "start_time": "2025-06-15T00:00:00Z",
@@ -254,8 +226,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
     "bid_micro_amount": 15000000,
     "pacing": "PACING_EVEN",
     "delivery": "ON"
-  }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/ad_sets"
+  }'
 ```
 
 **Expected Response (201):**
@@ -287,11 +258,8 @@ Save the `id` for the ad.
 Uses the `ad_set_id` from Step 2.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/ads" \
+  '{
     "name": "Summer Sale - 30s Audio Spot",
     "ad_set_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
     "tagline": "Summer deals up to 50% off",
@@ -306,8 +274,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
       "clickthrough_url": "https://mybrand.com/summer-sale"
     },
     "delivery": "ON"
-  }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/ads"
+  }'
 ```
 
 **Expected Response (201):**
