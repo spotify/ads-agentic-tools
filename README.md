@@ -9,7 +9,9 @@ Check out our post on the [Spotify Engineering Blog](https://engineering.atspoti
 - Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), or [Antigravity CLI](https://antigravity.google/)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
-- Python 3.8+ or `uv` (required for the secure configuration helpers)
+- Python 3.8+ or `uv` (required for the secure configuration helpers). On Windows, ensure `python` or `py` is in your PATH.
+- [Git for Windows](https://gitforwindows.org/) (Windows only; provides Git Bash, which the token refresh hook requires)
+- [jq](https://jqlang.github.io/jq/) (recommended on Windows for richer hook output; the token refresh hook works without it but produces minimal JSON)
 
 ## Install
 
@@ -49,9 +51,9 @@ Restart Antigravity CLI, then verify with `/plugins`. On Antigravity, skills act
 
 Use a source checkout for local development or testing unreleased changes.
 
-1. Clone the repository:
+1. Clone the repository (on Windows, disable `autocrlf` so the bash hooks stay LF-only):
    ```bash
-   git clone https://github.com/spotify/ads-agentic-tools.git
+   git clone -c core.autocrlf=false https://github.com/spotify/ads-agentic-tools.git
    cd ads-agentic-tools
    ```
 
@@ -199,6 +201,12 @@ Your targeting is too narrow for the selected ad format. Try broadening the age 
 
 **"Asset stuck in PROCESSING"**
 Large files may take longer to transcode. Check status with `/spotify-ads-api:assets get <id>`. If status is REJECTED, the file may not meet format requirements.
+
+**"Python was not found" on Windows**
+The `python3` command on stock Windows 11 is a Microsoft Store redirect stub, not real Python. It exits with code 49 and prints a Store install prompt. Install Python from [python.org](https://www.python.org/downloads/) or via `winget install Python.Python.3.13`, then use `python` or `py` (the plugin detects and skips the Store stub automatically).
+
+**Token refresh hook not running on Windows**
+The hook (`hooks/check-token.sh`) is a bash script. On Windows it requires Git Bash, which is included with [Git for Windows](https://gitforwindows.org/). If the hook silently does nothing, ensure `bash.exe` is discoverable in your PATH (it should be after installing Git for Windows).
 
 **Skill not activating on Antigravity CLI**
 Run `/skills list` to confirm the plugin's skills loaded, and `/plugins` to confirm the plugin is enabled. Restart Antigravity CLI after installing or linking.

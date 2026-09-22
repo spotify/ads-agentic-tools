@@ -35,10 +35,15 @@ case "$input" in
   *) exit 0 ;;
 esac
 
-# Need jq for JSON parsing
-if ! command -v jq &>/dev/null; then
-  exit 0
+# Prefer jq for JSON; fall back to grep/sed for minimal parsing
+HAS_JQ=false
+if command -v jq &>/dev/null; then
+  HAS_JQ=true
 fi
+
+json_extract_string() {
+  printf '%s' "$1" | sed -n 's/.*"'"$2"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1
+}
 
 # Detect platform from env vars; Antigravity sets none of the known
 # *_PROJECT_DIR vars, so it falls through to the default.
@@ -70,23 +75,50 @@ find_settings_file() {
   done
 }
 
+# Cross-platform Python discovery: prefer python3 on Unix, py on Windows
+find_python() {
+  local cmd candidates os_type
+  os_type="$(uname -s 2>/dev/null || echo unknown)"
+  case "$os_type" in
+    MINGW*|MSYS*|CYGWIN*) candidates="py python python3" ;;
+    *)                     candidates="python3 python py" ;;
+  esac
+  for cmd in $candidates; do
+    if command -v "$cmd" &>/dev/null; then
+      printf '%s\n' "$cmd"
+      return
+    fi
+  done
+}
+
 # Extract the command from tool input (different field paths per platform)
 # Claude/Codex: .tool_input.command
 # Antigravity:  .toolCall.args.CommandLine
-command=$(printf '%s' "$input" | jq -r '
-  .tool_input.command //
-  .tool_input.cmd //
-  .input.command //
-  .input.cmd //
-  .toolCall.args.CommandLine //
-  .toolCall.args.command //
-  ""')
-# Path to the session transcript, for best-effort skill inference.
-# Claude/Codex: .transcript_path (Codex may send null). Antigravity: .transcriptPath.
-transcript_path=$(printf '%s' "$input" | jq -r '
-  .transcript_path //
-  .transcriptPath //
-  ""')
+if [ "$HAS_JQ" = true ]; then
+  command=$(printf '%s' "$input" | jq -r '
+    .tool_input.command //
+    .tool_input.cmd //
+    .input.command //
+    .input.cmd //
+    .toolCall.args.CommandLine //
+    .toolCall.args.command //
+    ""')
+  # Path to the session transcript, for best-effort skill inference.
+  # Claude/Codex: .transcript_path (Codex may send null). Antigravity: .transcriptPath.
+  transcript_path=$(printf '%s' "$input" | jq -r '
+    .transcript_path //
+    .transcriptPath //
+    ""')
+else
+  command=$(json_extract_string "$input" "command")
+  if [ -z "$command" ]; then
+    command=$(json_extract_string "$input" "cmd")
+  fi
+  if [ -z "$command" ]; then
+    command=$(json_extract_string "$input" "CommandLine")
+  fi
+  transcript_path=""
+fi
 
 # Does this command actually target the Spotify Ads API? The literal host is
 # unambiguous. $BASE_URL is not, since any project may define it, so require
@@ -149,8 +181,9 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
     else
       REFRESH_SCRIPT="${PLUGIN_ROOT}/skills/configure/scripts/refresh-token.py"
       refresh_runner=()
-      if command -v python3 &>/dev/null; then
-        refresh_runner=(python3)
+      PYTHON="$(find_python || true)"
+      if [ -n "$PYTHON" ]; then
+        refresh_runner=("$PYTHON")
       elif command -v uv &>/dev/null; then
         refresh_runner=(uv run)
       else
@@ -166,9 +199,16 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
 
       if [ "${#refresh_runner[@]}" -gt 0 ] && [ "$refresh_status" -eq 0 ]; then
 
-        new_token=$(echo "$refresh_result" | jq -r '.access_token // ""')
-        expires_in=$(echo "$refresh_result" | jq -r 'if (.expires_in | type) == "number" then .expires_in else 3600 end')
-        new_refresh=$(echo "$refresh_result" | jq -r '.refresh_token // ""')
+        if [ "$HAS_JQ" = true ]; then
+          new_token=$(echo "$refresh_result" | jq -r '.access_token // ""')
+          expires_in=$(echo "$refresh_result" | jq -r 'if (.expires_in | type) == "number" then .expires_in else 3600 end')
+          new_refresh=$(echo "$refresh_result" | jq -r '.refresh_token // ""')
+        else
+          new_token=$(json_extract_string "$refresh_result" "access_token")
+          expires_in=$(printf '%s' "$refresh_result" | sed -n 's/.*"expires_in"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p' | head -1)
+          expires_in=${expires_in:-3600}
+          new_refresh=$(json_extract_string "$refresh_result" "refresh_token")
+        fi
 
         if [ -n "$new_token" ]; then
           new_expires=$(date -u -v+"${expires_in}"S +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
@@ -247,33 +287,56 @@ fi
 # --- Emit output ---
 # Claude/Codex: permissionDecision + updatedInput to rewrite the command.
 # Antigravity: decision + reason (no command rewriting support).
+
+json_escape() {
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' | tr -d '\n'
+}
+
 if [ "$PLATFORM" = "antigravity" ]; then
   if [ -n "$system_message" ]; then
-    jq -n --arg msg "$system_message" '{
-      "decision": "allow",
-      "reason": $msg
-    }' 2>/dev/null
+    if [ "$HAS_JQ" = true ]; then
+      jq -n --arg msg "$system_message" '{
+        "decision": "allow",
+        "reason": $msg
+      }' 2>/dev/null
+    else
+      printf '{"decision":"allow","reason":"%s"}\n' "$(json_escape "$system_message")"
+    fi
   fi
 else
   if [[ "$modified_command" != "$command" ]]; then
     if [ -n "$system_message" ]; then
-      jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
-        "hookSpecificOutput": {
-          "permissionDecision": "allow",
-          "updatedInput": {"command": $cmd}
-        },
-        "systemMessage": $msg
-      }' 2>/dev/null
+      if [ "$HAS_JQ" = true ]; then
+        jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
+          "hookSpecificOutput": {
+            "permissionDecision": "allow",
+            "updatedInput": {"command": $cmd}
+          },
+          "systemMessage": $msg
+        }' 2>/dev/null
+      else
+        printf '{"hookSpecificOutput":{"permissionDecision":"allow","updatedInput":{"command":"%s"}},"systemMessage":"%s"}\n' \
+          "$(json_escape "$modified_command")" "$(json_escape "$system_message")"
+      fi
     else
-      jq -n --arg cmd "$modified_command" '{
-        "hookSpecificOutput": {
-          "permissionDecision": "allow",
-          "updatedInput": {"command": $cmd}
-        }
-      }' 2>/dev/null
+      if [ "$HAS_JQ" = true ]; then
+        jq -n --arg cmd "$modified_command" '{
+          "hookSpecificOutput": {
+            "permissionDecision": "allow",
+            "updatedInput": {"command": $cmd}
+          }
+        }' 2>/dev/null
+      else
+        printf '{"hookSpecificOutput":{"permissionDecision":"allow","updatedInput":{"command":"%s"}}}\n' \
+          "$(json_escape "$modified_command")"
+      fi
     fi
   elif [ -n "$system_message" ]; then
-    jq -n --arg msg "$system_message" '{"systemMessage": $msg}' 2>/dev/null
+    if [ "$HAS_JQ" = true ]; then
+      jq -n --arg msg "$system_message" '{"systemMessage": $msg}' 2>/dev/null
+    else
+      printf '{"systemMessage":"%s"}\n' "$(json_escape "$system_message")"
+    fi
   fi
 fi
 
