@@ -10,7 +10,8 @@ Create a new campaign.
 
 **Request Body:** `CreateCampaignRequest`
 - `name` (string, 2-200 chars, required)
-- `objective` (string, required) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS
+- `objective` (string, required but deprecated for direct v3 creation) — One of: REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, PODCAST_STREAMS, APP_INSTALLS, WEBSITE_VISITS
+- `delivery_goal_group` (string, optional) — AWARENESS, WEBSITE_TRAFFIC, APP_PROMOTION, ENGAGEMENT_ON_SPOTIFY, or LEAD_GEN
 - `purchase_order` (string, optional)
 - `measurement_partner` (string, optional)
 
@@ -77,13 +78,13 @@ Create a new ad set within a campaign.
 - `start_time` (ISO 8601 datetime, required)
 - `end_time` (ISO 8601 datetime, **required if budget type is LIFETIME**)
 - `budget` (object, required):
-  - `micro_amount` (int64, required) — Budget in micro-units ($1 = 1000000)
+  - `micro_amount` (int64, required) — Budget in micro-units (1 unit of billing currency = 1,000,000 micro-units)
   - `type` (string, required) — DAILY or LIFETIME
 - `asset_format` (string, required) — AUDIO, VIDEO, IMAGE, or CATALOG
 - `category` (string, **required**) — Ad category code (e.g. `ADV_1_2`). Fetch valid values from `GET /ad_categories`
 - `targets` (object, required) — See Targeting section. **Note:** `geo_targets` is a flat object `{"country_code":"US"}`, NOT an array. `platforms` valid values are `ANDROID`, `DESKTOP`, `IOS`.
 - `bid_strategy` (string, required) — Plain string enum: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. **Not an object.**
-- `bid_micro_amount` (int64, required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 bid cap = `15000000`
+- `bid_micro_amount` (int64, required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 USD bid cap = `15000000`, ¥160 JPY = `160000000`
 - `promotion` (object, optional) — Promotion configuration
 - `frequency_caps` (array, optional, max 6) — Array of `FrequencyCap` objects: `{frequency_unit, frequency_period, max_impressions}`
 - `pacing` (string, optional) — PACING_EVEN or PACING_ACCELERATED
@@ -144,16 +145,16 @@ Create a new ad within an ad set.
 **Request Body:** `CreateAdRequest`
 - `name` (string, 2-200 chars, required)
 - `ad_set_id` (uuid, required)
-- `tagline` (string, 2-40 chars, required) — Ad tagline/headline
+- `tagline` (string, 2-40 chars, required; optional for drafts) — Ad tagline/headline
 - `advertiser_name` (string, 2-25 chars, required)
 - `assets` (object, required) — Asset references:
-  - `asset_id` (uuid, required) — Audio, video, or image creative asset
+  - `asset_id` (uuid, required; optional for drafts) — Audio, video, or image creative asset
   - `logo_asset_id` (uuid, required) — Logo image asset
   - `companion_asset_id` (uuid, required for AUDIO) — Companion image asset
   - `canvas_asset_id` (uuid, optional) — 9:16 image or video asset
-- `call_to_action` (object, required) — CTA configuration. **Uses field `key` (not `type`) and `clickthrough_url` (not `url`)**:
+- `call_to_action` (object, required; optional for drafts) — CTA configuration. **Uses field `key` (not `type`) and `clickthrough_url` (not `url`)**:
   - `key` (string, required) — e.g. `SHOP_NOW`, `LEARN_MORE`, `LISTEN_NOW`
-  - `clickthrough_url` (string, required) — Landing page URL
+  - `clickthrough_url` (string, required; optional for drafts) — Landing page URL
   - `language` (string, optional, default `ENGLISH`)
 - `start_time` (ISO 8601 datetime, optional, nullable) — Override the ad set's start time
 - `end_time` (ISO 8601 datetime, optional, nullable) — Override the ad set's end time
@@ -200,9 +201,9 @@ Update an ad.
 
 ---
 
-## Drafts (Preferred for New Campaigns)
+## Drafts (Default for Campaign Hierarchy Writes)
 
-Draft entities are staging versions of campaigns, ad sets, and ads. Nothing goes live until you publish. The workflow: create drafts → edit → validate → publish.
+Draft entities are staging versions of campaigns, ad sets, and ads. Nothing goes live until you publish. Default campaign hierarchy writes to drafts unless the user explicitly requests a direct live operation. The workflow: create or reuse drafts → edit → validate → publish.
 
 ### POST /ad_accounts/{ad_account_id}/drafts/campaigns
 Create a draft campaign.
@@ -210,8 +211,8 @@ Create a draft campaign.
 **Request Body:** `CampaignDraftRequestProperties`
 - `name` (string, max 200 chars)
 - `purchase_order` (string, max 45 chars, optional)
-- `objective` (string, optional) — REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, PODCAST_STREAMS
-- `delivery_goal_group` (string, optional) — AWARENESS, CONSIDERATION
+- `delivery_goal_group` (string, recommended) — AWARENESS, WEBSITE_TRAFFIC, APP_PROMOTION, ENGAGEMENT_ON_SPOTIFY, or LEAD_GEN. Use this instead of `objective`.
+- `objective` (string, deprecated) — REACH, EVEN_IMPRESSION_DELIVERY, CLICKS, VIDEO_VIEWS, or PODCAST_STREAMS
 - `status` (string, optional)
 
 **Response:** 200 — `CampaignDraft` (includes `id`, `draft_hierarchy_version`)
@@ -515,6 +516,8 @@ Async report `dimensions` are entity metadata columns only. Do not put geo, demo
 ### GET /ad_accounts/{ad_account_id}/async_reports/{report_id}
 Check async report status and get download URL when complete.
 
+**Status values:** `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`. Poll until `COMPLETED` (download URL available) or `FAILED` (retry or investigate).
+
 **Response:** 200 — `AsyncReportResponse`
 
 ---
@@ -599,7 +602,7 @@ Get available geographic targets. Use this to look up geo IDs for ad set targeti
 
 **Geo Types:**
 - `REGION` — States, provinces, territories
-- `DMA_REGION` — Designated Market Areas for media targeting
+- `DMA_REGION` — Designated Market Areas for media targeting. **Note:** `dma_ids` is no longer a valid field on the `geo_targets` targeting object; DMA_REGION results from this lookup endpoint are for reference only.
 - `CITY` — Cities and towns
 - `POSTAL_CODE` — ZIP codes (format: "US:06103")
 
@@ -609,7 +612,6 @@ Get available geographic targets. Use this to look up geo IDs for ad set targeti
   "geo_targets": {
     "country_code": "US",
     "region_ids": ["4831725"],           // Connecticut
-    "dma_ids": ["533"],                  // Hartford & New Haven DMA
     "city_ids": ["4845411"],             // West Hartford
     "postal_code_ids": ["US:06103"]      // Specific ZIP code
   }
@@ -687,6 +689,100 @@ Create a new ad account under a business.
 **Request Body:** `CreateAdAccountRequest`
 
 **Response:** 200 — `AdAccountResponse`
+
+---
+
+## Ad Product Catalog
+
+### GET /ad_product_catalog
+Returns the live validation rules for externally available ad products: AUCTION,
+CONTENT, and FPMNG. These product-specific rules layer on top of the OpenAPI request
+shape and field types.
+
+Fetch the catalog once for each create or update workflow and reuse it only during that
+workflow. Do not maintain a timed session cache; the endpoint response is delivered
+with `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`.
+
+Resolve the product from the new campaign request or known hierarchy context. An
+omitted, `UNSET`, or `UNKNOWN` campaign product maps to AUCTION. Campaign responses do
+not consistently expose `ad_product`, so do not silently classify an existing hierarchy
+as AUCTION when its configuration or request context indicates CONTENT or FPMNG. See
+`ad-product-validation.md` for the complete resolution and interaction procedure.
+
+**Response:** 200 — Ad product catalog with validation rules per product type.
+
+**Response structure:**
+
+Each product has `campaign`, `ad_set`, and `ad` sections. Rules are separated by
+operation: use `create` plus `both` for POST requests and `update` plus `both` for PATCH
+requests. Some products omit an operation section when they have no additional rules
+for it.
+
+The following is an abbreviated structural example. Always use values from the live
+response rather than treating this sample as an exhaustive catalog.
+
+```json
+{
+  "description": "Ad product validation rules that layer on top of the OpenAPI spec...",
+  "ad_products": {
+    "AUCTION": {
+      "display_name": "...",
+      "description": "...",
+      "campaign": {
+        "create": {
+          "allowed_values": { "objective": ["<live product-specific values>"] }
+        },
+        "update": {
+          "allowed_values": { "status": ["ACTIVE", "PAUSED"] },
+          "restrictions": ["field: cannot change after creation"]
+        },
+        "both": {
+          "constraints": ["end_time must be within 365 days of start_time"],
+          "cross_field_rules": ["When X: Y"]
+        }
+      },
+      "ad_set": {
+        "create": {
+          "allowed_values": { "...": "..." },
+          "required_fields": ["..."],
+          "forbidden_fields": ["..."],
+          "cross_field_rules": ["..."]
+        },
+        "update": {
+          "allowed_values": { "...": "..." },
+          "restrictions": ["..."],
+          "cross_field_rules": ["..."]
+        },
+        "both": {
+          "frequency_caps": { "max_impressions": { "DAY": 5, "WEEK": 35, "MONTH": 50 } },
+          "constraints": ["..."],
+          "cross_field_rules": ["..."]
+        }
+      },
+      "ad": {
+        "create": {
+          "required_fields": ["assets.asset_id: primary asset required; must not be archived"]
+        },
+        "update": { "restrictions": ["Cannot edit an archived creative"] },
+        "both": {
+          "constraints": ["Audio creative duration: max 31,000 ms"]
+        }
+      }
+    }
+  }
+}
+```
+
+**How to apply rules:**
+- For a **POST**: apply every rule category present in `create` and `both`.
+- For a **PATCH**: fetch the current entity, deep-merge the patch, then apply every rule category present in `update` and `both` to the effective entity.
+- Match the entity type to the correct key: `campaign`, `ad_set`, or `ad`.
+- Treat `required_fields`, `forbidden_fields`, `constraints`, `restrictions`, and
+  `cross_field_rules` as semantic rules, not merely field-name arrays.
+- Retrieve parent entities, assets, estimates, prices, or reporting state when a rule
+  depends on them.
+- Do not report runtime or server-only conditions as passed unless the required state
+  was actually checked.
 
 ---
 
@@ -813,7 +909,33 @@ Optional fields:
 }
 ```
 
-Bid amounts are in micro-units. Divide by 1,000,000 for dollar values (e.g. 8014566 = ~$8.01 CPM).
+Bid amounts are in micro-units. Divide by 1,000,000 for currency values (e.g. 8014566 = ~$8.01 CPM).
+
+---
+
+## Experiments
+
+### GET /ad_accounts/{ad_account_id}/experiment_availability
+Check which experiment types can be created for an ad account.
+
+**Path Parameters:**
+- `ad_account_id` (uuid, required)
+
+**Response:** 200 — `ExperimentAvailabilityResponse`
+```json
+{
+  "ad_account_id": "uuid",
+  "can_create_cls": true,
+  "can_create_sbl": false,
+  "can_create_ab_test": true,
+  "active_experiments": ["CLS", "AB_TEST"]
+}
+```
+
+- `can_create_cls` (boolean) — Whether a Competitive Lift Study can be created
+- `can_create_sbl` (boolean) — Whether a Sales-Based Lift study can be created
+- `can_create_ab_test` (boolean) — Whether an A/B test can be created
+- `active_experiments` (array of `ActiveExperiment`) — Currently active experiment types: `CLS`, `SBL`, `AB_TEST`
 
 ---
 
@@ -830,6 +952,54 @@ All endpoints return errors in this format:
   "timestamp": "2025-01-01T00:00:00Z"
 }
 ```
+
+## Change History
+
+### GET /ad_accounts/{ad_account_id}/change_history
+Retrieve a paginated timeline of changes made to campaigns, ad sets, creatives, and other entities within an ad account. Rolling 180-day retention window.
+
+**Path Parameters:**
+- `ad_account_id` (uuid, required) — Ad account identifier
+
+**Query Parameters:**
+- `entity_type` (string) — Filter by entity: CAMPAIGN, AD_SET, AD_ACCOUNT, BUSINESS, CREATIVE
+- `entity_ids` (array of uuid) — Filter by specific entity IDs
+- `entity_name` (string) — Case-insensitive substring match (2-255 chars); requires `entity_type`
+- `change_ids` (array of uuid) — Fetch specific change records by ID
+- `actor_ids` (array of string) — Filter by who made the change
+- `principal_type` (string) — USER, SERVICE
+- `change_category` (string) — STATUS, BUDGET, TARGETING, CREATIVE, SCHEDULING, SETTINGS, BILLING
+- `created_gte` (datetime) — Changes on or after this timestamp (default: 30 days ago; clamped to 180-day floor)
+- `created_lte` (datetime) — Changes on or before this timestamp
+- `limit` (integer) — 1-50 (default: 50)
+- `offset` (integer) — Pagination offset (default: 0)
+- `sort_direction` (string) — ASC, DESC (default: DESC)
+- `sort_field` (string) — TIMESTAMP, ENTITY_TYPE, PRINCIPAL_TYPE (default: TIMESTAMP)
+
+**Response:** 200 — `ChangeHistoryResponse`
+- `paging` — `{ page_size, total_results, offset, current_page }`
+- `change_history` — Array of change records:
+  - `change_id` (uuid)
+  - `timestamp` (datetime)
+  - `entity_type` (string) — CAMPAIGN, AD_SET, AD_ACCOUNT, BUSINESS, CREATIVE
+  - `entity_id` (uuid)
+  - `entity_name` (string)
+  - `operation` (string) — CREATED, CHANGED, REMOVED
+  - `actor` — `{ principal_id, principal_type, name, email, category }`
+    - `category`: ADVERTISER_USER, SUPPORT, API_INTEGRATION, SYSTEM, UNKNOWN
+  - `changes` — Array of field-level changes:
+    - `field_type` (string) — Internal field identifier
+    - `display_label` (string) — Human-readable field name
+    - `change_category` (string) — STATUS, BUDGET, TARGETING, CREATIVE, SCHEDULING, SETTINGS, BILLING
+    - `before` (object, nullable) — Previous value
+    - `after` (object, nullable) — New value
+
+**Notes:**
+- BILLING category visible only to admin roles (ad-account-admin or business-admin)
+- `entity_name` filter requires `entity_type` to be set
+- Each row represents a single logical change event — an actor's save on one entity
+
+---
 
 Common HTTP status codes:
 - 400 — Bad request (validation error)

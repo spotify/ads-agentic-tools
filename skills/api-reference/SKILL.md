@@ -1,5 +1,5 @@
 ---
-name: Spotify Ads API Reference
+name: spotify-ads-api-reference
 description: This skill should be used when the user asks to "call the Spotify Ads API", "create a Spotify ad campaign", "manage Spotify ads", "pull Spotify ad reports", "set up ad sets or ads", "upload ad assets", "target audiences on Spotify", "check campaign status", "get ad account info", "look up API schema or fields", "check what targeting options exist", or asks about Spotify advertising endpoints, request/response formats, enum values, or authentication.
 ---
 
@@ -32,6 +32,13 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 
 To set up authentication, run the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity), which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
+## Current API Contract
+
+Before answering a schema question or making an Ads API v3 call, read and follow
+`references/live-openapi.md`. Fetch the public OpenAPI document once for the workflow and
+use the relevant operation and component definitions as the source of truth for paths,
+parameters, request bodies, responses, and enums.
+
 ## Resource Hierarchy
 
 ```
@@ -50,24 +57,24 @@ Business
 
 Every CRUD operation on campaigns, ad sets, ads, assets, and audiences is scoped under an **ad account ID**.
 
-**Draft workflow (preferred for new campaigns):** Create draft entities → validate the entire hierarchy → publish. See the Drafts endpoint group below.
+**Draft workflow (default for campaign hierarchy writes):** Create drafts for new entities or from published entities → edit → validate → publish only after explicit confirmation. Use this flow for campaign, ad set, and ad creation or modification unless the user explicitly requests a direct live write.
 
 For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately before the action and use its current `draft_hierarchy_version`. `PUBLISH` creates live entities and always requires explicit user confirmation, even when automatic execution is enabled.
 
 ## Key Conventions
 
-- **Budgets use micro-amounts**: Multiply dollar values by 1,000,000. A $50 budget = `50000000` micro-amount.
+- **Budgets use micro-amounts**: Multiply values by 1,000,000 (amounts are in the ad account's billing currency). A $50 budget = `50000000` micro-amount.
 - **Timestamps**: ISO 8601 in UTC (e.g., `2025-09-23T04:56:07Z`).
 - **IDs**: UUID format (e.g., `ce4ff15e-f04d-48b9-9ddf-fb3c85fbd57a`).
 - **Pagination**: All list endpoints support `limit` (1-50, default 50) and `offset` (default 0).
 - **Sorting**: Most list endpoints support `sort_direction` (ASC/DESC) and entity-specific sort fields.
-- **Updates use PATCH**: Partial updates with minimum 1 property required.
+- **Updates use PATCH**: Partial updates with minimum 1 property required. For campaign, ad set, and ad changes, PATCH the draft endpoint by default.
 - **No DELETE on live campaigns/ad sets/ads**: Use status changes (ARCHIVED, PAUSED) instead. Draft entities _can_ be deleted.
 
 ## Public Endpoint Groups
 
 ### Campaigns
-- `POST /ad_accounts/{id}/campaigns` — Create campaign (required: name, objective)
+- `POST /ad_accounts/{id}/campaigns` — Create a live campaign (required: name and deprecated `objective`; prefer drafts with `delivery_goal_group`)
 - `GET /ad_accounts/{id}/campaigns` — List campaigns (filterable by status, name, IDs)
 - `GET /ad_accounts/{id}/campaigns/{campaign_id}` — Get campaign by ID
 - `PATCH /ad_accounts/{id}/campaigns/{campaign_id}` — Update campaign (name, status)
@@ -93,7 +100,38 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 ### Audiences
 - `POST /ad_accounts/{id}/audiences` — Create audience (CUSTOM or LOOKALIKE)
 - `GET /ad_accounts/{id}/audiences` — List audiences
+- `GET/PATCH /ad_accounts/{id}/audiences/{audience_id}` — Get or edit an audience
 - `DELETE /ad_accounts/{id}/audiences/{audience_id}` — Delete audience
+- `POST /ad_accounts/{id}/audiences/upload_url` — Get a signed customer-list upload URL
+- `POST /ad_accounts/{id}/audiences/upload_url/{audience_id}` — Replace an audience file
+- `GET /ad_accounts/{id}/audiences/datasets` — List datasets eligible for custom audiences
+
+### Measurement Setup
+- `GET/POST /businesses/{id}/mobile_apps` — List or register mobile apps
+- `GET/PATCH /businesses/{id}/mobile_apps/{mobile_app_id}` — Get or update a mobile app
+- `POST/DELETE /businesses/{id}/mobile_apps/{mobile_app_id}/ad_accounts/{ad_account_id}` — Share or unshare an app
+- `GET/POST /businesses/{id}/pixels` — List or create Pixels
+- `GET/PATCH /businesses/{id}/pixels/{pixel_id}` — Get or update a Pixel
+- `POST /businesses/{id}/capi` — Create a CAPI integration
+- `GET/PATCH /businesses/{id}/capi/{connection_id}` — Get or update CAPI
+- `POST/GET/DELETE /businesses/{id}/capi/{connection_id}/tokens[...]` — Manage CAPI auth tokens
+- `GET/POST /businesses/{id}/datasets` — List or create datasets
+- `GET/PATCH /businesses/{id}/datasets/{dataset_id}` — Get or update a dataset
+- `GET /businesses/{id}/datasets/{dataset_id}/diagnostics` — Inspect received events
+- `POST/DELETE /businesses/{id}/datasets/{dataset_id}/ad_accounts/{ad_account_id}` — Share or unshare a dataset
+
+### Account Administration
+- `GET/POST /businesses` — List or create businesses
+- `GET/PATCH /businesses/{id}` — Get or update a business
+- `GET /businesses/{id}/members` — List members and invited users
+- `GET/PATCH/DELETE /businesses/{id}/members/{member_id}` — Inspect, edit, or remove a member
+- `PATCH /businesses/{id}/members/{member_id}/role` — Update a business role
+- `GET/POST /businesses/{id}/invitations` — List or create invitations
+- `DELETE /businesses/{id}/invitations/{invitation_id}` — Cancel an invitation
+- `GET/POST /businesses/{id}/ad_accounts` — List or create ad accounts
+- `GET/PATCH /ad_accounts/{id}` — Get or update supported ad-account fields
+- `GET/POST /ad_accounts/{id}/members` — List or add ad-account members
+- `PATCH/DELETE /ad_accounts/{id}/members/{member_id}` — Update a role or remove access
 
 ### Reports
 - `GET /ad_accounts/{id}/aggregate_reports` — Aggregated metrics by entity
@@ -101,10 +139,12 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - `POST /ad_accounts/{id}/async_reports` — Create async CSV report
 - `GET /ad_accounts/{id}/async_reports/{report_id}` — Check async report status
 
-### Drafts (Preferred for New Campaigns)
+### Drafts (Default for Campaign Hierarchy Writes)
 
 Draft entities are staging versions that are not live until explicitly published. The full lifecycle:
 create drafts → edit → validate → publish.
+
+For changes to published campaigns, ad sets, or ads, first check whether a same-ID draft already exists. Reuse and disclose an existing draft rather than recreating or overwriting pending work. If none exists, use the create-from-published endpoint, PATCH the draft endpoint, and validate the parent draft campaign. A denied direct write does not by itself mean the credentials are read-only; draft staging may still be available.
 
 **Campaign drafts:**
 - `POST /ad_accounts/{id}/drafts/campaigns` — Create draft campaign
@@ -139,9 +179,11 @@ create drafts → edit → validate → publish.
 - `GET /businesses/{id}` — Get business by ID
 - `GET /targets/artists` — Search artist targets
 - `GET /ad_categories` — List ad categories
+- `GET /ad_product_catalog` — Get live product-specific validation rules for AUCTION, CONTENT, and FPMNG. Fetch once per create or update workflow and do not retain a timed cross-operation cache. Follow `references/ad-product-validation.md` before mutating campaigns, ad sets, or ads.
 - `POST /estimates/audience` — Estimate audience size for targeting parameters (recommended before creating ad sets to validate reach)
 - `POST /estimates/bid` — Get bid recommendations
 - `POST /ad_accounts/{id}/reserved_prices` — Get pricing for reserved ad products (fCPM)
+- `GET /ad_accounts/{id}/experiment_availability` — Check which experiment types can be created
 
 ## Making API Calls
 
@@ -154,8 +196,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 # GET
 api GET "ad_accounts/{ad_account_id}/campaigns?limit=50"
 
-# POST with JSON body
-api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"...","objective":"..."}'
+# Draft-first POST with JSON body
+api POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"...","delivery_goal_group":"AWARENESS"}'
 
 # Retrieve settings values for use outside API calls
 eval $(api --env)
@@ -185,9 +227,11 @@ For error response format and common HTTP status codes, see `references/endpoint
 ### Reference Files
 
 For detailed request/response schemas and field definitions, consult:
+- **`references/live-openapi.md`** — Mandatory workflow for fetching and inspecting the current public OpenAPI document
 - **`references/endpoints.md`** — Complete endpoint details with all parameters and response schemas
 - **`references/schemas.md`** — Request/response body schemas with field types, constraints, and required fields
 - **`references/enums.md`** — All enum values for status fields, asset formats, targeting options, report dimensions/metrics
+- **`references/ad-product-validation.md`** — Mandatory catalog-validation procedure for campaign, ad set, and ad mutations
 
 ### Example Files
 

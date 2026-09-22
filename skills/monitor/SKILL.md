@@ -18,7 +18,9 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" monitor "$@"; }
 ```
 
-To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Parsing Arguments
 
@@ -261,8 +263,8 @@ To monitor automatically, schedule a recurring run of:
 
 ## Formatting Rules
 
-- **Spend from `aggregate_reports`**: Already in dollars — display directly as `$X.XX`.
-- **Budget `micro_amount` from entity details**: In micro-units — divide by 1,000,000 to get dollars.
+- **Spend from `aggregate_reports`**: Already in the ad account's billing currency — display directly as `$X.XX`.
+- **Budget `micro_amount` from entity details**: In micro-units — divide by 1,000,000 to get the billing currency amount.
 - **Impressions/Reach/Clicks**: Format with thousands separators (e.g., `156,234`).
 - **CTR**: Display as percentage with 2 decimal places (e.g., `0.79%`).
 - **Frequency**: Display with 1 decimal place.

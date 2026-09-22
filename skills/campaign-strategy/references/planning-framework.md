@@ -22,7 +22,7 @@ For reach, avoid splitting by every product feature or service line. Use multipl
 
 Start with the broadest targeting that is still commercially relevant, then narrow only when the business case is clear.
 
-- **Local businesses and locations:** map the service area from the page. Validate city, ZIP, region, and DMA IDs through `/targets/geos`. For small towns, test both a core catchment and the broader DMA with `/estimates/audience`; recommend the broader one if the narrow catchment is too small.
+- **Local businesses and locations:** map the service area from the page. Validate city, ZIP, and region IDs through `/targets/geos`. Note: DMA-level targeting via `dma_ids` is no longer supported — DMAs can still be looked up through `/targets/geos` but cannot be used as targeting refinements. For small towns, test both a core catchment and the broader region with `/estimates/audience`; recommend the broader one if the narrow catchment is too small.
 - **Regional or national products:** use region or country geos only when the page supports that availability. Do not assume nationwide service from a local page.
 - **Age:** default to broad adult ranges for reach. Narrow age only for legal requirements, product fit, or explicit user direction.
 - **Gender:** avoid unless the product has a strong non-sensitive reason and policy allows it.
@@ -59,7 +59,7 @@ Prefer ad rotation when only the message differs:
 
 ## Budgets, Bidding, and Forecasting
 
-- Convert dollars to micro-amounts for budgets and bids.
+- Convert amounts to micro-amounts (in the ad account's billing currency) for budgets and bids.
 - Use `MAX_BID` with `bid_micro_amount` unless the user requests automated bidding. Use `AUTOBID` when the user wants automatic bid optimization (no `bid_micro_amount` required). Use `COST_PER_RESULT` only with the CLICKS objective.
 - Run `POST /estimates/bid` when recommending a bid cap.
 - Run `POST /estimates/audience` for every recommended ad set before presenting the final executable structure when credentials are available.
@@ -153,7 +153,7 @@ For each ad set, include:
   "category": "ADV_X_Y",
   "targets": {
     "age_ranges": [{"min": 18, "max": 99}],
-    "geo_targets": {"country_code": "US", "dma_ids": ["..."]},
+    "geo_targets": {"country_code": "US"},
     "platforms": ["ANDROID", "DESKTOP", "IOS"],
     "placements": ["MUSIC"]
   },

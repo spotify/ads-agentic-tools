@@ -1,5 +1,77 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Skill and SDK attribution enforcement in the `PreToolUse` hook, as `hooks/lib/attribution.sh` sourced by `hooks/check-token.sh`. Raw curl calls that skip the request wrapper are rewritten to carry `X-Spotify-Ads-Skill` and `X-Spotify-Ads-Sdk`, so per-skill usage and error-rate reporting is no longer blind to ad-hoc traffic. Attribution is a sourced library rather than a second hook on purpose: matching `PreToolUse` hooks run in parallel against the original input and the last rewrite wins, so a separate hook would race the token refresh and drop one of the two edits
+- Best-effort skill inference from the session transcript, scanning the most recent lines newest-first and accepting only names matching a real skill in this plugin. Inferred values carry an `-inferred` suffix so reporting can separate them from the wrapper's deterministic value
+- `SPOTIFY_ADS_SKILL_LOOKBACK_LINES` to tune how far back skill inference looks, defaulting to 300 transcript lines
+- `SPOTIFY_ADS_ATTRIBUTION_LIB` to point the hook and its tests at an alternative attribution library, so a deliberately broken copy can be tested without editing the installed one
+- `SKILL_HEADER` to the output of `api-request.sh --env`, so raw-curl call sites no longer construct the skill attribution header by hand
+- `tests/test-api-request.sh`, covering `--env` output quoting, `SKILL_HEADER` scoping, and values containing shell metacharacters
+- 52 attribution assertions in `tests/test-check-token.sh`, covering detection, curl-injection edge cases, inference ordering, and per-platform behaviour
+
+### Changed
+- The hook now recognises Spotify Ads API calls written as `$BASE_URL/...`, not just those naming `api-partner.spotify.com` literally. The assets and audiences upload flows use the variable form and previously bypassed the hook entirely, missing both token refresh and attribution
+- Antigravity gets a warning rather than a rewrite when attribution is missing, because its `PreToolUse` contract supports allow and deny decisions only and cannot modify a tool call on any of its hook events
+
+### Fixed
+- `eval $(api --env)` silently set nothing. The printed values were unquoted, so the space inside `SDK_HEADER` split the assignment and every line became a prefix assignment to a nonexistent command. Raw-curl paths that follow the documented flow, including asset and audience uploads, were therefore sending an empty `Authorization` header along with empty tracking headers. All values are now single-quoted, with embedded single quotes escaped
+- Removed the obsolete root `settings.json`, whose object-valued `agent` field caused Claude's UI marketplace sync to reject the plugin with `plugin_upload_settings_invalid`; tool permissions remain defined in the skill and agent frontmatter
+
+## [1.9.0] - 2026-08-25
+
+### Added
+- Authorization Code with PKCE (`S256`) using team-owned client IDs, cryptographic verifier and state generation, exact loopback callback validation, and a printed-URL browser fallback
+- Unit and shell regressions for PKCE construction, callback validation, token refresh rotation, legacy migration, direct-token behavior, and forbidden secret-based runtime paths
+
+### Changed
+- Replaced application-secret and HTTP Basic token exchanges with public-client authorization and refresh requests containing `client_id`
+- Added the explicit `auth_flow` settings marker and cross-platform automatic PKCE refresh without a platform credential store
+- Kept legacy access tokens usable until expiry while requiring one-time PKCE reauthorization for future refreshes
+- Updated setup documentation to separate team application registration from individual authorization and explain client-level attribution and rate-limit isolation
+- Synced version `1.9.0` across the Claude Code, Codex, and Antigravity manifests
+
+### Fixed
+- Resolved the Codex `PreToolUse` hook from the installed `${PLUGIN_ROOT}` instead of falling back to the workspace directory when `CODEX_PLUGIN_ROOT` is unset
+- Prevented initial OAuth tokens from entering captured helper stdout by writing settings directly through an atomic mode-0600 file replacement
+- Replaced post-write permission changes with secure-at-creation settings files and a private pending-token handoff for managed workspaces that require separate settings-write approval
+- Replaced the undefined direct-token environment-variable handoff with a non-echoing terminal prompt, keeping bearer tokens out of chat and generated command arguments
+- Kept refresh tokens out of process arguments by passing them to the automatic refresh helper through stdin
+
+### Removed
+- Application-secret collection, macOS Keychain access, secret-dependent refresh, and the shell-based manual OAuth flow
+
+## [1.8.0] - 2026-08-13
+
+### Added
+- Audience management for customer-list uploads and replacements, web-event and ad-engagement audiences, lookalikes, discovery, editing, status checks, and deletion
+- Conversion measurement setup for Spotify Pixel, Conversions API (CAPI), datasets, advanced matching, event mapping, mobile apps, and ad-account sharing
+- Read-only-first measurement debugging for missing, stale, duplicated, misrouted, or unattributed Pixel and CAPI events
+- Business and ad-account administration for account discovery, member and role audits, invitations, access assignments, and supported account updates
+- Change-history queries for auditing who changed campaigns, ad sets, creatives, budgets, targeting, statuses, and other settings within the API's 180-day retention window
+- A prompt catalog and expanded behavioral scenarios covering routing, schema rules, destructive-operation confirmation, draft workflows, and recovery behavior
+- A 36-case shell regression suite for token updates, command substitution, settings discovery, and hook response formats
+
+### Changed
+- Made drafts the default for campaign, ad-set, and ad creation or modification; complete hierarchies are validated before publishing, and publishing always requires explicit confirmation
+- Added staged edits for published entities, including existing-draft preservation, create-from-published flows, parent-campaign resolution, and grouped validation for bulk changes
+- Updated the bundled OpenAPI specification and API reference to the August 2026 Ads API surface
+- Replaced deprecated `objective` usage on draft campaigns with `delivery_goal_group` and documented goal-to-group mappings; direct v3 campaign creation and estimate requests retain `objective` where the API still requires it
+- Removed unsupported `dma_ids` targeting guidance while retaining an explanation that DMA results may still appear in geo lookup responses
+- Updated budget and bid documentation for ad accounts in any billing currency instead of assuming USD
+- Documented draft-only field optionality, `FAILED` ad and async-report statuses, experiment availability, and attribution-window fields
+- Clarified that `AUTOBID` enables automatic bidding without `bid_micro_amount`, while `UNSET` should not be chosen for new ad sets
+- Refreshed natural-language routing, plugin prompts, onboarding instructions, marketplace descriptions, README examples, and Claude Code auto-update guidance
+- Synced version `1.8.0` across the Claude Code, Codex, and Antigravity manifests
+
+### Fixed
+- Prevented OAuth token values containing pipes, ampersands, backslashes, wildcard characters, or other shell metacharacters from corrupting settings or command substitution
+- Prevented ordinary update requests from writing directly to published campaign hierarchies when they should be staged as drafts
+- Prevented direct-write permission errors from being reported as proof that credentials are entirely read-only
+- Corrected draft campaign examples and manual reference schemas that still used deprecated or invalid campaign-goal values
+- Aligned request-builder bidding guidance with the current `AUTOBID` and `UNSET` semantics
+
 ## [1.7.0] - 2026-07-23
 
 ### Added

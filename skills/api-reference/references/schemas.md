@@ -53,11 +53,12 @@
 ```
 
 ### CreateCampaignRequest
-Required: `name`, `objective`
+Required: `name`, `objective`. The direct v3 endpoint still requires deprecated `objective`; prefer draft creation with `delivery_goal_group`.
 ```json
 {
   "name": "string (2-200 chars)",
-  "objective": "REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY | PODCAST_STREAMS | APP_INSTALLS | WEBSITE_VISITS",
+  "objective": "(deprecated) REACH | CLICKS | VIDEO_VIEWS | CONVERSIONS | LEAD_GEN | EVEN_IMPRESSION_DELIVERY | PODCAST_STREAMS | APP_INSTALLS | WEBSITE_VISITS",
+  "delivery_goal_group": "AWARENESS | WEBSITE_TRAFFIC | APP_PROMOTION | ENGAGEMENT_ON_SPOTIFY | LEAD_GEN (optional)",
   "purchase_order": "string (optional)",
   "measurement_partner": "string (optional)"
 }
@@ -152,7 +153,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 ```json
 {
   "age_ranges": [{ "min": 18, "max": 65 }],
-  "geo_targets": { "country_code": "US", "city_ids": [], "dma_ids": [], "postal_code_ids": [], "region_ids": [] },
+  "geo_targets": { "country_code": "US", "city_ids": [], "postal_code_ids": [], "region_ids": [] },
   "artist_ids": ["spotify-artist-id"],
   "genre_ids": ["genre-id"],
   "interest_ids": ["interest-id"],
@@ -198,7 +199,7 @@ Required: `name`, `campaign_id`, `start_time`, `budget`, `asset_format`, `target
 ```
 
 ### CreateAdRequest
-Required: `name`, `ad_set_id`, `tagline`, `advertiser_name`, `assets`, `call_to_action`
+Required: `name`, `ad_set_id`, `tagline`, `advertiser_name`, `assets`, `call_to_action` (`tagline`, `asset_id`, and `clickthrough_url` are optional for drafts)
 
 Optional time fields: `start_time` and `end_time` (ISO 8601 datetime, nullable) — ads inherit the ad set's schedule by default; set these only to override.
 
@@ -206,17 +207,17 @@ Optional time fields: `start_time` and `end_time` (ISO 8601 datetime, nullable) 
 {
   "name": "string (2-200 chars)",
   "ad_set_id": "uuid",
-  "tagline": "string (2-40 chars)",
+  "tagline": "string (2-40 chars, optional for drafts)",
   "advertiser_name": "string (2-25 chars)",
   "assets": {
-    "asset_id": "uuid (required — audio, video, or image creative)",
+    "asset_id": "uuid (required; optional for drafts — audio, video, or image creative)",
     "logo_asset_id": "uuid (required — logo image)",
     "companion_asset_id": "uuid (required for AUDIO ads — companion image)",
     "canvas_asset_id": "uuid (optional — 9:16 image or video)"
   },
   "call_to_action": {
     "key": "SHOP_NOW",
-    "clickthrough_url": "https://example.com/landing"
+    "clickthrough_url": "https://example.com/landing (optional for drafts)"
   },
   "delivery": "ON",
   "third_party_tracking": [
@@ -228,8 +229,8 @@ Optional time fields: `start_time` and `end_time` (ISO 8601 datetime, nullable) 
 
 **Important schema notes:**
 - `call_to_action` uses field name `key` (NOT `type`) and `clickthrough_url` (NOT `url`).
-- `assets.asset_id` and `assets.logo_asset_id` are always required.
-- `assets.companion_asset_id` is required for AUDIO format ads.
+- `assets.asset_id` and `assets.logo_asset_id` are always required (optional for drafts).
+- `assets.companion_asset_id` is required for AUDIO format ads (optional for drafts).
 - Valid `call_to_action.key` values: `SHOP_NOW`, `LEARN_MORE`, `LISTEN_NOW`, `SIGN_UP`, `WATCH_NOW`, `BUY_NOW`, `BOOK_NOW`, `DOWNLOAD`, `GET_INFO`, `ORDER_NOW`, `PRE_SAVE`, `VISIT_SITE`, etc.
 - `third_party_tracking` uses field `measurement_event` (NOT `type`) to distinguish tracker types. Valid values: `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, `VIEWABLE_IMPRESSION`. **If `measurement_event` is omitted, it defaults to IMPRESSION** — always set it explicitly, especially for click trackers (`CLICKED`).
 
@@ -443,7 +444,7 @@ Required: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strat
 - DAILY budgets return up to 3 forecast entries (DAILY, WEEKLY, MONTHLY). LIFETIME budgets return 1 entry (LIFETIME).
 - `raw_unique_users` is the exact audience count from the past 7 days without adjustments.
 - `projected_unique_users` is adjusted for frequency caps, budget, and schedule.
-- All monetary values are in micro-units. Divide by 1,000,000 for dollars.
+- All monetary values are in micro-units. Divide by 1,000,000 for currency values.
 
 ### BidEstimateRequest
 Required: `asset_format`, `objective`, `bid_strategy`, `currency`, `targets`
@@ -469,7 +470,7 @@ Required: `asset_format`, `objective`, `bid_strategy`, `currency`, `targets`
 }
 ```
 
-Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
+Bid amounts are in micro-units. Divide by 1,000,000 for currency values.
 
 ---
 
@@ -480,9 +481,9 @@ Bid amounts are in micro-units. Divide by 1,000,000 for dollar values.
 {
   "id": "uuid",
   "name": "string (max 200 chars)",
-  "objective": "REACH | EVEN_IMPRESSION_DELIVERY | CLICKS | VIDEO_VIEWS | PODCAST_STREAMS",
+  "objective": "(deprecated) REACH | EVEN_IMPRESSION_DELIVERY | CLICKS | VIDEO_VIEWS | PODCAST_STREAMS",
   "purchase_order": "string (max 45 chars)",
-  "delivery_goal_group": "AWARENESS | CONSIDERATION",
+  "delivery_goal_group": "AWARENESS | WEBSITE_TRAFFIC | APP_PROMOTION | ENGAGEMENT_ON_SPOTIFY | LEAD_GEN",
   "status": "CampaignStatus enum",
   "draft_hierarchy_version": 1,
   "ad_account_id": "uuid",

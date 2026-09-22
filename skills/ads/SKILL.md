@@ -1,7 +1,7 @@
 ---
 name: ads
-description: Manage Spotify Ads API ad sets and ads — list, create, get, or update.
-argument-hint: "ad-sets list | ad-sets create | ads list | ads create | ads get <id>"
+description: List or get Spotify Ads API ad sets and ads, and stage their creation or updates through drafts by default. Use direct live writes only when explicitly requested.
+argument-hint: "ad-sets list|create|get|update | ads list|create|get|update | *-live for explicit direct writes"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
 
@@ -18,7 +18,9 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" ads "$@"; }
 ```
 
-To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Parsing Arguments
 
@@ -26,6 +28,8 @@ The argument format is: `<resource> <operation> [id]`
 - Resource: `ad-sets` or `ads`
 - Operation: `list`, `create`, `get`, `update`
 - If no argument, ask which resource and operation.
+
+For `create` and `update`, default to draft endpoints even when the user does not mention drafts. `create-live` and `update-live` are explicit escape hatches for direct published writes.
 
 ## Ad Set Operations
 
@@ -36,12 +40,18 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Campaign ID | Status | Format | Budget | Start
 
 ### `ad-sets create`
+Collect the required fields below first. Before the POST, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, parent campaign, and any runtime inputs required by its rules, then validate
+the final ad set body against `ad_set.create` plus `ad_set.both`. Do not add a separate
+validation confirmation.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **campaign_id** (uuid — suggest listing campaigns first)
 - **start_time** (ISO 8601 datetime)
 - **end_time** (ISO 8601 — **required if budget type is LIFETIME**)
-- **budget** — ask for dollar amount and type (DAILY/LIFETIME), convert to micro_amount
+- **budget** — ask for amount in the ad account's billing currency and type (DAILY/LIFETIME), convert to micro_amount
 - **asset_format** (AUDIO, VIDEO, IMAGE, CATALOG)
 - **category** (required — valid `ADV_X_Y` code, fetch from `GET /ad_categories` if needed)
 - **targets** — ask for targeting preferences:
@@ -51,9 +61,9 @@ Prompt for required fields:
   - Platforms (optional) → `"platforms": ["ANDROID", "DESKTOP", "IOS"]` (**NOT "MOBILE" or "CONNECTED_DEVICE"**)
   - Placements (required) → `"placements": ["MUSIC"]`
 - **bid_strategy** — plain string: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. Default to `MAX_BID`.
-- **bid_micro_amount** (required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — ask for the bid cap in dollars, convert to micro-amount. This is the maximum CPM the user is willing to pay. Example: "$15 bid cap" = `15000000`
+- **bid_micro_amount** (required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — ask for the bid cap in the ad account's billing currency, convert to micro-amount. This is the maximum CPM. Example: $15 USD = `15000000`, ¥160 JPY = `160000000`
 
-Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
+Important: Convert amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
 
 **Ad set validation guardrails before any POST:**
 - Never send zero or negative `budget.micro_amount`; ask for a positive budget and convert it to micro-units.
@@ -63,7 +73,7 @@ Important: Convert dollar amounts to micro-amounts by multiplying by 1,000,000. 
 - Valid `targets.platforms` values are only `ANDROID`, `DESKTOP`, and `IOS`; never send `WEB`, `MOBILE`, `CONNECTED_DEVICE`, or `ad_platforms`.
 - Do not send `cost_model`, `skippable`, `is_skippable`, or `ad_platforms` in ad set create payloads.
 - Use age ranges with `min >= 18` unless the user has explicitly confirmed a market/category that allows minors.
-- If using `city_ids`, `dma_ids`, `postal_code_ids`, or `region_ids`, include the parent `country_code` in the same `geo_targets` object.
+- If using `city_ids`, `postal_code_ids`, or `region_ids`, include the parent `country_code` in the same `geo_targets` object.
 
 #### Geo-Targeting
 
@@ -83,7 +93,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 
 **Geo Types:**
 - `REGION` — States/provinces (e.g., Connecticut, California, Ontario)
-- `DMA_REGION` — Designated Market Areas for media targeting (e.g., "Hartford & New Haven, CT")
+- `DMA_REGION` — Designated Market Areas for media targeting (e.g., "Hartford & New Haven, CT"). **Note:** DMA-level targeting via `dma_ids` is no longer supported. DMAs can still be looked up but cannot be used as targeting refinements.
 - `CITY` — Cities and towns
 - `POSTAL_CODE` — ZIP codes (format: "US:06103", "CA:M5H")
 
@@ -104,15 +114,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 }
 ```
 
-3. **DMA-level** (media markets):
-```json
-"geo_targets": {
-  "country_code": "US",
-  "dma_ids": ["533"]  // Hartford & New Haven, CT
-}
-```
-
-4. **City-level**:
+3. **City-level**:
 ```json
 "geo_targets": {
   "country_code": "US",
@@ -120,7 +122,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 }
 ```
 
-5. **Postal code-level** (most granular):
+4. **Postal code-level** (most granular):
 ```json
 "geo_targets": {
   "country_code": "US",
@@ -128,12 +130,11 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 }
 ```
 
-6. **Multi-level** (combine different geo types):
+5. **Multi-level** (combine different geo types):
 ```json
 "geo_targets": {
   "country_code": "US",
   "region_ids": ["4831725"],  // Connecticut
-  "dma_ids": ["533"],          // Hartford & New Haven DMA
   "city_ids": ["4845411"]      // West Hartford
 }
 ```
@@ -181,10 +182,12 @@ If the audience is too small (low projected users or 400 error), warn the user a
 
 Ask whether to proceed, adjust targeting, or cancel before creating the ad set.
 
-**Create the ad set:**
+**Create the draft ad set:**
+
+The `campaign_id` must reference a draft campaign. If the supplied campaign is published, first check for and reuse its draft or create one with `POST /campaigns/{campaign_id}/drafts`.
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/ad_sets" \
+api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
   '{...}'
 ```
 
@@ -194,7 +197,17 @@ api GET "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID"
 ```
 
 ### `ad-sets update <id>`
+
+Before the PATCH, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad set, parent campaign, and runtime state required by applicable
+rules. Deep-merge the proposed PATCH into the current ad set and validate the effective
+entity against `ad_set.update` plus `ad_set.both`. Do not add a separate validation
+confirmation.
+
 Prompt for fields to update (min 1). Same fields as create, all optional.
+
+Read the published ad set, then check `GET /drafts/ad_sets/{id}`. If it returns 404, create a draft with `POST /ad_sets/{id}/drafts`. If a draft already exists, disclose its pending state before combining changes. PATCH `/drafts/ad_sets/{id}`, resolve its draft `campaign_id`, fetch the draft campaign's current hierarchy version, and validate it. Keep the result staged.
 
 ## Ad Operations
 
@@ -205,18 +218,24 @@ api GET "ad_accounts/{ad_account_id}/ads?limit=50&sort_direction=DESC"
 Format as table: ID | Name | Ad Set ID | Status | Delivery
 
 ### `ads create`
+Collect the required fields and asset selections below first. Before the POST, read and
+follow `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch
+the live catalog, current parent ad set and campaign, and referenced assets, then
+validate the final ad body against `ad.create` plus `ad.both`. Do not add a separate
+validation confirmation.
+
 Prompt for required fields:
 - **name** (2-200 chars)
 - **ad_set_id** (uuid — suggest listing ad sets first)
-- **tagline** (2-40 chars, ad headline)
+- **tagline** (2-40 chars, ad headline; required for live ads, optional for drafts)
 - **advertiser_name** (2-25 chars)
 - **assets** — fetch available assets from `GET /assets` and prompt user to select:
-  - `asset_id` (required — audio/video/image creative matching ad set format)
+  - `asset_id` (required for live ads, optional for drafts — audio/video/image creative matching ad set format)
   - `logo_asset_id` (required — logo image)
   - `companion_asset_id` (required for AUDIO format — companion image)
 - **call_to_action** — uses field `key` (NOT `type`) and `clickthrough_url` (NOT `url`):
   - `key`: SHOP_NOW, LEARN_MORE, LISTEN_NOW, SIGN_UP, WATCH_NOW, BUY_NOW, DOWNLOAD, etc.
-  - `clickthrough_url`: landing page URL
+  - `clickthrough_url`: landing page URL (required for live ads, optional for drafts)
 - **delivery** (ON/OFF, default ON)
 - **third_party_tracking** (optional) — array of tracking pixels. Each entry needs:
   - `measurement_event`: **required** — `IMPRESSION`, `CLICKED`, `START`, `FIRST_QUARTILE`, `MIDPOINT`, `THIRD_QUARTILE`, `COMPLETE`, or `VIEWABLE_IMPRESSION`. If omitted, defaults to IMPRESSION — always set explicitly, especially for click trackers.
@@ -231,9 +250,11 @@ Prompt for required fields:
     ```
 
 ```bash
-api POST "ad_accounts/{ad_account_id}/ads" \
+api POST "ad_accounts/{ad_account_id}/drafts/ads" \
   '{...}'
 ```
+
+The `ad_set_id` must reference a draft ad set. If the supplied ad set is published, first check for and reuse its draft or create one with `POST /ad_sets/{ad_set_id}/drafts`.
 
 ### `ads get <id>`
 ```bash
@@ -241,7 +262,22 @@ api GET "ad_accounts/{ad_account_id}/ads/$AD_ID"
 ```
 
 ### `ads update <id>`
-Updateable fields: `call_to_action`, `delivery`, `status`.
+Before the update, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog, current ad, parent ad set and campaign, and any referenced assets. Deep-merge
+the proposed changes into the current ad and validate the effective entity against
+`ad.update` (when present) plus `ad.both`. Do not add a separate validation
+confirmation.
+
+Read the published ad, then check `GET /drafts/ads/{id}`. If it returns 404, create a draft with `POST /ads/{id}/drafts`. If a draft already exists, disclose its pending state before combining changes. PATCH `/drafts/ads/{id}`, fetch its parent draft ad set to resolve the draft campaign, fetch the campaign's current hierarchy version, and validate it. Keep the result staged.
+
+Draft ad updates support `name`, `advertiser_name`, `tagline`, `assets`, `asset_format`, `call_to_action`, `third_party_tracking`, `placements`, `weight`, and `status`. Always preserve third-party tracking entries the user did not explicitly remove or replace, and set `measurement_event` explicitly on every entry.
+
+### Explicit direct writes
+
+Use `ad-sets create-live`, `ad-sets update-live <id>`, `ads create-live`, or `ads update-live <id>` only when the user explicitly requests an immediate/direct change to a published entity or asks to skip drafts.
+
+If a direct write returns HTTP 403 or an edit-permission error, do not retry it and do not conclude that the credentials are entirely read-only. State that direct editing of the published entity was denied and offer draft staging instead.
 
 ## Execution Behavior
 
@@ -251,3 +287,5 @@ Updateable fields: `call_to_action`, `delivery`, `status`.
 - Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
 - On error, show the error message from the response body. Never automatically retry POST or PATCH requests — they may have succeeded server-side despite an error response.
 - When converting budgets, always confirm the micro-amount with the user (e.g., "$50/day = 50,000,000 micro-amount").
+- Treat a 404 from a draft existence check as "no draft exists"; for any other error, stop and show the response.
+- Never publish a draft without a separate user request and explicit confirmation immediately before `PUBLISH`.

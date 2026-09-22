@@ -18,7 +18,9 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" report "$@"; }
 ```
 
-To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Operations
 
@@ -172,7 +174,7 @@ Check the status of an async report and get the download URL when ready.
 api GET "ad_accounts/{ad_account_id}/async_reports/$REPORT_ID"
 ```
 
-If complete, display the download URL. If still processing, report the status and suggest checking again later.
+If complete, display the download URL. If still processing, report the status and suggest checking again later. If the status is `FAILED`, inform the user that report generation failed and suggest retrying by creating a new async report with `async-create`.
 
 ## Execution Behavior
 

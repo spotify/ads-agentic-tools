@@ -1,0 +1,4 @@
+interface:
+  display_name: "Measurement Setup"
+  short_description: "Plan and configure Pixel, CAPI, apps, and datasets"
+  default_prompt: "Use $measurement-setup to design and configure my Spotify Ads conversion measurement implementation."

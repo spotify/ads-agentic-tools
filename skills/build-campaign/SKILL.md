@@ -10,9 +10,9 @@ allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 Given a plain-text description of an advertising campaign, parse it into structured API
 calls and create the full campaign hierarchy: Campaign → Ad Sets → Ads.
 
-## Preferred Flow: Draft → Validate → Publish
+## Default Flow: Draft → Validate → Publish
 
-By default, use the **draft workflow** to build campaigns. This creates draft entities first, validates the entire hierarchy, and only publishes after confirmation. Route to the `/spotify-ads-api:drafts build <description>` skill to execute the draft flow.
+By default, use the **draft workflow** for all campaign hierarchy creation. This creates draft entities first, validates the entire hierarchy, and only publishes after confirmation. Route to the `/spotify-ads-api:drafts build <description>` skill to execute the draft flow.
 
 The draft flow is preferred because:
 - **Batch validation** catches all errors across the hierarchy before anything goes live
@@ -21,7 +21,7 @@ The draft flow is preferred because:
 
 Publishing a draft always requires explicit user confirmation immediately before the `PUBLISH` request, even when `auto_execute` is enabled.
 
-Only use the direct creation flow below if the user explicitly asks to skip drafts or create live entities immediately.
+Only use the direct creation flow below if the user explicitly asks to skip drafts or create live entities immediately. If a direct write is denied, do not infer that the credentials are read-only; offer the draft workflow instead.
 
 ## Direct Creation Flow (Legacy)
 
@@ -34,7 +34,9 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" build-campaign "$@"; }
 ```
 
-To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Step 1: Parse the Campaign Description
 
@@ -47,6 +49,7 @@ use the defaults noted below. If a required field cannot be inferred, ask the us
 |-------|----------|---------|
 | name | yes | — |
 | objective | yes | REACH |
+| ad_product | no | UNSET (resolves to AUCTION) |
 
 Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`, `PODCAST_STREAMS`, `APP_INSTALLS`, `WEBSITE_VISITS`
 
@@ -57,7 +60,7 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | name | yes | — | 2-200 chars |
 | start_time | yes | — | ISO 8601 UTC |
 | end_time | required if LIFETIME | — | ISO 8601 UTC |
-| budget.micro_amount | yes | — | Dollar amount x 1,000,000 |
+| budget.micro_amount | yes | — | Amount (in ad account's billing currency) x 1,000,000 |
 | budget.type | yes | DAILY | `DAILY` or `LIFETIME` |
 | asset_format | yes | AUDIO | `AUDIO`, `VIDEO`, `IMAGE`, or `CATALOG` |
 | category | yes | — | Valid `ADV_X_Y` code (fetch from `GET /ad_categories` if needed) |
@@ -77,7 +80,7 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 - Do not send `cost_model`, `skippable`, `is_skippable`, or `ad_platforms` in ad set create payloads.
 - Only use `ANDROID`, `DESKTOP`, and `IOS` in `targets.platforms`; never use `WEB`, `MOBILE`, or `CONNECTED_DEVICE`.
 - Use `min >= 18` for age ranges unless the user explicitly confirms a market/category that allows minors.
-- When geo refinements are present (`city_ids`, `dma_ids`, `postal_code_ids`, `region_ids`), include `country_code` in the same `geo_targets` object.
+- When geo refinements are present (`city_ids`, `postal_code_ids`, `region_ids`), include `country_code` in the same `geo_targets` object.
 - If `bid_strategy=UNSET`, omit `bid_micro_amount` unless the API response or user-provided source explicitly requires it.
 
 ### Ad-level fields (one or more per ad set)
@@ -85,18 +88,25 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | Field | Required | Notes |
 |-------|----------|-------|
 | name | yes | 2-200 chars |
-| tagline | yes | 2-40 chars |
+| tagline | yes (optional for drafts) | 2-40 chars |
 | advertiser_name | yes | 2-25 chars |
-| assets.asset_id | yes | UUID — prompt user to select |
+| assets.asset_id | yes (optional for drafts) | UUID — prompt user to select |
 | assets.logo_asset_id | yes | UUID — prompt user to select |
 | assets.companion_asset_id | yes (audio) | UUID — required for AUDIO format ads |
 | call_to_action.key | yes | e.g. `SHOP_NOW`, `LEARN_MORE`, `LISTEN_NOW`, `SIGN_UP` |
-| call_to_action.clickthrough_url | yes | Landing page URL |
+| call_to_action.clickthrough_url | yes (optional for drafts) | Landing page URL |
 | delivery | no | `ON` (default) or `OFF` |
+
+## Step 1.5: Load Ad Product Rules
+
+Read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
+catalog once for this workflow, resolve the planned campaign's product, and use the
+applicable rules while constructing the plan. Do not display a per-field checklist.
 
 ## Step 2: Confirm the Parsed Plan
 
-Before making any API calls, present the full parsed plan as a visual tree:
+Before making any mutating API calls, present the full parsed plan as a visual tree:
 
 ```
 Campaign: "My Campaign" (objective: REACH)
@@ -142,7 +152,7 @@ Audience Estimate for "Ad Set A":
   Likely to deliver budget: Yes
 ```
 
-Convert any CPM micro-amounts to dollars for display.
+Convert any CPM micro-amounts to the ad account's billing currency for display.
 
 **If the audience is too small** (very low `projected_unique_users` or the API returns a 400 error indicating audience too small), warn the user and suggest:
 - Broadening the age range
@@ -171,11 +181,26 @@ Present audio/video assets and image assets separately in tables, and ask the us
 - **logo_asset_id** — a logo image
 - **companion_asset_id** — a companion image (required for AUDIO format ads)
 
+## Step 3.5: Validate the Final Hierarchy
+
+Using the catalog loaded in Step 1.5, validate the complete campaign, ad set, and ad
+request bodies now that assets and all dependent fields are known. Apply the canonical
+procedure's static and runtime checks, including asset lookups and the audience estimate
+above. Never send a known-invalid request.
+
+Do not add another confirmation or print per-field successes. If the existing plan
+summary is still visible, one compact validation status line is sufficient. Surface a
+failure only when an explicit user choice must change or no safe compliant value can be
+inferred.
+
 ## Step 4: Execute API Calls Sequentially
 
 Execute each step in order, passing IDs forward from each response.
 
 ### 4a. Create Campaign
+
+Include `ad_product` when the resolved destination product is CONTENT or FPMNG. Omit it
+for the default AUCTION flow.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/campaigns" \
@@ -185,8 +210,6 @@ api POST "ad_accounts/{ad_account_id}/campaigns" \
 Extract the campaign `id` from the response.
 
 ### 4b. Create Ad Sets (using campaign_id from 4a)
-
-For each ad set:
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ad_sets" \
@@ -214,8 +237,6 @@ api POST "ad_accounts/{ad_account_id}/ad_sets" \
 Extract each ad set `id` for use in ad creation.
 
 ### 4c. Create Ads (using ad_set_id from 4b)
-
-For each ad:
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/ads" \
@@ -268,5 +289,5 @@ These are non-obvious API requirements that MUST be followed:
 5. **`end_time`** is required when budget type is `LIFETIME`
 6. **`companion_asset_id`** is required when creating ads for AUDIO ad sets
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
-8. Budget amounts must be in **micro-units** (multiply dollar amount by 1,000,000)
+8. Budget amounts must be in **micro-units** (multiply amount by 1,000,000)
 9. **Min audience thresholds** apply — VIDEO format may require broader targeting than AUDIO. If you get a "Min audience threshold was not met" error, suggest expanding the age range or switching format.
