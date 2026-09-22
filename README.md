@@ -202,9 +202,6 @@ Your targeting is too narrow for the selected ad format. Try broadening the age 
 **"Asset stuck in PROCESSING"**
 Large files may take longer to transcode. Check status with `/spotify-ads-api:assets get <id>`. If status is REJECTED, the file may not meet format requirements.
 
-**"secret-tool not found" (Linux)**
-Install `libsecret-tools` for credential storage: `sudo apt install libsecret-tools` (Debian/Ubuntu) or `sudo dnf install libsecret` (Fedora).
-
 **"Python was not found" on Windows**
 The `python3` command on stock Windows 11 is a Microsoft Store redirect stub, not real Python. It exits with code 49 and prints a Store install prompt. Install Python from [python.org](https://www.python.org/downloads/) or via `winget install Python.Python.3.13`, then use `python` or `py` (the plugin detects and skips the Store stub automatically).
 
