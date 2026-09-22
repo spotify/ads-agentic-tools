@@ -66,7 +66,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
       "placements": ["MUSIC"]
     },
     "bid_strategy": "MAX_BID",
-    "bid_micro_amount": 15000000
+    "bid_micro_amount": 15000000,
+    "delivery_goal": "REACH"
   }' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/drafts/ad_sets"
 ```
