@@ -14,7 +14,9 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" audiences "$@"; }
 ```
 
-Run `api --env` when raw upload curl needs the configured environment.
+Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
+Run `eval $(api --env)` when raw upload curl needs the configured environment. It sets `TOKEN`, `AD_ACCOUNT_ID`, `BASE_URL`, `SDK_HEADER`, and `SKILL_HEADER`; keep `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on those calls so they stay attributable.
 
 ## Operations
 

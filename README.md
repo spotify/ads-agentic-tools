@@ -21,6 +21,8 @@ claude plugin i spotify-ads-api
 
 The plugin is installed from the [Official Anthropic marketplace](https://claude.com/plugins), which has auto-update enabled by default. Claude Code checks for plugin updates in the background after each session starts and applies them automatically. New versions take effect on your next launch (or run `/reload-plugins` to pick them up in the current session).
 
+To use this repository as a custom marketplace in the Claude UI, choose **Add marketplace**, enter `spotify/ads-agentic-tools` or `https://github.com/spotify/ads-agentic-tools`, and select **Sync**. Then install **Spotify Ads API** from that marketplace. The Claude marketplace intentionally uses the repository-relative plugin source `"./"`; Git-based marketplace installs clone the whole repository and resolve that path from the repository root.
+
 If you have auto-update disabled for the Official Anthropic marketplace, you will need to update the plugin manually. See the Anthropic instructions on [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins) for instructions on managing marketplace updates.
 
 ### Codex
@@ -31,7 +33,7 @@ Add the Spotify Ads API plugin marketplace:
 codex plugin marketplace add spotify/ads-agentic-tools
 ```
 
-Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the added marketplace and install/enable **Spotify Ads API**.
+In the Codex app, you can instead choose **Add marketplace** and enter `https://github.com/spotify/ads-agentic-tools`. Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the added marketplace and install/enable **Spotify Ads API**.
 
 Use `codex plugin marketplace upgrade` later to refresh installed marketplace sources.
 
@@ -77,7 +79,7 @@ Use a source checkout for local development or testing unreleased changes.
 
    The link is a symlink, so source changes are picked up on the next Antigravity CLI restart.
 
-The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Antigravity CLI has no marketplace file — it installs directly from the repository using the root `plugin.json` manifest. Keep all three manifests in sync when changing plugin metadata.
+The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Their plugin sources intentionally differ: Codex uses the public Git repository URL for this repository-root plugin, while Claude uses the relative string `"./"` required by its marketplace schema. Antigravity CLI has no marketplace file — it installs directly from the repository using the root `plugin.json` manifest. Keep all three manifests in sync when changing plugin metadata.
 
 ## Configure
 

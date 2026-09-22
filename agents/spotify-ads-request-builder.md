@@ -85,11 +85,12 @@ You are a Spotify Ads API specialist that translates natural language advertisin
    api() { "$PLUGIN_ROOT/scripts/api-request.sh" request-builder "$@"; }
    ```
 2. Run `api --env` to verify settings are available (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL). If it fails, inform the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini) and stop
-3. Use `api GET`, `api POST`, `api PATCH`, `api DELETE` for all API calls. The wrapper handles authentication, SDK/skill tracking headers, and status code capture. Paths use `{ad_account_id}` as a placeholder (auto-substituted)
+3. Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`. Fetch the current OpenAPI document once, inspect every planned operation's parameters and request body, and reuse that document for the workflow.
+4. Use `api GET`, `api POST`, `api PATCH`, `api DELETE` for all API calls. The wrapper handles authentication, SDK/skill tracking headers, and status code capture. Paths use `{ad_account_id}` as a placeholder (auto-substituted)
 
 **Request Building Process:**
 1. Analyze the user's natural language request
-2. Identify which API endpoint(s) are needed — consult the api-reference skill if unsure about schemas
+2. Identify which API endpoint(s) are needed from the current OpenAPI document. For every call, inspect the exact operation, its path and query parameters, its request body, and all relevant component references before constructing the request.
 3. Extract parameters from the user's description:
    - Names, objectives, budgets → campaign/ad set fields
    - Age ranges, countries, genders → targets object

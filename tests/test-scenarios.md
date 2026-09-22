@@ -348,7 +348,7 @@ Edit the active platform settings file (`.codex/spotify-ads-api.local.md` on Cod
 1. User runs a command (e.g., "Show me all campaigns")
 2. The pre-tool hook (`PreToolUse` on Claude/Codex/Antigravity) detects the curl targets `api-partner.spotify.com`
 3. Hook reads settings, sees `token_expires_at` is in the past
-4. Hook runs `refresh-token.py` with the client ID and refresh token only
+4. Hook runs `refresh-token.py` with the client ID and passes the refresh token through stdin
 5. Hook updates settings file with new `access_token` and `token_expires_at`
 6. Original API call proceeds with the new token
 7. API call succeeds
@@ -1035,10 +1035,10 @@ catalog violation.
 **Quirks tested:** Reference routing, no-execution constraint, critical schema quirks
 
 **Expected behavior:**
-1. Routes to `api-reference` and answers from the committed API documentation/spec.
+1. Routes to `api-reference`, fetches the public OpenAPI document, and answers from the relevant operation and component definitions.
 2. Identifies required ad-set category, placements, flat `geo_targets`, valid platforms, and bid strategy shape.
 3. Identifies `call_to_action.key`, `clickthrough_url`, and required AUDIO `companion_asset_id`.
-4. Makes no network or Ads API call.
+4. Fetches the public OpenAPI document but makes no Ads API call.
 
 **Success criteria:**
 - `bid_strategy` is described as a string enum, not an object.
@@ -1198,3 +1198,119 @@ rules, effective PATCH validation, minimal user interruption, and draft validati
 - PATCH validation uses current entity + patch + required parent context
 - Clone validation follows the destination campaign product
 - Draft hierarchy validation and explicit publish confirmation remain intact
+
+---
+
+## Scenario 36: Create Request Dedup Key — Deterministic Hash
+
+**Prompt:** "Create a draft campaign called 'Dedup Test Campaign'"
+
+**Quirks tested:** Wrapper generates a deterministic key from the request fingerprint
+
+**Expected behavior:**
+1. Skill calls `api POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"Dedup Test Campaign"}'` — no manual header
+2. The wrapper builds a fingerprint from base URL, method, path, client ID, and canonical JSON body
+3. The fingerprint is hashed with SHA-256 — the hash is the key
+4. Campaign is created successfully (HTTP 200)
+
+**Success criteria:**
+- The curl command includes `-H "Idempotency-Key: <sha256-hash>"`
+- The skill file does NOT manually add the header
+- Running the same request again produces the same key
+- Different client_id values produce different keys for the same request
+
+---
+
+## Scenario 37: Create Request Dedup Key — Same Request Same Key
+
+**Prompt:** Retry the same draft campaign creation after a timeout
+
+**Quirks tested:** Identical requests produce the same deterministic key
+
+**Expected behavior:**
+1. First call: `api POST "ad_accounts/{id}/drafts/campaigns" '{"name":"Test"}'` → key = sha256(fingerprint)
+2. Retry (same body): same fingerprint → same key
+3. Server detects duplicate key → returns original result
+
+**Success criteria:**
+- Both calls produce the identical `Idempotency-Key` value
+- No duplicate entity created
+
+---
+
+## Scenario 38: Create Request Dedup Key — Different Body Different Key
+
+**Prompt:** "Build a draft campaign with one ad set and one ad"
+
+**Quirks tested:** Different request bodies produce different keys
+
+**Expected behavior:**
+1. Three separate `api POST` calls — campaign, ad set, ad
+2. Each has a different body → different fingerprint → different key
+3. All three entities created successfully
+
+**Success criteria:**
+- Three different `Idempotency-Key` values
+- Parent IDs passed correctly between steps
+
+---
+
+## Scenario 39: Create Request Dedup Key — JSON Key Order Ignored
+
+**Prompt:** Create a campaign with fields in different order
+
+**Quirks tested:** Canonical JSON normalization produces the same key regardless of field order
+
+**Expected behavior:**
+1. `'{"name":"Test","objective":"REACH"}'` and `'{"objective":"REACH","name":"Test"}'` produce the same key
+2. The wrapper sorts JSON keys before hashing
+
+**Success criteria:**
+- Both field orderings produce the identical `Idempotency-Key` value
+
+---
+
+## Scenario 40: Create Request Dedup Key — Non-Create POST Excluded
+
+**Prompt:** "Validate my draft campaign" or "Publish my draft campaign"
+
+**Quirks tested:** Dedup key not injected for POST endpoints that are not entity creation
+
+**Expected behavior:**
+1. Validate/publish calls `api POST "ad_accounts/{ad_account_id}/drafts/campaigns/{id}"` (includes an entity ID in path)
+2. The wrapper does NOT match this against the create endpoint patterns
+3. No `Idempotency-Key` header added
+
+**Success criteria:**
+- No `Idempotency-Key` header on non-create POST requests
+
+---
+
+## Scenario 41: Create Request Dedup Key — Opt-Out Flag
+
+**Prompt:** Advanced user explicitly disabling dedup key
+
+**Quirks tested:** `--no-dedup-key` flag prevents key injection
+
+**Expected behavior:**
+1. Skill calls `api --no-dedup-key POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"No Key"}'`
+2. The wrapper skips key generation
+3. Request sent without `Idempotency-Key` header
+
+**Success criteria:**
+- No `Idempotency-Key` header when `--no-dedup-key` is used
+
+---
+
+## Scenario 42: Create Request Dedup Key — GET and PATCH Excluded
+
+**Prompt:** "List my campaigns" or "Update campaign name"
+
+**Quirks tested:** Dedup key only injected for POST, not GET or PATCH
+
+**Expected behavior:**
+1. GET and PATCH requests pass through the wrapper without key injection
+2. No `Idempotency-Key` header added
+
+**Success criteria:**
+- No `Idempotency-Key` header on GET or PATCH requests

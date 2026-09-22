@@ -235,6 +235,18 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual(error, 1)
         self.assertNotIn(token, stderr.getvalue())
 
+    def test_cli_reads_refresh_token_from_stdin(self):
+        stdin = io.StringIO("refresh-sensitive-value")
+        stdout = io.StringIO()
+        argv = ["refresh-token.py", "--client-id", "team-client", "--refresh-token-stdin"]
+        with mock.patch.object(refresh, "refresh", return_value=({"access_token": "new", "expires_in": 3600}, None)) as call, \
+                mock.patch.object(sys, "argv", argv), \
+                mock.patch.object(sys, "stdin", stdin), \
+                contextlib.redirect_stdout(stdout):
+            self.assertEqual(refresh.main(), 0)
+        call.assert_called_once_with("team-client", "refresh-sensitive-value")
+        self.assertNotIn("refresh-sensitive-value", stdout.getvalue())
+
 
 class SettingsTests(unittest.TestCase):
     def test_direct_token_prompt_writes_without_emitting_token(self):

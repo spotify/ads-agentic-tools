@@ -5,8 +5,8 @@
 """Refresh a Spotify Authorization Code with PKCE access token.
 
 Usage:
-    python3 refresh-token.py --client-id ID --refresh-token TOKEN
-    uv run refresh-token.py --client-id ID --refresh-token TOKEN
+    printf '%s' "$REFRESH_TOKEN" | python3 refresh-token.py --client-id ID --refresh-token-stdin
+    printf '%s' "$REFRESH_TOKEN" | uv run refresh-token.py --client-id ID --refresh-token-stdin
 
 Structured token JSON is written to stdout. Diagnostics are written to stderr.
 """
@@ -74,10 +74,14 @@ def refresh(client_id, refresh_token, opener=urllib.request.urlopen):
 def main():
     parser = argparse.ArgumentParser(description="Refresh a Spotify OAuth 2.0 PKCE access token")
     parser.add_argument("--client-id", required=True, help="Team-owned Spotify app client ID")
-    parser.add_argument("--refresh-token", required=True, help="Refresh token from the PKCE authorization flow")
+    parser.add_argument("--refresh-token-stdin", action="store_true", required=True)
     args = parser.parse_args()
 
-    tokens, error_code = refresh(args.client_id, args.refresh_token)
+    refresh_token = sys.stdin.read().strip()
+    if not refresh_token:
+        parser.error("a refresh token must be provided on stdin")
+
+    tokens, error_code = refresh(args.client_id, refresh_token)
     if error_code is not None:
         return error_code
     if not tokens or "access_token" not in tokens:

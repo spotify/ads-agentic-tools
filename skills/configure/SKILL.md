@@ -110,6 +110,9 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" configure "$@"; }
 ```
 
+Before the first Ads API v3 call, read and follow
+`$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
+
    1. `api GET "businesses"`
    2. For each selected business, `api GET "businesses/<business_id>/ad_accounts"`
    3. Present account names, IDs, and statuses. Select automatically only when

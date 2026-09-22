@@ -4,8 +4,21 @@ Use this directory for two related jobs:
 
 - [`prompt-catalog.md`](prompt-catalog.md) gives users and internal testers a representative prompt for every plugin capability.
 - [`test-scenarios.md`](test-scenarios.md) defines the deeper behavioral checks for API routing, safety, schemas, and multi-step execution.
+- [`test-openapi-fetch.sh`](test-openapi-fetch.sh) verifies public OpenAPI retrieval, failure handling, and preflight coverage across every API-calling skill.
+- [`test-marketplace-metadata.sh`](test-marketplace-metadata.sh) keeps the distinct Codex and Claude marketplace source formats valid and intentional.
 
 The prompt catalog is the quickest smoke-test surface. The scenarios are the source of truth when validating a release.
+
+The shell regression suites run offline with no credentials, no network, and no API calls:
+
+```bash
+bash tests/test-check-token.sh    # hooks/check-token.sh
+bash tests/test-api-request.sh    # scripts/api-request.sh --env
+bash tests/test-openapi-fetch.sh  # scripts/fetch-openapi-schema.sh
+bash tests/test-marketplace-metadata.sh
+```
+
+Run the relevant suites after changing scripts or marketplace metadata. They exit non-zero on failure.
 
 ## Prerequisites
 
@@ -43,6 +56,7 @@ For every scenario, verify:
 
 - [ ] The natural-language prompt routes to the intended skill or workflow.
 - [ ] The request wrapper is used for Ads API calls and sends both SDK and skill tracking headers.
+- [ ] The workflow fetches the public OpenAPI document once before its first Ads API call and checks each operation's parameters and request body against it.
 - [ ] The API method, path, parameters, and request body match the scenario.
 - [ ] The agent checks `HTTP_STATUS:` before interpreting the response.
 - [ ] Dates are calculated from the execution date rather than copied from an old example.
