@@ -111,7 +111,7 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - `GET/PATCH /businesses/{id}/mobile_apps/{mobile_app_id}` — Get or update a mobile app
 - `POST/DELETE /businesses/{id}/mobile_apps/{mobile_app_id}/ad_accounts/{ad_account_id}` — Share or unshare an app
 - `POST /businesses/{id}/pixels` — Create a Pixel
-- `GET /businesses/{id}/pixels/{pixel_id}` — Get a Pixel (or use the `pixel` field on dataset responses)
+- `GET /businesses/{id}/pixels/{pixel_id}` — Get a Pixel
 - `PATCH /businesses/{id}/pixels/{pixel_id}` — Update a Pixel
 - `POST /businesses/{id}/capi` — Create a CAPI integration
 - `GET/PATCH /businesses/{id}/capi/{connection_id}` — Get or update CAPI
