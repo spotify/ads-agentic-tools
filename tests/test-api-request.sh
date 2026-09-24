@@ -109,6 +109,72 @@ run_env campaigns --env >/dev/null 2>&1
 assert_eq "exits non-zero without a settings file" "1" "$?"
 mv "$TMPDIR/settings.bak" "$PROJECT/.claude/spotify-ads-api.local.md"
 
+# --- Request-path tests with a stubbed curl ---
+#
+# The wrapper's request mode is exercised against a curl stub on PATH so the
+# 403 allow-list hint can be asserted without network access. The stub writes
+# STUB_BODY to the -o file and prints STUB_STATUS, mimicking
+# `curl -o <file> -w '%{http_code}'`.
+
+echo "=== request mode: 403 allow-list hint ==="
+
+STUB_DIR="$TMPDIR/stub"
+mkdir -p "$STUB_DIR"
+cat > "$STUB_DIR/curl" <<'EOF'
+#!/bin/bash
+# Minimal curl stub for api-request.sh request-mode tests.
+body="${STUB_BODY:-}"
+[ -n "$body" ] || body='{}'
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -o) printf '%s' "$body" > "$2"; shift 2 ;;
+    -w) shift 2 ;;
+    -X|-H|-d) shift 2 ;;
+    -s) shift ;;
+    --) shift ;;
+    *) shift ;;
+  esac
+done
+printf '%s' "${STUB_STATUS:-200}"
+EOF
+chmod +x "$STUB_DIR/curl"
+
+run_request() {
+  env -u CODEX_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
+    CLAUDE_PROJECT_DIR="$PROJECT" PATH="$STUB_DIR:$PATH" \
+    STUB_STATUS="${1:-}" STUB_BODY="${2:-}" \
+    bash "$API" campaigns "$3" "$4" ${5:+"$5"}
+}
+
+hint_re='ADS_API_HINT:.*https://adsmanager\.spotify\.com/api-terms'
+# Observed shape of the allow-list 403 from a real misconfigured client ID.
+allow_body='{"errors":[{"code":"CLIENT_NOT_ALLOWLISTED","message":"Client ID <82898555dd17469aa45036f58d433b04> is not allow-listed"}]}'
+# A plain permission denial: no allow-list markers, so no hint may appear.
+perm_body='{"errors":[{"code":"FORBIDDEN","message":"User is not authorized to access this ad account"}]}'
+
+get403=$(run_request 403 "$allow_body" GET businesses)
+assert_eq "GET 403 keeps the status line" "403" "$(printf '%s' "$get403" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d: -f2)"
+assert_eq "allow-list 403 emits the api-terms hint" "1" "$(printf '%s' "$get403" | grep -cE "$hint_re")"
+assert_eq "allow-list 403 still prints the body" "1" "$(printf '%s' "$get403" | grep -c 'CLIENT_NOT_ALLOWLISTED')"
+
+perm403=$(run_request 403 "$perm_body" GET businesses)
+assert_eq "permission 403 keeps the status line" "403" "$(printf '%s' "$perm403" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d: -f2)"
+assert_eq "permission 403 emits no allow-list hint" "0" "$(printf '%s' "$perm403" | grep -c 'ADS_API_HINT' || true)"
+
+get200=$(run_request 200 '{}' GET businesses)
+assert_eq "GET 200 has no hint" "0" "$(printf '%s' "$get200" | grep -c 'ADS_API_HINT' || true)"
+assert_eq "GET 200 keeps the status line" "200" "$(printf '%s' "$get200" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d: -f2)"
+
+# The allow-list marker is method-independent: a write hitting the same
+# denial still needs the terms page, unlike edit-permission 403s (perm_body).
+post403=$(run_request 403 "$allow_body" POST "ad_accounts/{ad_account_id}/campaigns/dedup-free-path" '{"name":"x"}')
+assert_eq "allow-list 403 on POST also emits the hint" "1" "$(printf '%s' "$post403" | grep -cE "$hint_re")"
+postperm403=$(run_request 403 "$perm_body" POST "ad_accounts/{ad_account_id}/campaigns/dedup-free-path" '{"name":"x"}')
+assert_eq "edit-permission 403 on POST emits no hint" "0" "$(printf '%s' "$postperm403" | grep -c 'ADS_API_HINT' || true)"
+
+get401=$(run_request 401 "$allow_body" GET businesses)
+assert_eq "401 emits no allow-list hint" "0" "$(printf '%s' "$get401" | grep -c 'ADS_API_HINT' || true)"
+
 echo
 echo "Passed: $PASS  Failed: $FAIL"
 [ "$FAIL" -eq 0 ] || exit 1
