@@ -9,6 +9,8 @@
 - `SPOTIFY_ADS_ATTRIBUTION_LIB` to point the hook and its tests at an alternative attribution library, so a deliberately broken copy can be tested without editing the installed one
 - `SKILL_HEADER` to the output of `api-request.sh --env`, so raw-curl call sites no longer construct the skill attribution header by hand
 - `tests/test-api-request.sh`, covering `--env` output quoting, `SKILL_HEADER` scoping, and values containing shell metacharacters
+- 403 allow-list guidance to `scripts/api-request.sh`: when a 403 response body says the client ID is not allow-listed (observed shape: `Client ID <id> is not allow-listed`), the wrapper appends an `ADS_API_HINT` line naming https://adsmanager.spotify.com/api-terms, the API terms page whose acceptance allow-lists the client ID. Before, agents invented a developer-dashboard request flow that does not exist. The hint is keyed to that body marker, not the bare status code, so ordinary permission-denied 403s (wrong ad account, insufficient role, unauthorized data) never carry allow-list guidance
+- Request-mode tests to `tests/test-api-request.sh` using a PATH-stubbed curl, asserting the hint appears for allow-list 403 bodies on both GET and POST, is absent for permission-denied 403 bodies, GET 200/401, and that the `body\nHTTP_STATUS:<code>` output format is preserved
 - 52 attribution assertions in `tests/test-check-token.sh`, covering detection, curl-injection edge cases, inference ordering, and per-platform behaviour
 
 ### Changed

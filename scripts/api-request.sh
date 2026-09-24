@@ -151,7 +151,7 @@ PATH_ARG="${PATH_ARG//\{ad_account_id\}/$AD_ACCOUNT_ID}"
 URL="${BASE_URL}/${PATH_ARG}"
 
 # --- Build and execute curl ---
-CURL_ARGS=(-s -w "\nHTTP_STATUS:%{http_code}")
+CURL_ARGS=(-s)
 CURL_ARGS+=(-X "$METHOD")
 CURL_ARGS+=(-H "Authorization: Bearer ${TOKEN}")
 CURL_ARGS+=(-H "$SDK_HEADER")
@@ -173,4 +173,38 @@ if [ -n "$BODY" ]; then
   CURL_ARGS+=(-d "$BODY")
 fi
 
-exec curl "${CURL_ARGS[@]}" "$URL"
+# --- Execute and emit the documented `body\nHTTP_STATUS:<code>` output ---
+#
+# The body is spooled to a temp file so the status line can be computed before
+# the rest of stdout is written. When the 403 response body says the client ID
+# is not allow-listed (observed shape: "Client ID <id> is not allow-listed"),
+# append an ADS_API_HINT naming the API terms page — the only fix is accepting
+# the terms at https://adsmanager.spotify.com/api-terms with the target ad
+# account selected (see README, "Team administrator: register the
+# application"). Without the hint, agents invent a developer-dashboard
+# request flow that does not exist.
+#
+# The hint is keyed to that body marker, NOT to the bare 403 status: other 403s
+# (wrong ad account, insufficient role, fetching data the token is not
+# authorized for) are ordinary permission denials and must not carry allow-list
+# guidance. The marker is specific enough to apply regardless of HTTP method.
+BODY_FILE="$(mktemp)"
+trap 'rm -f "$BODY_FILE"' EXIT
+
+HTTP_CODE="$(curl "${CURL_ARGS[@]}" -o "$BODY_FILE" -w '%{http_code}' "$URL")"
+CURL_EXIT=$?
+
+# A curl transport failure (timeout, DNS, refused connection) prints no status;
+# keep parity with the old `exec curl` behaviour and exit without a status line.
+if [ -z "$HTTP_CODE" ]; then
+  exit "$CURL_EXIT"
+fi
+
+cat "$BODY_FILE"
+printf '\nHTTP_STATUS:%s\n' "$HTTP_CODE"
+
+if [ "$HTTP_CODE" = "403" ] && grep -qiE 'not allow[-_ ]?listed|client[ _-]?id.*allow[ _-]?list' "$BODY_FILE"; then
+  printf 'ADS_API_HINT: This 403 says the client ID is not allow-listed for the Ads API. Open https://adsmanager.spotify.com/api-terms with the target ad account selected and accept the API terms; the saved OAuth tokens remain valid, so after accepting, retry the same call without reconfiguring. Always mention this page to the user.\n'
+fi
+
+exit "$CURL_EXIT"
