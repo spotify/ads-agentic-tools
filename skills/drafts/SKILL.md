@@ -171,6 +171,18 @@ Extract the draft campaign `id` from the response. The response includes an init
 
 **4b. Create Draft Ad Sets** (using `campaign_id` = draft campaign ID from 4a):
 
+Set a concrete `delivery_goal` compatible with the parent campaign's `delivery_goal_group`:
+
+| `delivery_goal_group` | Supported `delivery_goal` values |
+|---|---|
+| `AWARENESS` | `IMPRESSIONS`, `REACH`, `VIDEO_VIEWS` |
+| `WEBSITE_TRAFFIC` | `CLICKS`, `PAGE_VIEWS`, `VIDEO_VIEWS` |
+| `APP_PROMOTION` | `APP_INSTALLS` |
+| `ENGAGEMENT_ON_SPOTIFY` | `CLICKS`, `STREAMS`, `VIDEO_VIEWS` |
+| `LEAD_GEN` | `LEADS`, `CLICKS` |
+
+Choose the value that matches the user's requested outcome and the live ad product catalog. Never set `delivery_goal` to `UNSET` or omit it when the parent campaign has a non-`UNSET` `delivery_goal_group`.
+
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
   '{
@@ -183,7 +195,8 @@ api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
     "category": "ADV_X_Y",
     "targets": { ... },
     "bid_strategy": "MAX_BID",
-    "bid_micro_amount": ...
+    "bid_micro_amount": ...,
+    "delivery_goal": "..."
   }'
 ```
 

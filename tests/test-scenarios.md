@@ -533,7 +533,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -H "Authorization: Bearer <token>" \
 1. Agent presents plan as tree with DRAFT labels
 2. Prompts for assets (fetches from `GET /assets`)
 3. Creates draft campaign: `POST /drafts/campaigns`
-4. Creates draft ad set: `POST /drafts/ad_sets` with `campaign_id` = draft campaign ID
+4. Creates draft ad set: `POST /drafts/ad_sets` with `campaign_id` = draft campaign ID and `delivery_goal` compatible with the campaign's `delivery_goal_group`
 5. Creates draft ad: `POST /drafts/ads` with `ad_set_id` = draft ad set ID
 6. Fetches draft campaign to get current `draft_hierarchy_version`
 7. Validates with that version
@@ -569,7 +569,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
       "placements": ["MUSIC"]
     },
     "bid_strategy": "MAX_BID",
-    "bid_micro_amount": 15000000
+    "bid_micro_amount": 15000000,
+    "delivery_goal": "REACH"
   }' \
   "https://api-partner.spotify.com/ads/v3/ad_accounts/<account_id>/drafts/ad_sets"
 ```
@@ -601,6 +602,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 **Success criteria:**
 - All three entities created via `/drafts/` endpoints
 - Draft ad set `campaign_id` references the draft campaign ID from step 3 (not a live campaign)
+- Draft ad set uses `delivery_goal: REACH`, which is compatible with the campaign's `delivery_goal_group: AWARENESS`
 - Draft ad `ad_set_id` references the draft ad set ID from step 4 (not a live ad set)
 - All schema quirks applied: micro-amounts, flat geo_targets, platform enums, bid_strategy as string, category present, companion_asset_id for AUDIO
 - `call_to_action` uses `key` (not `type`) and `clickthrough_url` (not `url`)
