@@ -1,7 +1,7 @@
 ---
 name: configure
 description: Configure Spotify Ads API credentials via OAuth 2.0 with PKCE or a direct token. Sets up authentication, ad account, and execution preferences.
-argument-hint: "[oauth [client_id] | token]"
+argument-hint: "[oauth [device] [client_id] | token]"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
@@ -138,6 +138,97 @@ the legacy `spotify-ads-api-client-secret` Keychain item is unused and may be
 removed. Do not delete it automatically because an older installed plugin may
 still need it.
 
+### `oauth device [client_id]`
+
+Use the Device Authorization Grant (RFC 8628) for headless or sandboxed
+environments where a loopback redirect is unavailable (e.g. Cowork). No
+listener, port, or inbound networking is needed — the flow uses only outbound
+HTTPS requests.
+
+**Prerequisites**
+
+- A team administrator has created or selected a Spotify Developer application
+  and enabled the Ads API. No redirect URI registration is required for this
+  flow.
+- Python 3.8+ or `uv` is available.
+- In sandboxed environments with egress restrictions, the allowlist must include
+  `accounts.spotify.com` (OAuth endpoints) and `api-partner.spotify.com`
+  (Ads API).
+
+1. Choose the active settings file:
+   - Codex: `.codex/spotify-ads-api.local.md`
+   - Claude: `.claude/spotify-ads-api.local.md`
+   - Antigravity: `.agents/spotify-ads-api.local.md`
+
+   Read that file if it exists. If it does not, read another platform's settings
+   file as defaults, but do not overwrite the other platform's file.
+
+2. Resolve the team-owned client ID. Use the optional command argument when
+   supplied. Otherwise, if local settings contain `client_id`, offer to reuse it;
+   do not silently replace it. If none exists or the user declines reuse, prompt
+   for the client ID from the team's Spotify Developer application.
+
+3. Prompt for `auto_execute` (default `false`), then run the helper:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
+python3 "${PLUGIN_ROOT}/skills/configure/scripts/device-flow.py" \
+  --client-id "<team_client_id>" \
+  --settings-file "<active_settings_file>" \
+  --auto-execute "<true_or_false>"
+```
+
+If `python3` is unavailable, try:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
+uv run "${PLUGIN_ROOT}/skills/configure/scripts/device-flow.py" \
+  --client-id "<team_client_id>" \
+  --settings-file "<active_settings_file>" \
+  --auto-execute "<true_or_false>"
+```
+
+The helper prints a verification URL and a user code to stderr. Tell the user
+to open the URL in any browser (on any machine) and enter the code. The helper
+polls the token endpoint automatically and writes tokens on success.
+
+If neither Python 3 nor `uv` is available, explain that configuration requires
+one of those runtimes and stop.
+
+4. Confirm the helper's non-sensitive stdout receipt:
+
+```json
+{"settings_file":"<active_settings_file>","auth_flow":"device_authorization"}
+```
+
+The helper writes `access_token`, `refresh_token`, `token_expires_at`,
+`client_id`, and `auth_flow` directly to the settings file through an atomic
+mode-0600 creation. It does not print tokens and does not require a later
+`chmod`. Keep diagnostics from stderr separate.
+
+If a managed workspace denies the settings write, the helper exits with code 5
+and returns only safe paths:
+
+```json
+{"settings_file":"<active_settings_file>","pending_token_file":"<private_mode_0600_file>","requires_settings_write":true}
+```
+
+Do not read or print the pending file. Request the scoped workspace permission
+needed to run this token-free finalization command:
+
+```bash
+python3 "${PLUGIN_ROOT}/skills/configure/scripts/settings_file.py" oauth-result \
+  --settings-file "<active_settings_file>" \
+  --pending-token-file "<pending_token_file>"
+```
+
+On success the writer atomically installs the settings file and deletes the
+pending token file. If configuration is abandoned, delete that exact pending
+file after telling the user; it contains live OAuth tokens.
+
+5. Define the request wrapper, then discover and select the ad account (same
+   flow as the `oauth` mode above, starting from step 5).
+
 ### `token`
 
 Legacy direct-token mode for an already-issued bearer token. Do not ask the
@@ -187,6 +278,7 @@ Local configuration for the spotify-ads-api plugin.
 Do not commit this file to version control.
 ```
 
+For device authorization mode, set `auth_flow: "device_authorization"`.
 For direct-token mode, set `auth_flow: "direct_token"` and leave
 `refresh_token`, `token_expires_at`, and `client_id` empty.
 

@@ -100,7 +100,7 @@ def write_settings(path, updates):
     return settings_path
 
 
-def write_oauth_settings(path, tokens, client_id, auto_execute=None, now=None):
+def write_oauth_settings(path, tokens, client_id, auto_execute=None, auth_flow=None, now=None):
     expires_in = int(tokens.get("expires_in", 3600))
     current_time = now or datetime.datetime.now(datetime.timezone.utc)
     expires_at = current_time + datetime.timedelta(seconds=expires_in)
@@ -109,7 +109,7 @@ def write_oauth_settings(path, tokens, client_id, auto_execute=None, now=None):
         "refresh_token": tokens.get("refresh_token", ""),
         "token_expires_at": expires_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "client_id": client_id,
-        "auth_flow": "authorization_code_pkce",
+        "auth_flow": auth_flow or "authorization_code_pkce",
     }
     if auto_execute is not None:
         updates["auto_execute"] = auto_execute
@@ -117,7 +117,7 @@ def write_oauth_settings(path, tokens, client_id, auto_execute=None, now=None):
     return expires_in
 
 
-def create_pending_oauth_file(tokens, client_id, auto_execute=None):
+def create_pending_oauth_file(tokens, client_id, auto_execute=None, auth_flow=None):
     payload = {
         "access_token": tokens["access_token"],
         "refresh_token": tokens.get("refresh_token", ""),
@@ -125,6 +125,8 @@ def create_pending_oauth_file(tokens, client_id, auto_execute=None):
         "client_id": client_id,
         "auto_execute": auto_execute,
     }
+    if auth_flow:
+        payload["auth_flow"] = auth_flow
     descriptor, pending_name = tempfile.mkstemp(prefix="spotify-ads-oauth-", suffix=".json", text=True)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as pending_file:
@@ -156,6 +158,7 @@ def finalize_pending_oauth_file(pending_path, settings_path, now=None):
         payload,
         payload["client_id"],
         payload.get("auto_execute"),
+        auth_flow=payload.get("auth_flow"),
         now=now,
     )
     token_path.unlink()
