@@ -11,7 +11,7 @@ A Codex, Claude Code, and Antigravity CLI plugin package for the Spotify Ads API
 The plugin follows the agent plugin structure with four component types:
 
 - **Skills** (`skills/`) — User-invokable slash commands and reference documentation, each in its own directory with a `SKILL.md` file:
-  - `skills/configure/` — OAuth 2.0 Authorization Code with PKCE setup, direct-token fallback, and helper scripts in `scripts/`
+  - `skills/configure/` — OAuth 2.0 setup (Authorization Code with PKCE, Device Authorization Grant for headless/sandboxed environments), direct-token fallback, and helper scripts in `scripts/`
   - `skills/campaigns/` — Campaign CRUD operations
   - `skills/ads/` — Ad set and ad management
   - `skills/build-campaign/` — Full campaign builder from natural language descriptions (prefers draft flow)
@@ -46,7 +46,7 @@ The plugin follows the agent plugin structure with four component types:
   - **Antigravity cannot rewrite commands** on any of its hook events, so there the hook allows the call and attaches the nudge as `reason`.
   - Injection inserts `-H` arguments after each `curl` word, with word-boundary checks so `curl-config` and `mycurl` are left alone, and a single-quote parity check so a `curl` inside a `-d '{...}'` body is treated as data. It is idempotent, and skipped when the command has no `curl` to rewrite.
 - **Commands** (`commands/configure.toml`) — An Antigravity CLI custom command exposing `/configure` as an explicit entry point to the configure skill. Other skills auto-activate on Antigravity via its native Agent Skills support.
-- **Settings** (`.codex/spotify-ads-api.local.md`, `.claude/spotify-ads-api.local.md`, or `.agents/spotify-ads-api.local.md`, with each platform preferring its own file and falling back to the other two) — Per-user local config with YAML frontmatter storing OAuth credentials (`access_token`, `refresh_token`, `client_id`, `token_expires_at`, and `auth_flow`), `ad_account_id`, and `auto_execute`. OAuth uses Authorization Code with PKCE (`S256`) and team-owned client IDs; no application secret or platform credential store is used. Template lives in `templates/settings-template.md`. These files are gitignored.
+- **Settings** (`.codex/spotify-ads-api.local.md`, `.claude/spotify-ads-api.local.md`, or `.agents/spotify-ads-api.local.md`, with each platform preferring its own file and falling back to the other two) — Per-user local config with YAML frontmatter storing OAuth credentials (`access_token`, `refresh_token`, `client_id`, `token_expires_at`, and `auth_flow`), `ad_account_id`, and `auto_execute`. OAuth uses Authorization Code with PKCE (`S256`) or the Device Authorization Grant (RFC 8628) for headless/sandboxed environments, with team-owned client IDs; no application secret or platform credential store is used. Template lives in `templates/settings-template.md`. These files are gitignored.
 
 ## Marketplace Compatibility
 

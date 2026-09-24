@@ -175,7 +175,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
     fi
   fi
 
-  if [ "$auth_flow" = "authorization_code_pkce" ] && [ "$needs_refresh" = true ]; then
+  if { [ "$auth_flow" = "authorization_code_pkce" ] || [ "$auth_flow" = "device_authorization" ]; } && [ "$needs_refresh" = true ]; then
     if [ -z "$refresh_token" ] || [ -z "$client_id" ]; then
       system_message="Spotify API token is expired but PKCE refresh settings are incomplete. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
     else
