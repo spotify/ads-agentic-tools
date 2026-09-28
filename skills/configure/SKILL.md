@@ -3,6 +3,7 @@ name: configure
 description: Configure Spotify Ads API credentials via OAuth 2.0 with PKCE or a direct token. Sets up authentication, ad account, and execution preferences.
 argument-hint: "[oauth [client_id] | token]"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
+disable-model-invocation: true
 ---
 
 # Spotify Ads API Configuration

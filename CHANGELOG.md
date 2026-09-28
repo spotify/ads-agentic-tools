@@ -12,6 +12,9 @@
 - 52 attribution assertions in `tests/test-check-token.sh`, covering detection, curl-injection edge cases, inference ordering, and per-platform behaviour
 
 ### Changed
+- The `PreToolUse` hook no longer returns `permissionDecision: "allow"` when it rewrites a command. It now returns only `updatedInput` (with `hookEventName`), so rewritten Spotify Ads API calls, including live writes, go through the user's normal permission prompts instead of being auto-approved
+- `configure` sets `disable-model-invocation: true`, so the OAuth flow only starts when the user invokes it explicitly
+- `api-reference` skill renamed from `spotify-ads-api-reference` to match its directory, and marked `user-invocable: false` since it is reference material loaded by the model
 - The hook now recognises Spotify Ads API calls written as `$BASE_URL/...`, not just those naming `api-partner.spotify.com` literally. The assets and audiences upload flows use the variable form and previously bypassed the hook entirely, missing both token refresh and attribution
 - Antigravity gets a warning rather than a rewrite when attribution is missing, because its `PreToolUse` contract supports allow and deny decisions only and cannot modify a tool call on any of its hook events
 

@@ -285,7 +285,8 @@ if [ -f "$ATTRIBUTION_LIB" ]; then
 fi
 
 # --- Emit output ---
-# Claude/Codex: permissionDecision + updatedInput to rewrite the command.
+# Claude/Codex: updatedInput to rewrite the command. No permissionDecision, so
+# the user's normal permission flow still applies to the rewritten command.
 # Antigravity: decision + reason (no command rewriting support).
 
 json_escape() {
@@ -309,25 +310,25 @@ else
       if [ "$HAS_JQ" = true ]; then
         jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
           "hookSpecificOutput": {
-            "permissionDecision": "allow",
+            "hookEventName": "PreToolUse",
             "updatedInput": {"command": $cmd}
           },
           "systemMessage": $msg
         }' 2>/dev/null
       else
-        printf '{"hookSpecificOutput":{"permissionDecision":"allow","updatedInput":{"command":"%s"}},"systemMessage":"%s"}\n' \
+        printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{"command":"%s"}},"systemMessage":"%s"}\n' \
           "$(json_escape "$modified_command")" "$(json_escape "$system_message")"
       fi
     else
       if [ "$HAS_JQ" = true ]; then
         jq -n --arg cmd "$modified_command" '{
           "hookSpecificOutput": {
-            "permissionDecision": "allow",
+            "hookEventName": "PreToolUse",
             "updatedInput": {"command": $cmd}
           }
         }' 2>/dev/null
       else
-        printf '{"hookSpecificOutput":{"permissionDecision":"allow","updatedInput":{"command":"%s"}}}\n' \
+        printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{"command":"%s"}}}\n' \
           "$(json_escape "$modified_command")"
       fi
     fi

@@ -238,12 +238,12 @@ if command -v jq &>/dev/null; then
   # Claude/Codex: rewrite with system message
   json=$(jq -n --arg cmd "curl -H 'Bearer new' https://api.example.com" --arg msg "token refreshed" '{
     "hookSpecificOutput": {
-      "permissionDecision": "allow",
+      "hookEventName": "PreToolUse",
       "updatedInput": {"command": $cmd}
     },
     "systemMessage": $msg
   }')
-  assert_eq "claude rewrite has permissionDecision" "allow" "$(echo "$json" | jq -r '.hookSpecificOutput.permissionDecision')"
+  assert_eq "claude rewrite omits permissionDecision" "null" "$(echo "$json" | jq -r '.hookSpecificOutput.permissionDecision')"
   assert_eq "claude rewrite has updatedInput.command" "curl -H 'Bearer new' https://api.example.com" "$(echo "$json" | jq -r '.hookSpecificOutput.updatedInput.command')"
   assert_eq "claude rewrite has systemMessage" "token refreshed" "$(echo "$json" | jq -r '.systemMessage')"
 
