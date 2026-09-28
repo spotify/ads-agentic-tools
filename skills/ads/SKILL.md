@@ -68,7 +68,7 @@ Important: Convert amounts to micro-amounts by multiplying by 1,000,000. This ap
 **Ad set validation guardrails before any POST:**
 - Never send zero or negative `budget.micro_amount`; ask for a positive budget and convert it to micro-units.
 - Never send `bid_micro_amount: 0` with `MAX_BID` or `COST_PER_RESULT`; ask for a positive bid cap.
-- Do not send `bid_micro_amount` with `bid_strategy=UNSET` unless the API response or user-provided source explicitly requires it.
+- For auction buys with `bid_strategy=UNSET`, omit `bid_micro_amount` unless the current API contract or user-provided source requires it. For Reserved buys, follow the live product rules and use the fixed rate returned by `reserved_prices` as `bid_micro_amount`.
 - Keep `budget` to `micro_amount` and `type`; do not include `currency` on ad set create payloads.
 - Valid `targets.platforms` values are only `ANDROID`, `DESKTOP`, and `IOS`; never send `WEB`, `MOBILE`, `CONNECTED_DEVICE`, or `ad_platforms`.
 - Do not send `cost_model`, `skippable`, `is_skippable`, or `ad_platforms` in ad set create payloads.
@@ -147,7 +147,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 5. Build `geo_targets` object with appropriate IDs
 6. NEVER fall back to country-only without asking user first
 
-**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting:
+**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting. If the parent campaign uses `CONTENT` or `FPMNG`, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) first: fetch the fixed rate for the planned product, dates, format, and targeting; use `cost_micro` in both the ad set and audience estimate as `bid_micro_amount`; set `ad_product` and the returned currency in the estimate, and resolve the other product-specific fields from the current OpenAPI contract and live catalog. Report the fixed rate separately from forecast CPM and bid suggestions. The generic example below is for auction buys:
 
 ```bash
 api POST "estimates/audience" \

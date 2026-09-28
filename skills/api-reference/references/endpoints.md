@@ -786,6 +786,21 @@ response rather than treating this sample as an exhaustive catalog.
 
 ---
 
+## Reserved Pricing and Forecasting
+
+Use this flow for `CONTENT` (Reserved Podcasts) and `FPMNG` (Reserved Music):
+
+1. Call `POST /ad_accounts/{ad_account_id}/reserved_prices` with the planned `ad_product`, `start_date`, and `targets`. Include `end_date` and `asset_format` when known. Use the same product, dates, format, and targeting in the forecast. The response contains `cost_micro` and `currency`; `cost_micro / 1,000,000` is the fixed CPM in the ad account's billing currency.
+
+   ```bash
+   api POST "ad_accounts/{ad_account_id}/reserved_prices" '{"ad_product":"CONTENT","start_date":"2026-11-01T00:00:00Z","end_date":"2026-11-30T00:00:00Z","asset_format":"AUDIO","targets":{"geo_targets":{"country_code":"US"}}}'
+   ```
+
+2. When the plan specifies desired impressions rather than a budget, calculate the planned total budget in micros as `cost_micro * desired_impressions / 1,000`. For example, a `cost_micro` of `10000000` and 100,000 desired impressions gives `budget.micro_amount: 1000000000` ($1,000 USD).
+3. Read the current OpenAPI request contract for `POST /estimates/audience` and the live `GET /ad_product_catalog` rules for the selected product before constructing the forecast or ad set. Use the fetched `cost_micro` as `bid_micro_amount` in the Reserved forecast and ad set, and use the returned `currency` in the forecast budget. Resolve the campaign objective, bid strategy, budget type, delivery goal, targeting, and other product-specific fields from those live sources; do not apply auction defaults to a Reserved buy.
+4. Apply the live catalog rules to the final campaign and ad set payloads before creating or editing them. Do not treat example placements or other product-specific values in this reference as a substitute for the current catalog.
+5. Report the fixed rate from `reserved_prices` separately from forecast reach, impressions, estimated CPM, and bid suggestions. Passing the fixed rate does not guarantee nonzero forecast CPM or bid-suggestion fields. A zero forecast monetary value does not establish a zero fixed rate or prove why the estimate was zero. If pricing fails, report that the rate is unavailable; do not invent a price or run a reserved forecast with a fabricated bid.
+
 ## Estimates
 
 **Important:** These are top-level endpoints — they are NOT nested under `/ad_accounts/{ad_account_id}/`. The `ad_account_id` is passed in the request body instead.

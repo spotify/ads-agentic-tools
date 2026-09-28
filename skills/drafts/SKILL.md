@@ -113,6 +113,8 @@ catalog once for this draft-build workflow, resolve the planned campaign product
 use the applicable rules while constructing the draft plan. Do not display a per-field
 checklist.
 
+For reserved `CONTENT` or `FPMNG` buys, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) before presenting the plan or creating draft ad sets. Fetch the fixed rate for the planned product, dates, format, and targeting, then use its `cost_micro` as the draft ad set `bid_micro_amount`. Show the fixed rate separately from any audience estimate.
+
 #### Step 2: Confirm the Parsed Plan
 
 Present the plan as a visual tree, clearly labeled as **DRAFT**:

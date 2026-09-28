@@ -81,7 +81,9 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 - Only use `ANDROID`, `DESKTOP`, and `IOS` in `targets.platforms`; never use `WEB`, `MOBILE`, or `CONNECTED_DEVICE`.
 - Use `min >= 18` for age ranges unless the user explicitly confirms a market/category that allows minors.
 - When geo refinements are present (`city_ids`, `postal_code_ids`, `region_ids`), include `country_code` in the same `geo_targets` object.
-- If `bid_strategy=UNSET`, omit `bid_micro_amount` unless the API response or user-provided source explicitly requires it.
+- For auction buys with `bid_strategy=UNSET`, omit `bid_micro_amount` unless the current API contract or user-provided source requires it. For Reserved buys, follow the live product rules and use the fixed rate returned by `reserved_prices` as `bid_micro_amount`.
+
+For Reserved buys, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) before confirming the plan or creating ad sets. Fetch the rate for each distinct product, date, format, and targeting; use its `cost_micro` as the ad set and audience estimate `bid_micro_amount`. Resolve campaign, ad set, and forecast fields from the current OpenAPI contract and live ad product catalog rather than using auction defaults. Show the fixed rate separately from any forecast CPM or bid suggestion.
 
 ### Ad-level fields (one or more per ad set)
 
@@ -123,7 +125,7 @@ You can fetch valid categories from `GET /ad_categories` to present options.
 
 ## Step 2.5: Validate Audience Size
 
-After the user confirms the plan but before executing API calls, run an audience estimate for each ad set's targeting:
+After the user confirms the plan but before creating any entities, run an audience estimate for each ad set's targeting. For Reserved buys, use the fixed rate fetched while planning, then add `ad_product`, `end_date`, and the returned `cost_micro` as `bid_micro_amount` to the estimate request; use the returned currency and resolve other fields from the live contract and catalog. The generic example below is for auction buys:
 
 ```bash
 api POST "estimates/audience" \
