@@ -1,6 +1,6 @@
 {
   "name": "spotify-ads-api",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Manage Spotify ad campaigns, audiences, measurement, account access, assets, and reporting with natural language and OAuth.",
   "contextFileName": "ANTIGRAVITY.md"
 }

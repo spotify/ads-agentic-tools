@@ -1,9 +1,47 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
 
 ### Added
 - Media-plan-to-draft orchestration for spreadsheet, document, presentation, PDF, and text plans, with source provenance, reconciliation, live Ads API enrichment and forecasts, explicit completeness states, a strict review gate, and handoff to the existing draft workflow without publishing
+- Skill and SDK attribution enforcement in the `PreToolUse` hook, as `hooks/lib/attribution.sh` sourced by `hooks/check-token.sh`. Raw curl calls that skip the request wrapper are rewritten to carry `X-Spotify-Ads-Skill` and `X-Spotify-Ads-Sdk`, so per-skill usage and error-rate reporting is no longer blind to ad-hoc traffic. Attribution is a sourced library rather than a second hook on purpose: matching `PreToolUse` hooks run in parallel against the original input and the last rewrite wins, so a separate hook would race the token refresh and drop one of the two edits
+- Best-effort skill inference from the session transcript, scanning the most recent lines newest-first and accepting only names matching a real skill in this plugin. Inferred values carry an `-inferred` suffix so reporting can separate them from the wrapper's deterministic value
+- `SPOTIFY_ADS_SKILL_LOOKBACK_LINES` to tune how far back skill inference looks, defaulting to 300 transcript lines
+- `SPOTIFY_ADS_ATTRIBUTION_LIB` to point the hook and its tests at an alternative attribution library, so a deliberately broken copy can be tested without editing the installed one
+- `SKILL_HEADER` to the output of `api-request.sh --env`, so raw-curl call sites no longer construct the skill attribution header by hand
+- `tests/test-api-request.sh`, covering `--env` output quoting, `SKILL_HEADER` scoping, and values containing shell metacharacters
+- 52 attribution assertions in `tests/test-check-token.sh`, covering detection, curl-injection edge cases, inference ordering, and per-platform behaviour
+
+### Changed
+- The hook now recognises Spotify Ads API calls written as `$BASE_URL/...`, not just those naming `api-partner.spotify.com` literally. The assets and audiences upload flows use the variable form and previously bypassed the hook entirely, missing both token refresh and attribution
+- Antigravity gets a warning rather than a rewrite when attribution is missing, because its `PreToolUse` contract supports allow and deny decisions only and cannot modify a tool call on any of its hook events
+
+### Fixed
+- `eval $(api --env)` silently set nothing. The printed values were unquoted, so the space inside `SDK_HEADER` split the assignment and every line became a prefix assignment to a nonexistent command. Raw-curl paths that follow the documented flow, including asset and audience uploads, were therefore sending an empty `Authorization` header along with empty tracking headers. All values are now single-quoted, with embedded single quotes escaped
+- Removed the obsolete root `settings.json`, whose object-valued `agent` field caused Claude's UI marketplace sync to reject the plugin with `plugin_upload_settings_invalid`; tool permissions remain defined in the skill and agent frontmatter
+
+## [1.9.0] - 2026-08-25
+
+### Added
+- Authorization Code with PKCE (`S256`) using team-owned client IDs, cryptographic verifier and state generation, exact loopback callback validation, and a printed-URL browser fallback
+- Unit and shell regressions for PKCE construction, callback validation, token refresh rotation, legacy migration, direct-token behavior, and forbidden secret-based runtime paths
+
+### Changed
+- Replaced application-secret and HTTP Basic token exchanges with public-client authorization and refresh requests containing `client_id`
+- Added the explicit `auth_flow` settings marker and cross-platform automatic PKCE refresh without a platform credential store
+- Kept legacy access tokens usable until expiry while requiring one-time PKCE reauthorization for future refreshes
+- Updated setup documentation to separate team application registration from individual authorization and explain client-level attribution and rate-limit isolation
+- Synced version `1.9.0` across the Claude Code, Codex, and Antigravity manifests
+
+### Fixed
+- Resolved the Codex `PreToolUse` hook from the installed `${PLUGIN_ROOT}` instead of falling back to the workspace directory when `CODEX_PLUGIN_ROOT` is unset
+- Prevented initial OAuth tokens from entering captured helper stdout by writing settings directly through an atomic mode-0600 file replacement
+- Replaced post-write permission changes with secure-at-creation settings files and a private pending-token handoff for managed workspaces that require separate settings-write approval
+- Replaced the undefined direct-token environment-variable handoff with a non-echoing terminal prompt, keeping bearer tokens out of chat and generated command arguments
+- Kept refresh tokens out of process arguments by passing them to the automatic refresh helper through stdin
+
+### Removed
+- Application-secret collection, macOS Keychain access, secret-dependent refresh, and the shell-based manual OAuth flow
 
 ## [1.8.0] - 2026-08-13
 

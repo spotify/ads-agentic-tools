@@ -1,5 +1,5 @@
 ---
-name: Spotify Ads API Reference
+name: spotify-ads-api-reference
 description: This skill should be used when the user asks to "call the Spotify Ads API", "create a Spotify ad campaign", "manage Spotify ads", "pull Spotify ad reports", "set up ad sets or ads", "upload ad assets", "target audiences on Spotify", "check campaign status", "get ad account info", "look up API schema or fields", "check what targeting options exist", or asks about Spotify advertising endpoints, request/response formats, enum values, or authentication.
 ---
 
@@ -110,8 +110,9 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - `GET/POST /businesses/{id}/mobile_apps` — List or register mobile apps
 - `GET/PATCH /businesses/{id}/mobile_apps/{mobile_app_id}` — Get or update a mobile app
 - `POST/DELETE /businesses/{id}/mobile_apps/{mobile_app_id}/ad_accounts/{ad_account_id}` — Share or unshare an app
-- `GET/POST /businesses/{id}/pixels` — List or create Pixels
-- `GET/PATCH /businesses/{id}/pixels/{pixel_id}` — Get or update a Pixel
+- `POST /businesses/{id}/pixels` — Create a Pixel
+- `GET /businesses/{id}/pixels/{pixel_id}` — Get a Pixel
+- `PATCH /businesses/{id}/pixels/{pixel_id}` — Update a Pixel
 - `POST /businesses/{id}/capi` — Create a CAPI integration
 - `GET/PATCH /businesses/{id}/capi/{connection_id}` — Get or update CAPI
 - `POST/GET/DELETE /businesses/{id}/capi/{connection_id}/tokens[...]` — Manage CAPI auth tokens
@@ -235,6 +236,6 @@ For detailed request/response schemas and field definitions, consult:
 
 ### Example Files
 
-Working examples with complete curl commands and expected responses:
+Working examples with shared `api()` helper commands and expected responses:
 - **`examples/full-campaign-flow.md`** — End-to-end: create campaign, ad set, and ad with targeting
 - **`examples/aggregate-report.md`** — Pull aggregate metrics and create async CSV reports

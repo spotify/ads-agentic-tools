@@ -9,7 +9,9 @@ Check out our post on the [Spotify Engineering Blog](https://engineering.atspoti
 - Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), or [Antigravity CLI](https://antigravity.google/)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
-- Python 3.8+ (for automated OAuth flow; optional — manual flow available as fallback)
+- Python 3.8+ or `uv` (required for the secure configuration helpers). On Windows, ensure `python` or `py` is in your PATH.
+- [Git for Windows](https://gitforwindows.org/) (Windows only; provides Git Bash, which the token refresh hook requires)
+- [jq](https://jqlang.github.io/jq/) (recommended on Windows for richer hook output; the token refresh hook works without it but produces minimal JSON)
 
 ## Install
 
@@ -21,6 +23,8 @@ claude plugin i spotify-ads-api
 
 The plugin is installed from the [Official Anthropic marketplace](https://claude.com/plugins), which has auto-update enabled by default. Claude Code checks for plugin updates in the background after each session starts and applies them automatically. New versions take effect on your next launch (or run `/reload-plugins` to pick them up in the current session).
 
+To use this repository as a custom marketplace in the Claude UI, choose **Add marketplace**, enter `spotify/ads-agentic-tools` or `https://github.com/spotify/ads-agentic-tools`, and select **Sync**. Then install **Spotify Ads API** from that marketplace. The Claude marketplace intentionally uses the repository-relative plugin source `"./"`; Git-based marketplace installs clone the whole repository and resolve that path from the repository root.
+
 If you have auto-update disabled for the Official Anthropic marketplace, you will need to update the plugin manually. See the Anthropic instructions on [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins) for instructions on managing marketplace updates.
 
 ### Codex
@@ -31,7 +35,7 @@ Add the Spotify Ads API plugin marketplace:
 codex plugin marketplace add spotify/ads-agentic-tools
 ```
 
-Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the added marketplace and install/enable **Spotify Ads API**.
+In the Codex app, you can instead choose **Add marketplace** and enter `https://github.com/spotify/ads-agentic-tools`. Restart Codex after adding the marketplace. Then open the plugin directory in the Codex app, or run `codex` and enter `/plugins` in the CLI. Select the added marketplace and install/enable **Spotify Ads API**.
 
 Use `codex plugin marketplace upgrade` later to refresh installed marketplace sources.
 
@@ -41,15 +45,15 @@ Use `codex plugin marketplace upgrade` later to refresh installed marketplace so
 agy plugin install https://github.com/spotify/ads-agentic-tools
 ```
 
-Restart Antigravity CLI, then verify with `/plugins`. On Antigravity, skills activate automatically from natural language (or browse them with `/skills list`); run `/configure` for first-time setup instead of `/spotify-ads-api:configure`. Note: automatic OAuth token refresh uses the macOS Keychain, so auto-refresh is macOS-only.
+Restart Antigravity CLI, then verify with `/plugins`. On Antigravity, skills activate automatically from natural language (or browse them with `/skills list`); run `/configure` for first-time setup instead of `/spotify-ads-api:configure`.
 
 ## Install from source
 
 Use a source checkout for local development or testing unreleased changes.
 
-1. Clone the repository:
+1. Clone the repository (on Windows, disable `autocrlf` so the bash hooks stay LF-only):
    ```bash
-   git clone https://github.com/spotify/ads-agentic-tools.git
+   git clone -c core.autocrlf=false https://github.com/spotify/ads-agentic-tools.git
    cd ads-agentic-tools
    ```
 
@@ -77,43 +81,49 @@ Use a source checkout for local development or testing unreleased changes.
 
    The link is a symlink, so source changes are picked up on the next Antigravity CLI restart.
 
-The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Antigravity CLI has no marketplace file — it installs directly from the repository using the root `plugin.json` manifest. Keep all three manifests in sync when changing plugin metadata.
+The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Their plugin sources intentionally differ: Codex uses the public Git repository URL for this repository-root plugin, while Claude uses the relative string `"./"` required by its marketplace schema. Antigravity CLI has no marketplace file — it installs directly from the repository using the root `plugin.json` manifest. Keep all three manifests in sync when changing plugin metadata.
 
 ## Configure
 
-1. Create a Spotify Developer app:
+### Team administrator: register the application
+
+1. Create or select the team's Spotify Developer app:
    - Go to [developer.spotify.com](https://developer.spotify.com/) and log in
    - Click **Create App**
    - Enter a name (e.g. "Ads Agentic Tools") and a simple description
    - Under **Redirect URIs**, enter `http://127.0.0.1:8080/callback` and remember to click **Add**
    - Under **Which API/SDKs are you planning to use?**, check **Ads API**
-   - Save the app and note your **Client ID** and **Client Secret**
+   - Save the app and note its **Client ID**
    - Open [https://adsmanager.spotify.com/api-terms](https://adsmanager.spotify.com/api-terms) and make sure the ad account you want to use is selected. Accept the terms to authorize your client id to access your ad account through Ads API.
 
-2. Configure OAuth credentials:
+2. Share the client ID with the team's plugin users. A client ID is public
+   application metadata; do not distribute an application secret. Keeping a
+   team-owned client ID preserves that team's client-level attribution, quotas,
+   and rate-limit isolation. The plugin has no global fallback client ID.
+
+### Individual user: authorize the plugin
+
+1. Configure OAuth with the team's client ID:
    ```
    /spotify-ads-api:configure
    ```
    (On Antigravity CLI, run `/configure` instead — the skill names below all apply, but the slash-command prefix is Claude Code/Codex syntax.)
-   This opens your browser for Spotify authorization, then saves your tokens locally with automatic refresh.
+   This opens your browser for PKCE authorization, then saves your tokens locally with automatic refresh. The authorization URL is also printed so it can be copied if the browser does not open automatically.
 
-3. Create your first campaign:
+2. Create your first campaign:
    ```
    /spotify-ads-api:build-campaign Create an audio campaign called Summer Promo targeting US listeners aged 25-44 with $100/day budget
    ```
 
 ## Authentication
 
-The plugin supports three authentication modes:
+The plugin supports two authentication modes:
 
-### OAuth 2.0 (Recommended)
-Run `/spotify-ads-api:configure` or `/spotify-ads-api:configure oauth`. This launches an automated OAuth flow using a local Python script. Your tokens are stored locally and refresh automatically before API calls.
-
-### Manual OAuth
-Run `/spotify-ads-api:configure manual` if Python is not available. You'll manually open the authorization URL, copy the redirect, and the plugin exchanges the code for tokens via curl.
+### OAuth 2.0 with PKCE (Recommended)
+Run `/spotify-ads-api:configure` or `/spotify-ads-api:configure oauth [client_id]`. This launches Authorization Code with PKCE (`S256`) using Python 3 or `uv`. The verifier stays in memory, no application secret is requested, and tokens refresh automatically before API calls. The helper writes tokens directly to an atomically replaced mode-0600 settings file instead of printing them. If a managed workspace requires separate write approval, tokens remain in a private mode-0600 temporary file until a token-free finalization command succeeds. If automatic browser opening fails, copy the printed authorization URL while the callback listener remains active.
 
 ### Direct Token (Legacy)
-Run `/spotify-ads-api:configure token <your-token>`. Accepts a pre-obtained access token. No automatic refresh — token expires in ~1 hour.
+Run `/spotify-ads-api:configure token`. The helper securely prompts for a pre-obtained access token without placing it in chat or command arguments. There is no automatic refresh, so the token expires in about one hour.
 
 ## Available Skills
 
@@ -166,15 +176,20 @@ Settings are stored in `.codex/spotify-ads-api.local.md` on Codex, `.claude/spot
 | `refresh_token` | Token for automatic renewal | — |
 | `token_expires_at` | ISO 8601 expiry timestamp | — |
 | `client_id` | Spotify app client ID | — |
+| `auth_flow` | `authorization_code_pkce` or `direct_token` | — |
 | `ad_account_id` | Default ad account UUID | — |
 | `auto_execute` | Skip confirmation prompts | `false` |
 
-The client secret is stored in the **macOS Keychain** (not in the settings file) for security. It is saved during `/spotify-ads-api:configure` and retrieved automatically by the token refresh hook.
+Existing OAuth settings created before PKCE can keep using an unexpired access token, but cannot refresh. Run `/spotify-ads-api:configure` once to reauthorize. On macOS, the old `spotify-ads-api-client-secret` Keychain item is then unused and may be removed; the plugin does not delete it automatically.
+
+Codex resolves the installed token-refresh hook through its plugin manifest's
+`${PLUGIN_ROOT}` substitution, so the hook does not depend on the workspace
+directory or an exported `CODEX_PLUGIN_ROOT` variable.
 
 ## Troubleshooting
 
 **"Token may be invalid or expired"**
-If using OAuth, the plugin auto-refreshes tokens. If the refresh token is also expired, re-run `/spotify-ads-api:configure`. If using direct token mode, obtain a new token and run `/spotify-ads-api:configure token <new-token>`.
+If using OAuth, the plugin auto-refreshes tokens. If the refresh token is also expired, re-run `/spotify-ads-api:configure`. If using direct token mode, obtain a new token and run `/spotify-ads-api:configure token`, then enter it at the secure terminal prompt.
 
 **"Ad account ID may be incorrect"**
 Verify your ad account UUID. You can find it in the Spotify Ads Manager or by asking the plugin to list accounts after configuring a valid token.
@@ -187,6 +202,12 @@ Your targeting is too narrow for the selected ad format. Try broadening the age 
 
 **"Asset stuck in PROCESSING"**
 Large files may take longer to transcode. Check status with `/spotify-ads-api:assets get <id>`. If status is REJECTED, the file may not meet format requirements.
+
+**"Python was not found" on Windows**
+The `python3` command on stock Windows 11 is a Microsoft Store redirect stub, not real Python. It exits with code 49 and prints a Store install prompt. Install Python from [python.org](https://www.python.org/downloads/) or via `winget install Python.Python.3.13`, then use `python` or `py` (the plugin detects and skips the Store stub automatically).
+
+**Token refresh hook not running on Windows**
+The hook (`hooks/check-token.sh`) is a bash script. On Windows it requires Git Bash, which is included with [Git for Windows](https://gitforwindows.org/). If the hook silently does nothing, ensure `bash.exe` is discoverable in your PATH (it should be after installing Git for Windows).
 
 **Skill not activating on Antigravity CLI**
 Run `/skills list` to confirm the plugin's skills loaded, and `/plugins` to confirm the plugin is enabled. Restart Antigravity CLI after installing or linking.

@@ -1,6 +1,11 @@
 # Example: Pulling an Aggregate Report
 
-**Note:** All curl examples below assume `SDK_HEADER="X-Spotify-Ads-Sdk: $SDK_PRODUCT/$PLUGIN_VERSION"`, where `SDK_PRODUCT` is `codex-plugin` on Codex, `claude-code-plugin` on Claude, and `antigravity-cli-plugin` on Antigravity.
+These examples use the shared request helper, which loads settings and injects authentication and attribution headers:
+
+```bash
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
+api() { "$PLUGIN_ROOT/scripts/api-request.sh" api-reference "$@"; }
+```
 
 This example shows how to pull aggregated campaign performance metrics.
 
@@ -9,10 +14,7 @@ This example shows how to pull aggregated campaign performance metrics.
 **Important:** The `fields` parameter must use **repeated parameter names** (`fields=X&fields=Y`), NOT comma-separated values. The parameter is called `fields`, NOT `report_fields`.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports?\
 entity_type=AD_SET&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&fields=FREQUENCY&fields=COMPLETES&\
 granularity=LIFETIME&\
@@ -59,10 +61,7 @@ When using `DAY` granularity, the date range must be within 90 days and both dat
 When using `HOUR` granularity, the date range must be within the last 2 weeks.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&fields=CLICKS&fields=REACH&\
 report_start=2025-01-01T00:00:00Z&\
@@ -76,10 +75,7 @@ limit=50"
 If `continuation_token` is non-null, there are more results. Pass it as a query parameter:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/aggregate_reports?\
+api GET "ad_accounts/{ad_account_id}/aggregate_reports?\
 entity_type=CAMPAIGN&\
 fields=IMPRESSIONS&fields=SPEND&\
 granularity=LIFETIME&\
@@ -102,11 +98,8 @@ These are the valid values for the `fields` parameter on aggregate/insight repor
 For large datasets, use async reports. Note: async reports use **different metric names** than aggregate reports.
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  -H "Content-Type: application/json" \
-  -d '{
+api POST "ad_accounts/{ad_account_id}/async_reports" \
+  '{
     "name": "january_2025_report",
     "granularity": "DAY",
     "dimensions": ["CAMPAIGN_NAME", "AD_SET_NAME", "AD_NAME"],
@@ -114,15 +107,11 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
     "report_start": "2025-01-01T00:00:00Z",
     "report_end": "2025-01-31T00:00:00Z",
     "statuses": ["ACTIVE", "COMPLETED"]
-  }' \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/async_reports"
+  }'
 ```
 
 Then check status with the returned report ID:
 
 ```bash
-curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "$SDK_HEADER" \
-  "https://api-partner.spotify.com/ads/v3/ad_accounts/$AD_ACCOUNT_ID/async_reports/$REPORT_ID"
+api GET "ad_accounts/{ad_account_id}/async_reports/$REPORT_ID"
 ```

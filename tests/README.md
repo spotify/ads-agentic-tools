@@ -5,14 +5,26 @@ Use this directory for two related jobs:
 - [`prompt-catalog.md`](prompt-catalog.md) gives users and internal testers a representative prompt for every plugin capability.
 - [`test-scenarios.md`](test-scenarios.md) defines the deeper behavioral checks for API routing, safety, schemas, and multi-step execution.
 - [`test-openapi-fetch.sh`](test-openapi-fetch.sh) verifies public OpenAPI retrieval, failure handling, and preflight coverage across every API-calling skill.
+- [`test-marketplace-metadata.sh`](test-marketplace-metadata.sh) keeps the distinct Codex and Claude marketplace source formats valid and intentional.
 
 The prompt catalog is the quickest smoke-test surface. The scenarios are the source of truth when validating a release.
+
+The shell regression suites run offline with no credentials, no network, and no API calls:
+
+```bash
+bash tests/test-check-token.sh    # hooks/check-token.sh
+bash tests/test-api-request.sh    # scripts/api-request.sh --env
+bash tests/test-openapi-fetch.sh  # scripts/fetch-openapi-schema.sh
+bash tests/test-marketplace-metadata.sh
+```
+
+Run the relevant suites after changing scripts or marketplace metadata. They exit non-zero on failure.
 
 ## Prerequisites
 
 1. A Spotify Developer app with Ads API access
 2. A Spotify Ads business and ad account suitable for testing
-3. Python 3.8+ for the automated OAuth flow, or use the manual flow
+3. Python 3.8+ or `uv` for the secure OAuth and direct-token configuration helpers
 4. Codex, Claude Code, or Antigravity with this source checkout installed
 5. Test creative files and a synthetic customer-list CSV when exercising uploads
 
@@ -66,4 +78,17 @@ Record fixture IDs outside this repository. Useful fixtures include:
 - a Pixel/CAPI/dataset topology with known diagnostics for read-only measurement tests
 - a non-owner account member whose access can be inspected; only mutate membership in a dedicated test business
 
-Token-refresh testing requires a valid refresh token and macOS Keychain entry. Set `token_expires_at` to a past timestamp, but never add `client_secret` to a settings file.
+Token-refresh testing requires `auth_flow: "authorization_code_pkce"`, a valid refresh token, and the team-owned client ID. Set `token_expires_at` to a past timestamp. No application secret or platform credential store is involved.
+
+Initial OAuth authorization must leave token values out of captured helper
+stdout and atomically replace the active settings file with mode 0600. Codex
+hook tests must also assert the manifest uses `${PLUGIN_ROOT}` without a cwd
+fallback.
+
+Run the automated OAuth regressions with:
+
+```bash
+python3 tests/test-oauth-pkce.py
+bash tests/test-check-token.sh
+bash tests/test-pkce-runtime-guard.sh
+```

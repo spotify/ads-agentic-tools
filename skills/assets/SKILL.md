@@ -20,7 +20,7 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" assets "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
-To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL) for use outside API calls, run `api --env`.
+To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Parsing Arguments
 
@@ -65,13 +65,12 @@ Extract `id` from the response.
 
 #### Step 4: Upload the file
 
-> File uploads use raw curl (not the `api` wrapper) because they use multipart form data. Run `eval $(api --env)` before upload calls to set `TOKEN`, `AD_ACCOUNT_ID`, `SDK_HEADER`, and `BASE_URL`, and set `SKILL_HEADER="X-Spotify-Ads-Skill: assets"`.
+> File uploads use raw curl (not the `api` wrapper) because they use multipart form data. Run `eval $(api --env)` before upload calls: it sets `TOKEN`, `AD_ACCOUNT_ID`, `BASE_URL`, `SDK_HEADER`, and `SKILL_HEADER` (already scoped to this skill). Keep `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on every upload call so the request stays attributable in reporting.
 
 First, check the file size:
 
 ```bash
-stat -f%z "/path/to/file"  # macOS
-# or: stat --printf="%s" "/path/to/file"  # Linux
+FILE_SIZE=$(stat -f%z "/path/to/file" 2>/dev/null || stat --printf="%s" "/path/to/file" 2>/dev/null || wc -c < "/path/to/file")
 ```
 
 **If file is <= 20MB** — Simple upload:
@@ -99,7 +98,8 @@ Extract `upload_session_id` and `max_chunk_size_mb` from the response.
 
 2. Split the file into chunks:
 ```bash
-split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file /tmp/chunk_
+CHUNK_DIR=$(mktemp -d)
+split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file "$CHUNK_DIR/chunk_"
 ```
 
 3. Upload each chunk (numbered starting from 1):
@@ -107,7 +107,7 @@ split -b ${MAX_CHUNK_SIZE_MB}m /path/to/file /tmp/chunk_
 curl -s -X POST -H "Authorization: Bearer $TOKEN" \
   -H "$SDK_HEADER" \
   -H "$SKILL_HEADER" \
-  -F "media=@/tmp/chunk_aa" \
+  -F "media=@$CHUNK_DIR/chunk_aa" \
   -F "upload_section=1" \
   "$BASE_URL/ad_accounts/$AD_ACCOUNT_ID/assets/$ASSET_ID/chunked_upload/transfer"
 ```
@@ -124,7 +124,7 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
 
 5. Clean up temp chunks:
 ```bash
-rm /tmp/chunk_*
+rm -rf "$CHUNK_DIR"
 ```
 
 #### Step 5: Poll for processing status

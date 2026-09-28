@@ -60,8 +60,16 @@ Never promise attribution, optimization, or reporting merely because ingestion i
 
 ## Pixel resources
 
+There is no dedicated `GET /businesses/{id}/pixels` list endpoint. To discover existing Pixels, list datasets and inspect the `pixel` field on each response:
+
 ```bash
-api GET "businesses/<business_id>/pixels?include_events=true"
+api GET "businesses/<business_id>/datasets"
+# Each dataset response includes a `pixel` object (or null) with Pixel details.
+```
+
+To create or update a Pixel:
+
+```bash
 api POST "businesses/<business_id>/pixels" \
   '{"name":"Web Pixel","domain":"https://example.com","aam_opt_in":true,"aam_fields":["EMAIL","PHONE"]}'
 api GET "businesses/<business_id>/pixels/<pixel_id>"
@@ -69,14 +77,14 @@ api PATCH "businesses/<business_id>/pixels/<pixel_id>" \
   '{"name":"Updated Pixel","domain":"https://example.com"}'
 ```
 
+Creating a Pixel auto-creates a dataset; the Pixel ID and configuration are then visible in that dataset's `pixel` field.
+
 The API creates and configures the Pixel resource; it does not install JavaScript on the user's site. Provide the correct implementation path:
 
 - Direct install: base code sitewide, ideally in the document header, plus event code at the actual action or confirmation.
 - Web GTM: Custom HTML tags, with the base code present whenever an event fires.
 - Base code records page views. Additional events require their own trigger.
 - Do not advise simultaneous direct and tag-manager installation.
-
-The Pixel list endpoint (`GET pixels`) may return 403 for some businesses. If it does, fall back to checking the `pixel` field on individual dataset responses (`GET datasets/<dataset_id>`) to verify Pixel configuration.
 
 Pixel events are read-only. The API does not expose Pixel deletion or arbitrary custom-event creation. Event activity is total received site activity, not attributed campaign results.
 

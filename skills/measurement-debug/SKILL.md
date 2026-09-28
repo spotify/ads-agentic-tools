@@ -35,14 +35,13 @@ Do not ask for CAPI tokens, raw email/phone, cookies, device IDs, IP addresses, 
 ### 1. Resolve topology
 
 ```bash
-api GET "businesses/<business_id>/pixels?include_events=true"
-api GET "businesses/<business_id>/capi/<capi_connection_id>"
 api GET "businesses/<business_id>/datasets"
 api GET "businesses/<business_id>/datasets/<dataset_id>"
+api GET "businesses/<business_id>/capi/<capi_connection_id>"
 api GET "businesses/<business_id>/ad_accounts/<ad_account_id>/datasets"
 ```
 
-The `GET datasets` endpoint does not accept `limit` or `offset` parameters. The `GET pixels` endpoint may return 403 for some businesses; if so, check the `pixel` field on individual dataset responses instead.
+The `GET datasets` endpoint does not accept `limit` or `offset` parameters. To discover Pixels, inspect the `pixel` field on each dataset response rather than calling a separate pixels endpoint.
 
 Only call `GET businesses/<business_id>/capi/<capi_connection_id>/tokens` when the incident specifically requires token inventory. The response includes active token values, not just IDs: treat the entire raw response as secret, never show it in a command result or transcript, and expose only redacted token IDs/counts in the final audit.
 
