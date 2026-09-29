@@ -194,12 +194,9 @@ trap 'rm -f "$BODY_FILE"' EXIT
 HTTP_CODE="$(curl "${CURL_ARGS[@]}" -o "$BODY_FILE" -w '%{http_code}' "$URL")"
 CURL_EXIT=$?
 
-# A curl transport failure (timeout, DNS, refused connection) prints no status;
-# keep parity with the old `exec curl` behaviour and exit without a status line.
-if [ -z "$HTTP_CODE" ]; then
-  exit "$CURL_EXIT"
-fi
-
+# On a transport failure (timeout, DNS, refused connection) curl still runs
+# -w, so the output is an empty body plus `HTTP_STATUS:000` with curl's
+# non-zero exit code — exactly what the old `exec curl -w …` produced.
 cat "$BODY_FILE"
 printf '\nHTTP_STATUS:%s\n' "$HTTP_CODE"
 

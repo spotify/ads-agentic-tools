@@ -125,9 +125,10 @@ cat > "$STUB_DIR/curl" <<'EOF'
 # Minimal curl stub for api-request.sh request-mode tests.
 body="${STUB_BODY:-}"
 [ -n "$body" ] || body='{}'
+out=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    -o) printf '%s' "$body" > "$2"; shift 2 ;;
+    -o) out="$2"; shift 2 ;;
     -w) shift 2 ;;
     -X|-H|-d) shift 2 ;;
     -s) shift ;;
@@ -135,14 +136,20 @@ while [ $# -gt 0 ]; do
     *) shift ;;
   esac
 done
+# A transport failure (STUB_EXIT non-zero) prints -w output but writes no body,
+# matching real curl's `code=000 exit=6` on DNS/refused-connection errors.
+if [ -n "$out" ] && [ "${STUB_EXIT:-0}" = "0" ]; then
+  printf '%s' "$body" > "$out"
+fi
 printf '%s' "${STUB_STATUS:-200}"
+exit "${STUB_EXIT:-0}"
 EOF
 chmod +x "$STUB_DIR/curl"
 
 run_request() {
   env -u CODEX_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
     CLAUDE_PROJECT_DIR="$PROJECT" PATH="$STUB_DIR:$PATH" \
-    STUB_STATUS="${1:-}" STUB_BODY="${2:-}" \
+    STUB_STATUS="${1:-}" STUB_BODY="${2:-}" STUB_EXIT="${6:-0}" \
     bash "$API" campaigns "$3" "$4" ${5:+"$5"}
 }
 
@@ -174,6 +181,14 @@ assert_eq "edit-permission 403 on POST emits no hint" "0" "$(printf '%s' "$postp
 
 get401=$(run_request 401 "$allow_body" GET businesses)
 assert_eq "401 emits no allow-list hint" "0" "$(printf '%s' "$get401" | grep -c 'ADS_API_HINT' || true)"
+
+# Transport failure: curl still runs -w, so the output is an empty body plus
+# HTTP_STATUS:000 with curl's non-zero exit code (old `exec curl -w …` parity).
+transport_out=$(run_request 000 "" GET businesses "" 6)
+transport_rc=$?
+assert_eq "transport failure reports HTTP_STATUS:000" "000" "$(printf '%s' "$transport_out" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d: -f2)"
+assert_eq "transport failure emits no hint" "0" "$(printf '%s' "$transport_out" | grep -c 'ADS_API_HINT' || true)"
+assert_eq "transport failure propagates curl exit code" "6" "$transport_rc"
 
 echo
 echo "Passed: $PASS  Failed: $FAIL"
