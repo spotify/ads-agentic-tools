@@ -174,4 +174,44 @@ if [ -n "$BODY" ]; then
   CURL_ARGS+=(-d "$BODY")
 fi
 
+# --- Eval replay mode ---
+#
+# For offline evals only (evals/README.md). When EVAL_ADS_API_FIXTURES names a
+# fixture directory, answer from it instead of calling the API, and append the
+# request to $EVAL_ADS_API_LOG so graders can check what was sent. A fixture is
+# <key>.http: first line the HTTP status, the rest the response body. The key is
+# METHOD__path with the query dropped, the ad account ID put back as
+# {ad_account_id}, other UUIDs as {id}, and "/" as "__". An optional
+# <key>.<n>.http answers the nth call to the same key.
+if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
+  case "$EVAL_ADS_API_FIXTURES" in
+    /*) FIXTURE_DIR="$EVAL_ADS_API_FIXTURES" ;;
+    *)  FIXTURE_DIR="$PROJECT_DIR/$EVAL_ADS_API_FIXTURES" ;;
+  esac
+  LOG_FILE="${EVAL_ADS_API_LOG:-$PROJECT_DIR/ads-api-requests.log}"
+
+  KEY_PATH="${PATH_ARG%%\?*}"
+  ACCOUNT_PLACEHOLDER='{ad_account_id}'
+  [ -n "$AD_ACCOUNT_ID" ] && KEY_PATH="${KEY_PATH//"$AD_ACCOUNT_ID"/$ACCOUNT_PLACEHOLDER}"
+  KEY_PATH=$(printf '%s' "$KEY_PATH" \
+    | sed -E 's/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/{id}/g; s#/#__#g')
+  KEY="${METHOD}__${KEY_PATH}"
+
+  CALL_N=1
+  if [ -f "$LOG_FILE" ]; then
+    CALL_N=$(( $(awk -v k="$KEY " 'index($0, k) == 1' "$LOG_FILE" | wc -l) + 1 ))
+  fi
+  printf '%s %s %s\n' "$KEY" "$PATH_ARG" "$(printf '%s' "$BODY" | tr '\n' ' ')" >> "$LOG_FILE"
+
+  FIXTURE="$FIXTURE_DIR/${KEY}.${CALL_N}.http"
+  [ -f "$FIXTURE" ] || FIXTURE="$FIXTURE_DIR/${KEY}.http"
+  if [ ! -f "$FIXTURE" ]; then
+    printf '{"error":{"message":"No fixture for %s %s"}}\nHTTP_STATUS:404\n' "$METHOD" "$PATH_ARG"
+    exit 0
+  fi
+  tail -n +2 "$FIXTURE"
+  printf '\nHTTP_STATUS:%s\n' "$(head -1 "$FIXTURE" | tr -d '[:space:]')"
+  exit 0
+fi
+
 exec curl "${CURL_ARGS[@]}" "$URL"
