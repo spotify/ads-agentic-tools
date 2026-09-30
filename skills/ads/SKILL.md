@@ -61,7 +61,7 @@ Prompt for required fields:
   - Platforms (optional) → `"platforms": ["ANDROID", "DESKTOP", "IOS"]` (**NOT "MOBILE" or "CONNECTED_DEVICE"**)
   - Placements (required) → `"placements": ["MUSIC"]`
 - **bid_strategy** — plain string: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. Default to `MAX_BID`.
-- **bid_micro_amount** (required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — ask for the bid cap in the ad account's billing currency, convert to micro-amount. This is the maximum CPM. Example: $15 USD = `15000000`, ¥160 JPY = `160000000`
+- **bid_micro_amount** (on the ad set: required with MAX_BID or COST_PER_RESULT, omitted with AUTOBID; this omission applies only to ad set payloads, not audience estimates) — ask for the bid cap in the ad account's billing currency, convert to micro-amount. This is the maximum CPM. Example: $15 USD = `15000000`, ¥160 JPY = `160000000`
 
 Important: Convert amounts to micro-amounts by multiplying by 1,000,000. This applies to both `budget.micro_amount` and `bid_micro_amount`.
 
@@ -147,7 +147,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 5. Build `geo_targets` object with appropriate IDs
 6. NEVER fall back to country-only without asking user first
 
-**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting. If the parent campaign uses `CONTENT` or `FPMNG`, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) first: fetch the fixed rate for the planned product, dates, format, and targeting; use `cost_micro` in both the ad set and audience estimate as `bid_micro_amount`; set `ad_product` and the returned currency in the estimate, and resolve the other product-specific fields from the current OpenAPI contract and live catalog. Report the fixed rate separately from forecast CPM and bid suggestions. The generic example below is for auction buys:
+**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting. If the parent campaign uses `CONTENT` or `FPMNG`, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) first: fetch the fixed rate for the planned product, dates, format, and targeting; use `cost_micro` in both the ad set and audience estimate as `bid_micro_amount`; set `ad_product` and the returned currency in the estimate, and resolve the other product-specific fields from the current OpenAPI contract and live catalog. Report the fixed rate separately from forecast CPM and bid suggestions. The generic example below is for auction buys. Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`; choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates).
 
 ```bash
 api POST "estimates/audience" \

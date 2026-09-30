@@ -69,7 +69,7 @@ Prefer ad rotation when only the message differs:
 
 **Estimate endpoints are top-level** — use `POST /estimates/audience` and `POST /estimates/bid`, NOT `/ad_accounts/{id}/estimates/...`. The `ad_account_id` goes in the request body.
 
-`POST /estimates/audience` required body:
+`POST /estimates/audience` example body:
 ```json
 {
   "ad_account_id": "<from settings>",
@@ -91,9 +91,9 @@ Prefer ad rotation when only the message differs:
 }
 ```
 
-All 8 fields (`ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget`, `targets`) are required. The `budget` object requires `currency` (e.g. "USD") in addition to `micro_amount` and `type`.
+Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`. Choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates), and use the ad account's billing currency.
 
-`POST /estimates/bid` required body:
+`POST /estimates/bid` example body:
 ```json
 {
   "asset_format": "AUDIO",
@@ -104,7 +104,7 @@ All 8 fields (`ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_s
 }
 ```
 
-All 5 fields (`asset_format`, `objective`, `bid_strategy`, `currency`, `targets`) are required.
+Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`, and use the ad account's billing currency.
 
 ## Creative and Asset Guidance
 

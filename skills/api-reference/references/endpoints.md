@@ -84,7 +84,7 @@ Create a new ad set within a campaign.
 - `category` (string, **required**) — Ad category code (e.g. `ADV_1_2`). Fetch valid values from `GET /ad_categories`
 - `targets` (object, required) — See Targeting section. **Note:** `geo_targets` is a flat object `{"country_code":"US"}`, NOT an array. `platforms` valid values are `ANDROID`, `DESKTOP`, `IOS`.
 - `bid_strategy` (string, required) — Plain string enum: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET`. **Not an object.**
-- `bid_micro_amount` (int64, required with MAX_BID or COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 USD bid cap = `15000000`, ¥160 JPY = `160000000`
+- `bid_micro_amount` (int64, required with MAX_BID or COST_PER_RESULT, omitted with AUTOBID; this applies only to ad set payloads, not audience estimates) — Bid cap in micro-units. With MAX_BID, this is the maximum CPM. Example: $15 USD bid cap = `15000000`, ¥160 JPY = `160000000`
 - `promotion` (object, optional) — Promotion configuration
 - `frequency_caps` (array, optional, max 6) — Array of `FrequencyCap` objects: `{frequency_unit, frequency_period, max_impressions}`
 - `pacing` (string, optional) — PACING_EVEN or PACING_ACCELERATED
@@ -810,15 +810,8 @@ Estimate audience size, reach, impressions, CPM range, and delivery likelihood b
 
 **Request Body:** `AudienceEstimateRequest`
 
-Required fields:
-- `ad_account_id` (uuid, required) — The ad account to estimate for
-- `start_date` (ISO 8601 datetime, required) — Campaign start date
-- `asset_format` (string, required) — AUDIO, VIDEO, IMAGE, or CATALOG
-- `objective` (string, required) — REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, or WEBSITE_VISITS
-- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, AUTOBID, or UNSET
-- `bid_micro_amount` (int64, required with MAX_BID/COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units
-- `budget` (object, required) — Requires `micro_amount`, `type` (DAILY or LIFETIME), **and `currency`** (e.g. "USD"). Note: this differs from ad set budget which does not require `currency`.
-- `targets` (object, required) — Same Targets structure as ad set creation
+Required fields: include every field the live spec marks as required, following `skills/api-reference/references/live-openapi.md`. Do not rely on a hard-coded list here.
+Choose `bid_micro_amount` as described in "Choosing `bid_micro_amount` for audience estimates" below, and use the ad account's billing currency in `budget.currency`. Ad set budgets do not carry `currency`.
 
 Optional fields:
 - `end_date` (ISO 8601 datetime) — Campaign end date
@@ -881,6 +874,15 @@ Optional fields:
 }
 ```
 
+#### Choosing `bid_micro_amount` for audience estimates
+
+Whether a field is required comes from the live spec (see `skills/api-reference/references/live-openapi.md`). The AUTOBID no-bid exception applies only to ad set payloads, not to estimate requests. This section covers only where the bid value comes from:
+
+- **`MAX_BID` or `COST_PER_RESULT`:** use the user's bid.
+- **Reserved (`UNSET`):** use the reserved-pricing fCPM (`cost_micro` from `reserved_prices`) and follow the live ad product catalog rules for the Reserved product.
+- **`AUTOBID`, or no bid given:** call `POST /estimates/bid` first with the same targeting, asset format, objective, frequency caps, and currency. Use `bid_estimate_max` for `AUTOBID` and the midpoint of `bid_estimate_min` and `bid_estimate_max` otherwise. `/estimates/bid` ignores budget and dates.
+- The bid must be greater than 0, in micro-units of the ad account's billing currency.
+
 `audience_forecast` returns up to 3 entries (DAILY, WEEKLY, MONTHLY) for DAILY budgets, or 1 entry (LIFETIME) for LIFETIME budgets. `raw_unique_users` is the exact count from the past 7 days; `projected_unique_users` is adjusted for frequency caps and budget.
 
 ### POST /estimates/bid
@@ -888,12 +890,8 @@ Get recommended bid range based on ad set parameters.
 
 **Request Body:** `BidEstimateRequest`
 
-Required fields:
-- `asset_format` (string, required) — AUDIO, VIDEO, IMAGE, or CATALOG
-- `objective` (string, required) — REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, or WEBSITE_VISITS
-- `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, AUTOBID, or UNSET
-- `currency` (string, required) — e.g. "USD"
-- `targets` (object, required) — Same Targets structure as ad set creation
+Required fields: include every field the live spec marks as required, following `skills/api-reference/references/live-openapi.md`. Do not rely on a hard-coded list here.
+Use the ad account's billing currency.
 
 Optional fields:
 - `frequency_caps` (array) — Frequency cap objects

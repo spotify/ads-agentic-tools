@@ -115,6 +115,8 @@ checklist.
 
 For reserved `CONTENT` or `FPMNG` buys, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) before presenting the plan or creating draft ad sets. Fetch the fixed rate for the planned product, dates, format, and targeting, then use its `cost_micro` as the draft ad set `bid_micro_amount`. Show the fixed rate separately from any audience estimate.
 
+Before creating draft ad sets, run the audience estimate from `build-campaign` Step 2.5 for each ad set. Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`; choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates). The `AUTOBID` omission of `bid_micro_amount` applies only to ad set payloads, not to the estimate request.
+
 #### Step 2: Confirm the Parsed Plan
 
 Present the plan as a visual tree, clearly labeled as **DRAFT**:

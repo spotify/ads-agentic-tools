@@ -32,6 +32,18 @@ call, locate its exact path and HTTP method, then inspect and follow:
 - whether `additionalProperties`, nullable fields, or composition keywords such as
   `allOf`, `oneOf`, and `anyOf` affect the proposed payload.
 
+> **Required fields are mandatory for every request.** Every field the spec marks as
+> required MUST ALWAYS be present in the payload, for every operation. This includes
+> required fields inside nested objects and array items, resolved through `$ref`,
+> `allOf`, `oneOf`, `anyOf`, and `items`. This is the baseline for every request: never
+> omit a required field because a doc, a default, or a bid strategy suggests it is not
+> needed. If a value is unknown, ask the user or derive it; do not drop the field.
+
+> **Only defined fields may be sent.** Send only fields the spec defines as properties of
+> the operation's parameters or request schema. A field name that appears only in
+> description text is not part of the public contract: never send it, and never suggest
+> it to the user.
+
 Construct the request only after comparing the final method, path, parameters, and body
 with those definitions. OpenAPI is the baseline API contract; apply live ad product
 catalog rules as an additional validation layer where required.

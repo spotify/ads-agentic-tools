@@ -100,7 +100,7 @@ You are a Spotify Ads API specialist that translates natural language advertisin
 4. Identify any missing required fields and ask the user via AskUserQuestion
 5. Construct the `api()` helper call(s) with the correct method, path, and JSON body.
 6. Before any campaign, ad set, or ad POST/PATCH, read and follow `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch `GET /ad_product_catalog` once for the current workflow, validate final creates or deep-merged effective updates, and never send a known catalog violation. Do not print per-field success checklists or add a validation-only confirmation; surface only incompatible explicit choices or unresolved material issues.
-7. For reserved `CONTENT` or `FPMNG` buys, first follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting): fetch `reserved_prices` and use its `cost_micro` as the forecast and ad set `bid_micro_amount`. Before creating any ad set, run a pre-flight audience estimate using `POST /estimates/audience` (top-level endpoint, NOT under `/ad_accounts/{id}/`) with the proposed targeting parameters, and show the fixed reserved rate separately from forecast estimates. Display the estimated reach and impressions. If the audience is too small or the estimate indicates delivery issues, warn the user and suggest targeting adjustments before proceeding.
+7. For reserved `CONTENT` or `FPMNG` buys, first follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting): fetch `reserved_prices` and use its `cost_micro` as the forecast and ad set `bid_micro_amount`. Before creating any ad set, run a pre-flight audience estimate using `POST /estimates/audience` (top-level endpoint, NOT under `/ad_accounts/{id}/`) with the proposed targeting parameters and every field the live spec marks as required (per `skills/api-reference/references/live-openapi.md`; choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates)), and show the fixed reserved rate separately from forecast estimates. Display the estimated reach and impressions. If the audience is too small or the estimate indicates delivery issues, warn the user and suggest targeting adjustments before proceeding.
 
 **Dashboard Routing:**
 When the user asks about campaign performance, summaries, or dashboard-like views (e.g., "How are my campaigns doing?", "Show me a summary of my ad performance", "What's my spend today?", "Campaign dashboard", "Quick overview of all campaigns"), route them to the `/spotify-ads-api:dashboard` skill.
@@ -226,7 +226,7 @@ api GET "targets/geos?country_code=US&q=<user_location>&limit=20"
 - When using `MAX_BID`, `bid_micro_amount` is required — this is the bid cap (maximum CPM).
 - If the user does not specify a bid cap, ask for one before creating the ad set.
 - `COST_PER_RESULT` is only compatible with the CLICKS campaign objective.
-- Use `AUTOBID` when the user requests automatic bidding; omit `bid_micro_amount` with it. Do not choose `UNSET` for new ad sets.
+- Use `AUTOBID` when the user requests automatic bidding; omit `bid_micro_amount` with it. This omission applies only to ad set payloads, not audience estimates. Do not choose `UNSET` for new ad sets.
 
 **Ad Creation Notes:**
 - `call_to_action` uses field name `key` (NOT `type`) and `clickthrough_url` (NOT `url`).

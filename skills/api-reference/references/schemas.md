@@ -382,9 +382,7 @@ Insight reports support filtering by a single ad set ID or campaign ID via `enti
 ## Estimate Schemas
 
 ### AudienceEstimateRequest
-Required: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget`, `targets`
-
-**Important:** `budget` here requires a `currency` field (e.g. "USD") in addition to `micro_amount` and `type`. This differs from the ad set budget which does not require `currency`.
+Required fields: include every field the live spec marks as required, following `skills/api-reference/references/live-openapi.md`. Choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates), and use the ad account's billing currency in `budget.currency`. Ad set budgets do not carry `currency`.
 
 ```json
 {
@@ -447,7 +445,7 @@ Required: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strat
 - All monetary values are in micro-units. Divide by 1,000,000 for currency values.
 
 ### BidEstimateRequest
-Required: `asset_format`, `objective`, `bid_strategy`, `currency`, `targets`
+Required fields: include every field the live spec marks as required, following `skills/api-reference/references/live-openapi.md`. Use the ad account's billing currency.
 ```json
 {
   "asset_format": "AUDIO | VIDEO | IMAGE | CATALOG",

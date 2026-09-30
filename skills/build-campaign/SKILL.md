@@ -65,7 +65,7 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | asset_format | yes | AUDIO | `AUDIO`, `VIDEO`, `IMAGE`, or `CATALOG` |
 | category | yes | — | Valid `ADV_X_Y` code (fetch from `GET /ad_categories` if needed) |
 | bid_strategy | yes | MAX_BID | Plain string: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET` |
-| bid_micro_amount | yes with MAX_BID/COST_PER_RESULT | 15000000 | Bid cap in micro-units. Not required with AUTOBID. |
+| bid_micro_amount | yes with MAX_BID/COST_PER_RESULT | 15000000 | Bid cap in micro-units. Omitted with AUTOBID; this applies only to ad set payloads, not audience estimates. |
 | pacing | no | PACING_EVEN | `PACING_EVEN` or `PACING_ASAP` |
 | delivery | no | ON | `ON` or `OFF` |
 | targets.age_ranges | yes | [{"min":18,"max":54}] | Array of `{min, max}` objects |
@@ -125,7 +125,7 @@ You can fetch valid categories from `GET /ad_categories` to present options.
 
 ## Step 2.5: Validate Audience Size
 
-After the user confirms the plan but before creating any entities, run an audience estimate for each ad set's targeting. For Reserved buys, use the fixed rate fetched while planning, then add `ad_product`, `end_date`, and the returned `cost_micro` as `bid_micro_amount` to the estimate request; use the returned currency and resolve other fields from the live contract and catalog. The generic example below is for auction buys:
+After the user confirms the plan but before creating any entities, run an audience estimate for each ad set's targeting. For Reserved buys, use the fixed rate fetched while planning, then add `ad_product`, `end_date`, and the returned `cost_micro` as `bid_micro_amount` to the estimate request; use the returned currency and resolve other fields from the live contract and catalog. The generic example below is for auction buys. Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`; choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates).
 
 ```bash
 api POST "estimates/audience" \

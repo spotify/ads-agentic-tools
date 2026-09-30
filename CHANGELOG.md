@@ -16,6 +16,8 @@
 - Antigravity gets a warning rather than a rewrite when attribution is missing, because its `PreToolUse` contract supports allow and deny decisions only and cannot modify a tool call on any of its hook events
 
 ### Fixed
+- Audience estimate guidance no longer claims `AUTOBID` estimates can omit `bid_micro_amount` (the server returns 400 `bidMicroAmount must not be null`). The AUTOBID no-bid exception now applies only to ad set payloads. Hard-coded estimate required-field lists were replaced with a pointer to the live spec, and `endpoints.md` now explains only where the estimate bid comes from: the user's bid, the Reserved fCPM, or `POST /estimates/bid`.
+- `live-openapi.md` and `AGENTS.md` now state a general rule: every request payload must include every field the live spec marks as required, including nested and array-item fields, for every endpoint
 - `eval $(api --env)` silently set nothing. The printed values were unquoted, so the space inside `SDK_HEADER` split the assignment and every line became a prefix assignment to a nonexistent command. Raw-curl paths that follow the documented flow, including asset and audience uploads, were therefore sending an empty `Authorization` header along with empty tracking headers. All values are now single-quoted, with embedded single quotes escaped
 - Removed the obsolete root `settings.json`, whose object-valued `agent` field caused Claude's UI marketplace sync to reject the plugin with `plugin_upload_settings_invalid`; tool permissions remain defined in the skill and agent frontmatter
 

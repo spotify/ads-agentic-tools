@@ -112,7 +112,7 @@ If budget type is LIFETIME and the user changed dates, verify that `end_time` is
 
 #### Audience estimate validation
 
-If targeting, dates, objective, bid, or budget changed for any cloned ad set, run a pre-flight audience estimate before creating it:
+If targeting, dates, objective, bid, or budget changed for any cloned ad set, run a pre-flight audience estimate before creating it. Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`; choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates).
 
 ```bash
 api POST "estimates/audience" \
