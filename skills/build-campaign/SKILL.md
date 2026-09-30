@@ -292,4 +292,4 @@ These are non-obvious API requirements that MUST be followed:
 6. **`companion_asset_id`** is required when creating ads for AUDIO ad sets
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
 8. Budget amounts must be in **micro-units** (multiply amount by 1,000,000)
-9. **Min audience thresholds** apply — VIDEO format may require broader targeting than AUDIO. If you get a "Min audience threshold was not met" error, suggest expanding the age range or switching format.
+9. **Min audience thresholds** apply — VIDEO format may require broader targeting than AUDIO. "Min audience threshold was not met" is a 400 caused by targeting that is too narrow, not by a malformed payload. Do not resend the same request, and do not change the targeting on your own. Tell the user the audience is too small, suggest ways to widen it (for example a broader age range, more locations, or a different format), show `bid_suggestion` if the response includes one, then estimate again with the targeting the user chooses.
