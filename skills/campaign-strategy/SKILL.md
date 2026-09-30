@@ -32,7 +32,7 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - For restricted categories such as healthcare, finance, alcohol, gambling, politics, or medicine, add a policy note and keep targeting/copy conservative.
 
 3. Build the campaign strategy.
-   - Choose the campaign objective from API enums: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`, `PODCAST_STREAMS`, `APP_INSTALLS`, or `WEBSITE_VISITS`.
+   - Choose the campaign objective from API enums: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `EVEN_IMPRESSION_DELIVERY`, `PODCAST_STREAMS`, `APP_INSTALLS`, or `WEBSITE_VISITS`. For reserved `CONTENT` or `FPMNG`, resolve campaign and forecast objectives from the current OpenAPI contract and live ad product catalog instead of applying auction defaults.
    - For reach or local awareness, prefer one broad ad set over many narrow splits. Add a second ad set only when it controls a meaningful geo, format, budget, or message difference.
    - Put creative/message variations inside ads, not separate ad sets, unless targeting or format differs.
    - Choose asset format from available assets and the goal. Use AUDIO as the default reach format when no strong video asset exists. Add VIDEO only when video assets are available and the budget can support a separate format test.
@@ -44,8 +44,9 @@ If budget, dates, or market are missing, make a conservative recommendation and 
    - Fetch valid ad categories from `GET /ad_categories`; use the closest exact category code.
    - Look up every requested geo with `GET /targets/geos?country_code=<code>&q=<query>&limit=20`; never fall back to country-only without saying so.
    - Use only targeting dimensions available in the Ads API. If recommending interests, genres, artists, playlists, or languages, validate them with the matching target endpoint before presenting IDs. **Only `/targets/geos` accepts `limit`/`offset` parameters.** All other target endpoints (`/targets/genres`, `/targets/interests`, `/targets/artists`, `/targets/playlists`, `/targets/languages`) accept only `q` and/or `ids` — passing `limit` will cause a 400 error.
+   - For `CONTENT` or `FPMNG` reserved buys, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting): call `POST /ad_accounts/{id}/reserved_prices` first for each distinct planned product, date, format, and targeting; use its `cost_micro` as the `bid_micro_amount` in the matching `POST /estimates/audience` request. Use the returned currency and resolve product-specific forecast fields from the current OpenAPI contract and live catalog. Show the fixed price separately from the forecast. Do not use a zero estimated CPM or bid suggestion as the reserved price.
    - Before recommending final ad sets, run `POST /estimates/audience` for each ad set when credentials are available. This is a **top-level endpoint** (not under `/ad_accounts/`) and requires 8 fields in the request body: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget` (including `currency`), and `targets`. See `references/planning-framework.md` for the full request schema.
-   - Run `POST /estimates/bid` when bid guidance is needed or the user has not supplied a bid cap. This is also a **top-level endpoint** requiring: `asset_format`, `objective`, `bid_strategy`, `currency`, and `targets`.
+   - Run `POST /estimates/bid` when auction bid guidance is needed or the user has not supplied an auction bid cap. This is also a **top-level endpoint** requiring: `asset_format`, `objective`, `bid_strategy`, `currency`, and `targets`.
 
 5. Apply execution conventions.
    - Set the plugin root and define the request wrapper:
