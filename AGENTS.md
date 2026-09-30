@@ -1,6 +1,6 @@
 # Repository Instructions
 
-This is the canonical instruction file for agents working in this repository. Codex reads `AGENTS.md` directly; Claude Code keeps `CLAUDE.md` as a compatibility shim that points back here.
+This is the canonical instruction file for agents working in this repository. Codex and Claude Code (2.1.277 and later) both read `AGENTS.md` directly.
 
 ## What This Is
 
