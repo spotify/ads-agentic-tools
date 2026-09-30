@@ -234,10 +234,12 @@ api GET "targets/geos?country_code=US&q=<user_location>&limit=20"
 - `tagline` max 40 chars, `advertiser_name` max 25 chars.
 
 **Status Code Capture:**
-The `api` wrapper appends `\nHTTP_STATUS:<code>` to every response. Always check the `HTTP_STATUS:` line first before interpreting the response body.
+The `api` wrapper appends `\nHTTP_STATUS:<code>` to every response. Always check the `HTTP_STATUS:` line first before interpreting the response body. When a 403 response body says the client ID is not allow-listed, the wrapper also appends an `ADS_API_HINT` line — relay that hint to the user verbatim.
 
 **Error Handling:**
 - If the API returns a **401 Unauthorized**, the token is likely expired. If settings use `auth_flow: authorization_code_pkce` with a refresh token and client ID, the pre-tool hook should auto-refresh. If auto-refresh did not occur, suggest running the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity) to authorize again.
+- If the API returns a **403** and the wrapper appended an `ADS_API_HINT` line, the body said the client ID is not allow-listed for the Ads API. Tell the user to open https://adsmanager.spotify.com/api-terms with the target ad account selected and accept the API terms; the saved tokens remain valid, so after accepting, retry the same call. Do not describe this as a developer-dashboard access request — the terms page is the only allow-listing step.
+- Other **403s** (wrong ad account, insufficient role, data the token is not authorized for) are ordinary permission denials: report the specific denial from the response body without allow-list guidance.
 - If the API returns other errors, read the error message and explain what went wrong in plain language
 - Suggest fixes for common errors (missing fields, budget too low, targeting too narrow, etc.)
 - Never retry automatically on 4xx errors — explain the issue to the user

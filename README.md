@@ -190,6 +190,9 @@ directory or an exported `CODEX_PLUGIN_ROOT` variable.
 **"Token may be invalid or expired"**
 If using OAuth, the plugin auto-refreshes tokens. If the refresh token is also expired, re-run `/spotify-ads-api:configure`. If using direct token mode, obtain a new token and run `/spotify-ads-api:configure token`, then enter it at the secure terminal prompt.
 
+**"403 — client ID not allow-listed for the Ads API"**
+The OAuth login succeeded but the API rejects calls with an error like `Client ID <id> is not allow-listed`. The client ID has not been authorized for Ads API use on your ad account yet. Open [https://adsmanager.spotify.com/api-terms](https://adsmanager.spotify.com/api-terms) with the target ad account selected and accept the API terms. Existing tokens remain valid; once the terms are accepted, retry without reconfiguring. Other 403s (wrong ad account, insufficient role, unauthorized data) are ordinary permission denials and are unrelated to allow-listing.
+
 **"Ad account ID may be incorrect"**
 Verify your ad account UUID. You can find it in the Spotify Ads Manager or by asking the plugin to list accounts after configuring a valid token.
 

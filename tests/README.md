@@ -13,7 +13,7 @@ The shell regression suites run offline with no credentials, no network, and no 
 
 ```bash
 bash tests/test-check-token.sh    # hooks/check-token.sh
-bash tests/test-api-request.sh    # scripts/api-request.sh --env
+bash tests/test-api-request.sh    # scripts/api-request.sh --env and the 403 allow-list hint (curl stubbed)
 bash tests/test-openapi-fetch.sh  # scripts/fetch-openapi-schema.sh
 bash tests/test-marketplace-metadata.sh
 ```

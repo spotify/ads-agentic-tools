@@ -20,8 +20,10 @@ Never substitute a plugin-global client ID; this plugin does not provide one.
 **Prerequisites**
 
 - A team administrator has created or selected a Spotify Developer application,
-  enabled the Ads API, completed applicable Ads API authorization steps, and
-  registered `http://127.0.0.1:8080/callback` exactly.
+  enabled the Ads API, accepted the Ads API terms at
+  [https://adsmanager.spotify.com/api-terms](https://adsmanager.spotify.com/api-terms)
+  with the target ad account selected (this is what allow-lists the client ID),
+  and registered `http://127.0.0.1:8080/callback` exactly.
 - Python 3.8+ or `uv` is available for the standard-library PKCE helper.
 
 1. Choose the active settings file:
@@ -193,7 +195,23 @@ For direct-token mode, set `auth_flow: "direct_token"` and leave
 ## Verification Results
 
 - **200**: Configuration saved and verified successfully.
-- **401/403**: Token may be invalid, expired, or unauthorized for the account.
+- **401**: Token may be invalid or expired. With OAuth, re-run this skill to
+  reauthorize; with direct tokens, obtain a new token.
+- **403 whose response body says the client ID is not allow-listed** (e.g.
+  `Client ID <id> is not allow-listed`): This is fixed by accepting the API
+  terms — there is no developer-dashboard request form to wait for. Always tell
+  the user to open
+  [https://adsmanager.spotify.com/api-terms](https://adsmanager.spotify.com/api-terms),
+  make sure the correct ad account is selected, and accept the terms. The
+  request wrapper appends an `ADS_API_HINT` line with this URL whenever a 403
+  body carries the not-allow-listed marker; relay it. Reassure the user that
+  the saved OAuth tokens remain valid (they auto-refresh) and that after
+  accepting the terms the same calls will work without reconfiguring — then
+  re-run verification when the user confirms.
+- **403 on other calls** (wrong ad account, insufficient role, data the token
+  is not authorized for): ordinary permission denials. Report the specific
+  denial from the response body; do not generalize it to an allow-list problem
+  and do not mention the terms page.
 - **404**: The selected ad account ID may be incorrect.
 - Other errors: report the status and the response error without exposing tokens.
 
