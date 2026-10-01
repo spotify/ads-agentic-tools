@@ -147,7 +147,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 5. Build `geo_targets` object with appropriate IDs
 6. NEVER fall back to country-only without asking user first
 
-**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting. If the parent campaign uses `CONTENT` or `FPMNG`, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) first: fetch the fixed rate for the planned product, dates, format, and targeting; use `cost_micro` in both the ad set and audience estimate as `bid_micro_amount`; set `ad_product` and the returned currency in the estimate, and resolve the other product-specific fields from the current OpenAPI contract and live catalog. Report the fixed rate separately from forecast CPM and bid suggestions. The generic example below is for auction buys. Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`; choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates).
+**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting. If the parent campaign uses `CONTENT` or `FPMNG`, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) first: fetch the fixed rate for the planned product, dates, format, and targeting; use `cost_micro` in both the ad set and audience estimate as `bid_micro_amount`; set `ad_product` and the returned currency in the estimate, and resolve the other product-specific fields from the current OpenAPI contract and live catalog. Report the fixed rate separately from forecast CPM and bid suggestions. The generic example below is for auction buys.
 
 ```bash
 api POST "estimates/audience" \
@@ -174,13 +174,15 @@ Audience Estimate:
   Estimated CPM: $12.50 – $18.00
 ```
 
-If the audience is too small (low projected users or 400 error), warn the user and suggest:
+If the audience is too small (low projected users or a "Min audience threshold was not met" 400), warn the user and suggest:
 - Broadening the age range
 - Adding more platforms
 - Switching from VIDEO to AUDIO format (lower thresholds)
 - Expanding geo targeting
 
-Ask whether to proceed, adjust targeting, or cancel before creating the ad set.
+A "Min audience threshold was not met" 400 means the targeting is too narrow. Do not resend the same request, and do not widen the targeting on your own. Show `bid_suggestion` only when the response includes it (other estimate 400s are a plain `ErrorResponse` without it), ask the user how to broaden the targeting, then estimate again with their choice.
+
+If the estimate came back valid but low, ask whether to proceed, adjust targeting, or cancel before creating the ad set. After a threshold 400, do not offer to proceed with the same targeting; offer only to adjust targeting or cancel.
 
 **Create the draft ad set:**
 

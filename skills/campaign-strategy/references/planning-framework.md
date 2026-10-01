@@ -91,7 +91,7 @@ Prefer ad rotation when only the message differs:
 }
 ```
 
-Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`. Choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates), and use the ad account's billing currency.
+The `budget` object requires `currency` (e.g. "USD") in addition to `micro_amount` and `type`.
 
 `POST /estimates/bid` example body:
 ```json
@@ -103,8 +103,6 @@ Include every field the live spec marks as required, per `skills/api-reference/r
   "targets": { "...same Targets as ad set..." }
 }
 ```
-
-Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`, and use the ad account's billing currency.
 
 ## Creative and Asset Guidance
 

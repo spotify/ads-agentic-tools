@@ -125,7 +125,7 @@ You can fetch valid categories from `GET /ad_categories` to present options.
 
 ## Step 2.5: Validate Audience Size
 
-After the user confirms the plan but before creating any entities, run an audience estimate for each ad set's targeting. For Reserved buys, use the fixed rate fetched while planning, then add `ad_product`, `end_date`, and the returned `cost_micro` as `bid_micro_amount` to the estimate request; use the returned currency and resolve other fields from the live contract and catalog. The generic example below is for auction buys. Include every field the live spec marks as required, per `skills/api-reference/references/live-openapi.md`; choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates).
+After the user confirms the plan but before creating any entities, run an audience estimate for each ad set's targeting. For Reserved buys, use the fixed rate fetched while planning, then add `ad_product`, `end_date`, and the returned `cost_micro` as `bid_micro_amount` to the estimate request; use the returned currency and resolve other fields from the live contract and catalog. The generic example below is for auction buys.
 
 ```bash
 api POST "estimates/audience" \
@@ -163,8 +163,10 @@ Convert any CPM micro-amounts to the ad account's billing currency for display.
 - Switching from VIDEO to AUDIO format (lower thresholds)
 - Expanding geo targeting
 
+If the API returned "Min audience threshold was not met", follow rule 9 under Critical Schema Notes: do not resend the same request, do not widen the targeting on your own, and only offer to adjust targeting (then re-estimate) or cancel. "Proceed anyway" is only for an estimate that came back valid but low.
+
 Use AskUserQuestion to ask whether to:
-1. Proceed anyway with current targeting
+1. Proceed anyway with current targeting (only when the estimate came back valid but low)
 2. Adjust targeting (then re-estimate)
 3. Cancel this ad set
 

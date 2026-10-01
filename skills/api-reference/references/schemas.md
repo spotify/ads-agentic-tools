@@ -382,7 +382,9 @@ Insight reports support filtering by a single ad set ID or campaign ID via `enti
 ## Estimate Schemas
 
 ### AudienceEstimateRequest
-Required fields: include every field the live spec marks as required, following `skills/api-reference/references/live-openapi.md`. Choose the bid value as described in `skills/api-reference/references/endpoints.md` (Choosing `bid_micro_amount` for audience estimates), and use the ad account's billing currency in `budget.currency`. Ad set budgets do not carry `currency`.
+Required: `ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget`, `targets`
+
+**Important:** `budget` here requires a `currency` field (e.g. "USD") in addition to `micro_amount` and `type`. This differs from the ad set budget which does not require `currency`.
 
 ```json
 {
@@ -445,7 +447,7 @@ Required fields: include every field the live spec marks as required, following 
 - All monetary values are in micro-units. Divide by 1,000,000 for currency values.
 
 ### BidEstimateRequest
-Required fields: include every field the live spec marks as required, following `skills/api-reference/references/live-openapi.md`. Use the ad account's billing currency.
+Required: `asset_format`, `objective`, `bid_strategy`, `currency`, `targets`
 ```json
 {
   "asset_format": "AUDIO | VIDEO | IMAGE | CATALOG",
@@ -555,14 +557,15 @@ Bid amounts are in micro-units. Divide by 1,000,000 for currency values.
 }
 ```
 
-On validation failure, the API returns HTTP 400 with:
+On hierarchy validation failure, the API returns HTTP 400 with:
 ```json
 {
   "validation_errors": [
     {
       "validation_entity_type": "CAMPAIGN | AD_SET | AD",
       "validation_entity_id": "uuid",
-      "message": "string"
+      "message": "string",
+      "error_codes": ["string"]
     }
   ]
 }
@@ -570,5 +573,5 @@ On validation failure, the API returns HTTP 400 with:
 
 **Notes:**
 - `draft_hierarchy_version` is read-only and is populated on draft campaign responses. Draft ad set and draft ad responses return `null`. The campaign version increments whenever any entity in the draft hierarchy is edited. Always fetch the draft campaign immediately before publishing or validating, and do not reuse a version captured before child draft entities or edits.
-- `validation_errors` is `null` on success; populated with per-entity errors on HTTP 400 validation failure.
+- `validation_errors` is `null` on success (200). On a 400, check for `validation_errors` first.
 - The same schema pitfalls apply to drafts: `bid_strategy` is a plain string, `geo_targets` is a flat object, `category` is required on ad sets, etc.

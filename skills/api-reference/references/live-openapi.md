@@ -36,8 +36,8 @@ call, locate its exact path and HTTP method, then inspect and follow:
 > required MUST ALWAYS be present in the payload, for every operation. This includes
 > required fields inside nested objects and array items, resolved through `$ref`,
 > `allOf`, `oneOf`, `anyOf`, and `items`. This is the baseline for every request: never
-> omit a required field because a doc, a default, or a bid strategy suggests it is not
-> needed. If a value is unknown, ask the user or derive it; do not drop the field.
+> omit a required field because a doc suggests it is not needed. If a value is unknown,
+> ask the user or derive it; do not drop the field.
 
 > **Only defined fields may be sent.** Send only fields the spec defines as properties of
 > the operation's parameters or request schema. A field name that appears only in
