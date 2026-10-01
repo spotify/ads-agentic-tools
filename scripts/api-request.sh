@@ -145,8 +145,9 @@ BODY="${3:-}"
 
 SKILL_HEADER="X-Spotify-Ads-Skill: ${SKILL}"
 
-# --- Substitute {ad_account_id} in path ---
+# --- Substitute {ad_account_id} in path and body ---
 PATH_ARG="${PATH_ARG//\{ad_account_id\}/$AD_ACCOUNT_ID}"
+BODY="${BODY//\{ad_account_id\}/$AD_ACCOUNT_ID}"
 
 URL="${BASE_URL}/${PATH_ARG}"
 

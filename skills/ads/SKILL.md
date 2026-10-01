@@ -180,7 +180,7 @@ If the audience is too small (low projected users or a "Min audience threshold w
 - Switching from VIDEO to AUDIO format (lower thresholds)
 - Expanding geo targeting
 
-A "Min audience threshold was not met" 400 means the targeting is too narrow. Do not resend the same request, and do not widen the targeting on your own. Show `bid_suggestion` only when the response includes it (other estimate 400s are a plain `ErrorResponse` without it), ask the user how to broaden the targeting, then estimate again with their choice.
+A "Min audience threshold was not met" 400 means the targeting is too narrow. Do not resend the same request, and do not widen the targeting on your own. Show `bid_suggestion` only when the response includes it, ask the user how to broaden the targeting, then estimate again with their choice.
 
 If the estimate came back valid but low, ask whether to proceed, adjust targeting, or cancel before creating the ad set. After a threshold 400, do not offer to proceed with the same targeting; offer only to adjust targeting or cancel.
 

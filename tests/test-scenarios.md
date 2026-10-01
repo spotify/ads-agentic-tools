@@ -477,33 +477,6 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 
 ---
 
-## Scenario 12b: AUTOBID Estimate Gets Its Bid From `POST /estimates/bid`
-
-**Prompt:** "Build me an audio campaign for US listeners aged 25-34 with $50/day budget and automatic bidding"
-
-**Quirks tested:** AUTOBID no-bid exception applies only to ad set payloads, not to the audience estimate
-
-**Expected behavior:**
-1. Plugin plans the ad set with `bid_strategy: AUTOBID` and no `bid_micro_amount` on the ad set
-2. Before the audience estimate, plugin calls `POST /estimates/bid` with the same targeting, asset format, objective, frequency caps, and currency
-3. Plugin uses `bid_estimate_max` as `bid_micro_amount` in `POST /estimates/audience`
-4. The ad set create request still omits `bid_micro_amount`
-
-**Expected calls:**
-```bash
-api POST "estimates/bid" '{ <fields the live spec marks as required, same targeting> }'
-api POST "estimates/audience" '{ ..., "bid_strategy": "AUTOBID", "bid_micro_amount": <bid_estimate_max>, ... }'
-```
-
-**Success criteria:**
-- `POST /estimates/bid` runs before `POST /estimates/audience`
-- The audience estimate includes a `bid_micro_amount` greater than 0
-- The ad set payload does not include `bid_micro_amount`
-- Every field the live spec marks as required is present in both estimate requests
-- If user adjusts targeting, estimate re-runs with new parameters
-
----
-
 ## Scenario 13: Dashboard
 
 **Prompt:** `/spotify-ads-api:dashboard`
