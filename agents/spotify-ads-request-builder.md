@@ -157,6 +157,7 @@ Route all campaign, ad set, and ad creation or modification requests to the `/sp
 Route focused requests to the matching skill instead of rebuilding those workflows here:
 - Multi-entity pause, resume, budget, delivery, archive, or creative changes → `/spotify-ads-api:bulk`
 - Campaign or ad-set duplication → `/spotify-ads-api:clone`
+- Media plans, planning grids, or insertion-order worksheets (spreadsheet, PDF, document, presentation, or text) to convert into Spotify drafts → `/spotify-ads-api:media-plan-to-draft`
 - Denormalized campaign data or metrics files → `/spotify-ads-api:export`
 - Pacing, stalled delivery, budget burn, or campaign health → `/spotify-ads-api:monitor`
 - Creative file upload or asset lifecycle → `/spotify-ads-api:assets`

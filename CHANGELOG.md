@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Media-plan-to-draft orchestration for spreadsheet, document, presentation, PDF, and text plans, with source provenance, reconciliation, live Ads API enrichment and forecasts, explicit completeness states, a strict review gate, and handoff to the existing draft workflow without publishing
 - Skill and SDK attribution enforcement in the `PreToolUse` hook, as `hooks/lib/attribution.sh` sourced by `hooks/check-token.sh`. Raw curl calls that skip the request wrapper are rewritten to carry `X-Spotify-Ads-Skill` and `X-Spotify-Ads-Sdk`, so per-skill usage and error-rate reporting is no longer blind to ad-hoc traffic. Attribution is a sourced library rather than a second hook on purpose: matching `PreToolUse` hooks run in parallel against the original input and the last rewrite wins, so a separate hook would race the token refresh and drop one of the two edits
 - Best-effort skill inference from the session transcript, scanning the most recent lines newest-first and accepting only names matching a real skill in this plugin. Inferred values carry an `-inferred` suffix so reporting can separate them from the wrapper's deterministic value
 - `SPOTIFY_ADS_SKILL_LOOKBACK_LINES` to tune how far back skill inference looks, defaulting to 300 transcript lines
