@@ -15,6 +15,7 @@ The plugin follows the agent plugin structure with four component types:
   - `skills/campaigns/` — Campaign CRUD operations
   - `skills/ads/` — Ad set and ad management
   - `skills/build-campaign/` — Full campaign builder from natural language descriptions (prefers draft flow)
+  - `skills/media-plan-to-draft/` — Source-traceable media-plan ingestion, Ads API enrichment and forecasting, review gating, and approved draft handoff
   - `skills/drafts/` — Draft campaign lifecycle: create, edit, validate, and publish draft campaigns, ad sets, and ads. **Preferred flow** for creating new campaigns — builds the full hierarchy as drafts, validates everything at once, then publishes only after review.
   - `skills/report/` — Aggregate, insight, and async CSV reporting
   - `skills/assets/` — Upload, list, and manage creative assets (audio, video, images)
