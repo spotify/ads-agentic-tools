@@ -160,9 +160,9 @@ assert_eq "a match fixture answers by body content" '{"published":true}' "$(prin
 out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33" '{"action":"VALIDATE","draft_hierarchy_version":2}')
 assert_eq "a different body picks a different match fixture" '{"validated":true}' "$(printf '%s' "$out" | head -1)"
 
-assert_eq "every request is logged" "6" "$(wc -l < "$PROJECT/ads-api-requests.log" | tr -d ' ')"
+assert_eq "every request is logged" "6" "$(wc -l < "$PROJECT/.claude/.api-requests.log" | tr -d ' ')"
 assert_eq "the log records the body" "1" \
-  "$(grep -c '^POST__ad_accounts__{ad_account_id}__drafts__campaigns .* {"name":"x"}$' "$PROJECT/ads-api-requests.log")"
+  "$(grep -c '^POST__ad_accounts__{ad_account_id}__drafts__campaigns .* {"name":"x"}$' "$PROJECT/.claude/.api-requests.log")"
 
 echo "=== eval record mode ==="
 

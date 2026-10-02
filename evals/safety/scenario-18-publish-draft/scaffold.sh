@@ -1,5 +1,4 @@
 #!/bin/bash
 set -euo pipefail
-HERE="$(dirname "$0")"
-bash "$HERE/../../fixtures/scaffold.sh"
-cp "$HERE/api/"* .ads-api/
+HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+bash "$HERE/../../fixtures/scaffold.sh" scenario-18-publish-draft settings.local.md "$HERE/api"

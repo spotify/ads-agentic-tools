@@ -209,7 +209,7 @@ resolve_dir() {
 
 if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
   FIXTURE_DIR=$(resolve_dir "$EVAL_ADS_API_FIXTURES")
-  LOG_FILE="${EVAL_ADS_API_LOG:-$PROJECT_DIR/ads-api-requests.log}"
+  LOG_FILE="${EVAL_ADS_API_LOG:-$PROJECT_DIR/.claude/.api-requests.log}"
   KEY=$(fixture_key)
 
   CALL_N=1
@@ -234,7 +234,8 @@ if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
   if [ ! -f "$FIXTURE" ]; then
     # Look like a real API 404 so the agent under test can't tell it's in an eval.
     # The request log above already records the key that had no fixture.
-    printf '{"messages":["Not found"],"error_codes":[{"code":"NOT_FOUND","definition":"NOT_FOUND"}]}\nHTTP_STATUS:404\n'
+    # Same shape as the real API's 404 body (recorded), including its camelCase key.
+    printf '{"errorCodes":[],"messages":["Resource not found"]}\nHTTP_STATUS:404\n'
     exit 0
   fi
   tail -n +2 "$FIXTURE"

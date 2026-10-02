@@ -1,2 +1,2 @@
 200
-{"paging": {"page_size": 50, "total_results": 1, "offset": 0, "current_page": 1}, "businesses": [{"id": "00000000-0000-4000-8000-0000000000b1", "name": "Eval Test Business", "type": "ADVERTISER", "role": "BUSINESS_MEMBER", "created_at": "2026-09-01T10:00:00Z", "updated_at": "2026-09-01T10:00:00Z"}]}
+{"paging": {"page_size": 50, "total_results": 1, "offset": 0, "current_page": 1}, "businesses": [{"id": "00000000-0000-4000-8000-0000000000b1", "name": "Northside Media Group", "type": "ADVERTISER", "role": "BUSINESS_MEMBER", "created_at": "2026-09-01T10:00:00Z", "updated_at": "2026-09-01T10:00:00Z"}]}

@@ -5,7 +5,7 @@ max_turns: 30
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill, Bash]
 env:
-  EVAL_ADS_API_FIXTURES: .ads-api
+  EVAL_ADS_API_FIXTURES: /tmp/spotify-ads-cache/scenario-19-delete-draft
 ---
 
 Delete the draft campaign 2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d01

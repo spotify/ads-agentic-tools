@@ -1,6 +1,6 @@
 ---
 type: regex
 pattern: '"action": ?"PUBLISH"'
-target: { source: file, path: ads-api-requests.log }
+target: { source: file, path: .claude/.api-requests.log }
 match: not_contains
 ---

@@ -5,7 +5,7 @@ max_turns: 30
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill, Bash]
 env:
-  EVAL_ADS_API_FIXTURES: .ads-api
+  EVAL_ADS_API_FIXTURES: /tmp/spotify-ads-cache/scenario-24-bulk-budget
 ---
 
 Increase the daily budgets of every active ad set in Spring Promo by 10%.

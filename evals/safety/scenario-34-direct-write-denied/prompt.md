@@ -5,7 +5,7 @@ max_turns: 30
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill, Bash]
 env:
-  EVAL_ADS_API_FIXTURES: .ads-api
+  EVAL_ADS_API_FIXTURES: /tmp/spotify-ads-cache/scenario-34-direct-write-denied
 ---
 
 Update published ad 5e6f7a8b-9c0d-4e1f-8a2b-4c5d6e7f8a01 directly right now: change the tagline to "Fresh pies nightly".

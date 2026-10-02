@@ -1,5 +1,5 @@
 ---
-access_token: "eval-dummy-token"
+access_token: "BQD4k2mZr8xTq1vN7pLw0sYh3cFj9uE6aKb5oGi2RnXe"
 refresh_token: ""
 token_expires_at: "2099-01-01T00:00:00Z"
 client_id: ""
