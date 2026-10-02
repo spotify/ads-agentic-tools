@@ -40,10 +40,14 @@ has --no-publish "$@"   || ARGS+=(--no-publish)
 has --judge-model "$@"  || ARGS+=(--judge-model claude-sonnet-5)
 has --max-cost-usd "$@" || ARGS+=(--max-cost-usd 20)
 
-# bubblewrap needs user namespaces, which Docker's default seccomp profile blocks.
+# Claude Code's Bash sandbox (bubblewrap) needs user namespaces, which Docker's
+# default seccomp profile blocks, and must mount /proc in a new PID namespace,
+# which Docker's masked /proc paths block. These only loosen this throwaway
+# container's own confinement.
 docker run --rm -i \
   --security-opt seccomp=unconfined \
   --security-opt apparmor=unconfined \
+  --security-opt systempaths=unconfined \
   -e CLAUDE_CODE_OAUTH_TOKEN="${CLAUDE_CODE_OAUTH_TOKEN:-}" \
   -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
   -v "$REPO:/plugin" \

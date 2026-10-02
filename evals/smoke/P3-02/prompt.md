@@ -5,7 +5,7 @@ max_turns: 30
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill, Bash]
 env:
-  EVAL_ADS_API_FIXTURES: /tmp/spotify-ads-cache/P3-02
+  EVAL_ADS_API_FIXTURES: .git/ads-cache
 ---
 
 Completion rate for the video campaign.

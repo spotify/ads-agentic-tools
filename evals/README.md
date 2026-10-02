@@ -41,10 +41,11 @@ When `EVAL_ADS_API_FIXTURES` is set, `scripts/api-request.sh` answers from fixtu
 files instead of calling the API, and appends each request to
 `.claude/.api-requests.log` in the workspace so graders can check what was sent.
 
-Each case's scaffold copies its fixtures to `/tmp/spotify-ads-cache/<case>`, outside
-the workspace. When fixtures sat in the workspace, the agent under test sometimes
-listed the folder and read them directly instead of calling the API, so keep
-fixtures, settings, and names free of anything that marks the run as a test.
+Each case's scaffold makes the workspace a git repository and copies its fixtures
+to `.git/ads-cache`. When fixtures sat in a visible folder, the agent under test
+sometimes listed the workspace and read them directly instead of calling the API.
+They can't go outside the workspace either, because eval runs can't read `/tmp`.
+Keep fixtures, settings, and names free of anything that marks the run as a test.
 `scripts/fetch-openapi-schema.sh` serves the checked-in schema snapshot.
 
 A fixture is `<METHOD>__<path>.http`: the first line is the HTTP status, the rest is

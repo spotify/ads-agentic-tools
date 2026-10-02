@@ -5,7 +5,7 @@ max_turns: 30
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill, Bash]
 env:
-  EVAL_ADS_API_FIXTURES: /tmp/spotify-ads-cache/P2-03
+  EVAL_ADS_API_FIXTURES: .git/ads-cache
 ---
 
 What's left on the Radio Revival budget?

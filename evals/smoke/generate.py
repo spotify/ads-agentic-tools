@@ -23,8 +23,9 @@ A = "{ad_account_id}"
 ACCOUNT_ID = "00000000-0000-4000-8000-000000000001"
 LOG = "{ source: file, path: .claude/.api-requests.log }"
 MONTHS = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
-DATE_RANGE = (rf"'\b({MONTHS})[a-z]*\.? \d{{1,2}}(, \d{{4}})?\s*(-|–|to|through)\s*"
-              rf"(({MONTHS})[a-z]*\.? )?\d{{1,2}}\b|\b\d{{4}}-\d\d-\d\d\s*(-|–|to)\s*\d{{4}}-\d\d-\d\d\b'")
+SEP = r"(-|–|—|→|to|through|until)"
+DATE_RANGE = (rf"'\b({MONTHS})[a-z]*\.? \d{{1,2}}(, \d{{4}})?\s*{SEP}\s*"
+              rf"(({MONTHS})[a-z]*\.? )?\d{{1,2}}\b|\b\d{{4}}-\d\d-\d\d\s*{SEP}\s*\d{{4}}-\d\d-\d\d\b'")
 # Recorded from the real API (account-independent product rules).
 with open(os.path.join(HERE, "..", "fixtures", "api", "default", "GET__ad_product_catalog.http")) as _f:
     CATALOG = json.loads(_f.read().split("\n", 1)[1])
@@ -495,7 +496,7 @@ def write_row(row_id, spec):
     tags = ["smoke", spec["principle"].split()[0] if not spec["principle"].startswith("LS") else "enum_display",
             spec["group"], "regression" if not spec["no_api"] else "capability", *spec["tags"]]
     tools = ["Read", "Glob", "Grep", "Skill"] + ([] if spec["no_api"] else ["Bash"])
-    env = "" if spec["no_api"] else f"env:\n  EVAL_ADS_API_FIXTURES: /tmp/spotify-ads-cache/{row_id}\n"
+    env = "" if spec["no_api"] else "env:\n  EVAL_ADS_API_FIXTURES: .git/ads-cache\n"
     with open(os.path.join(root, "prompt.md"), "w") as f:
         description = json.dumps(f"Sheet {row_id}. {spec['expected']}", ensure_ascii=False)
         f.write(f"---\ndescription: {description}\n"

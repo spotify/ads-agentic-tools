@@ -23,7 +23,7 @@ else
 fi
 
 SESSION_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-CLAUDE_PROJECT_DIR="$WORKSPACE" EVAL_ADS_API_FIXTURES="/tmp/spotify-ads-cache/$(basename "$CASE")" claude -p "$PROMPT" \
+CLAUDE_PROJECT_DIR="$WORKSPACE" EVAL_ADS_API_FIXTURES=.git/ads-cache claude -p "$PROMPT" \
   --plugin-dir "$PLUGIN_ROOT" --setting-sources project --session-id "$SESSION_ID" \
   --allowedTools "Bash,Read,Glob,Grep,Skill" --max-turns 30 < /dev/null
 
