@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: scenario-34-direct-write-denied
+context:
+  scaffold_script: scaffold.sh
