@@ -16,7 +16,9 @@ trap 'rm -f "$DOWNLOAD_FILE"' EXIT
 if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
   case "$EVAL_ADS_API_FIXTURES" in
     /*) SNAPSHOT="$EVAL_ADS_API_FIXTURES/openapi.yaml" ;;
-    *)  SNAPSHOT="${CLAUDE_PROJECT_DIR:-$PWD}/$EVAL_ADS_API_FIXTURES/openapi.yaml" ;;
+    *)  SNAPSHOT="${CLAUDE_PROJECT_DIR:-$PWD}/$EVAL_ADS_API_FIXTURES/openapi.yaml"
+        # Same fallback as api-request.sh when the agent has cd'd away from the workspace.
+        [ -f "$SNAPSHOT" ] || SNAPSHOT="${HOME:-}/cwd/$EVAL_ADS_API_FIXTURES/openapi.yaml" ;;
   esac
   cp "$SNAPSHOT" "$DOWNLOAD_FILE" 2>/dev/null || {
     echo "ERROR: Could not fetch the public Spotify Ads API OpenAPI schema from $OPENAPI_URL." >&2

@@ -520,7 +520,13 @@ def write_row(row_id, spec):
                     f'bash "$HERE/../../fixtures/scaffold.sh" {row_id} {settings} "$HERE/api"\n')
         os.chmod(os.path.join(root, "scaffold.sh"), 0o755)
 
-    for name, g in spec["graders"].items():
+    graders = dict(spec["graders"])
+    if not spec["no_api"] and not spec["prompt"].startswith("/"):
+        # Diagnostic: separates "no plugin skill loaded" from wording failures.
+        # Skipped for slash-command prompts, which load the skill without a Skill call.
+        graders.setdefault("plugin-skill-loaded", {"type": "tool_used", "tool": "Skill",
+                                                   "input_match": "'\"skill\"\\s*:\\s*\"spotify-ads-api:'"})
+    for name, g in graders.items():
         if spec["ask"] and name == "no-trailing-question":
             continue
         with open(os.path.join(root, "graders", f"{name}.md"), "w") as f:

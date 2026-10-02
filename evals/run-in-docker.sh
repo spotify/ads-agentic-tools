@@ -43,12 +43,23 @@ has --max-cost-usd "$@" || ARGS+=(--max-cost-usd 20)
 # Claude Code's Bash sandbox (bubblewrap) needs user namespaces, which Docker's
 # default seccomp profile blocks, and must mount /proc in a new PID namespace,
 # which Docker's masked /proc paths block. These only loosen this throwaway
-# container's own confinement.
+# container's own confinement. The tmpfs over /plugin/.claude keeps any real
+# settings file in this checkout (with live credentials) out of the container,
+# and the one over /plugin/evals/docker does the same for the saved token.
+#
+# Kept run sandboxes (--keep-temp) and traces go to a host folder outside the
+# plugin: plugin eval refuses to load cases while they sit inside the plugin dir.
+EVAL_TMP="${ADS_EVAL_TMP:-$HOME/.cache/ads-plugin-evals/tmp}"
+mkdir -p "$EVAL_TMP"
 docker run --rm -i \
   --security-opt seccomp=unconfined \
   --security-opt apparmor=unconfined \
   --security-opt systempaths=unconfined \
   -e CLAUDE_CODE_OAUTH_TOKEN="${CLAUDE_CODE_OAUTH_TOKEN:-}" \
   -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+  -e TMPDIR=/evaltmp \
+  -v "$EVAL_TMP:/evaltmp" \
   -v "$REPO:/plugin" \
+  --mount type=tmpfs,destination=/plugin/.claude \
+  --mount type=tmpfs,destination=/plugin/evals/docker \
   "$IMAGE" "${ARGS[@]}"

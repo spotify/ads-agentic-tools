@@ -37,6 +37,13 @@ fi
 
 PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
 
+# Eval runs only: agents sometimes cd into the plugin before calling this script,
+# which moves PWD away from the workspace that holds the settings and fixtures.
+# plugin eval puts the workspace at $HOME/cwd, so fall back to it there.
+if [ -n "${EVAL_ADS_API_FIXTURES:-}" ] && [ ! -d "$PROJECT_DIR/.claude" ] && [ -d "${HOME:-}/cwd/.claude" ]; then
+  PROJECT_DIR="$HOME/cwd"
+fi
+
 # --- Settings file discovery ---
 find_settings_file() {
   local order dir candidate
