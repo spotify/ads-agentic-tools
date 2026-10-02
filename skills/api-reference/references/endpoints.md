@@ -816,7 +816,7 @@ Required fields:
 - `asset_format` (string, required) — AUDIO, VIDEO, IMAGE, or CATALOG
 - `objective` (string, required) — REACH, CLICKS, VIDEO_VIEWS, CONVERSIONS, LEAD_GEN, EVEN_IMPRESSION_DELIVERY, PODCAST_STREAMS, APP_INSTALLS, or WEBSITE_VISITS
 - `bid_strategy` (string, required) — MAX_BID, COST_PER_RESULT, AUTOBID, or UNSET
-- `bid_micro_amount` (int64, required with MAX_BID/COST_PER_RESULT, not required with AUTOBID) — Bid cap in micro-units
+- `bid_micro_amount` (int64, required) — Bid cap in micro-units
 - `budget` (object, required) — Requires `micro_amount`, `type` (DAILY or LIFETIME), **and `currency`** (e.g. "USD"). Note: this differs from ad set budget which does not require `currency`.
 - `targets` (object, required) — Same Targets structure as ad set creation
 

@@ -115,6 +115,8 @@ checklist.
 
 For reserved `CONTENT` or `FPMNG` buys, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) before presenting the plan or creating draft ad sets. Fetch the fixed rate for the planned product, dates, format, and targeting, then use its `cost_micro` as the draft ad set `bid_micro_amount`. Show the fixed rate separately from any audience estimate.
 
+Before creating draft ad sets, run the audience estimate from `build-campaign` Step 2.5 for each ad set. The `AUTOBID` omission of `bid_micro_amount` applies only to ad set payloads, not to the estimate request.
+
 #### Step 2: Confirm the Parsed Plan
 
 Present the plan as a visual tree, clearly labeled as **DRAFT**:
@@ -244,11 +246,11 @@ api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
 
 The `draft_hierarchy_version` must match the current value from the draft campaign response.
 
-**If validation succeeds** (HTTP 200 with `validation_errors: null`):
+**If validation succeeds** (HTTP 200, `validation_errors` is null):
 - Display a success summary with the full draft hierarchy
 - Ask the user: **Publish now** or **Keep as draft for later**
 
-**If validation returns errors** (HTTP 400 with `validation_errors` array):
+**If validation returns errors** (HTTP 400 with a `validation_errors` array):
 - Display each error with its entity type, entity ID, and message:
   ```
   Validation Errors:
@@ -257,6 +259,8 @@ The `draft_hierarchy_version` must match the current value from the draft campai
   ```
 - Suggest fixes for each error
 - Ask the user if they want to fix the issues (for example, `edit ad-set <draft_ad_set_id>` or `edit ad <draft_ad_id>`) or delete the draft
+
+**If the request fails another way** (no `validation_errors` in the body): handle it like any other error; never retry automatically.
 
 #### Step 6: Summary
 
@@ -388,13 +392,17 @@ api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 
 **Handling the response:**
 
-- **HTTP 200** — validation passed. The response is a `PublishCampaignResult` with `validation_errors: null` and optionally `campaign` data.
-- **HTTP 400** — validation failed. The response contains a `validation_errors` array of `HierarchyValidationError` objects.
+- **HTTP 200** — validation passed. The response is a `PublishCampaignResult` with `validation_errors: null`.
+- **HTTP 400 with `validation_errors`** — validation failed. The response is a `PublishCampaignResult` whose `validation_errors` array lists `HierarchyValidationError` objects.
+- **Any other error** — handle it like any other error; never retry automatically.
+
+On a 400, check for `validation_errors` first.
 
 Each `HierarchyValidationError` has:
 - `validation_entity_type`: `CAMPAIGN`, `AD_SET`, or `AD`
 - `validation_entity_id`: UUID of the failing entity
 - `message`: human-readable error description
+- `error_codes`: error codes for the failure
 
 **If no validation errors (HTTP 200):**
 ```
@@ -404,7 +412,7 @@ Each `HierarchyValidationError` has:
   Publish now? /spotify-ads-api:drafts publish <draft_campaign_id>
 ```
 
-**If validation errors exist (HTTP 400):**
+**If validation errors exist (HTTP 400 with `validation_errors`):**
 ```
 ✗ Draft campaign "My Campaign" has validation errors:
 
@@ -465,7 +473,9 @@ api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
   '{"action":"PUBLISH","draft_hierarchy_version":<version>}'
 ```
 
-Display the published campaign details from the response. Published entities retain the same IDs they had as drafts.
+On HTTP 200, display the published campaign details from the response. Published entities retain the same IDs they had as drafts.
+
+A 400 with `validation_errors` means publish failed and nothing went live: show the errors, fix them with PATCH, and re-validate. Otherwise handle it like any other error; never retry automatically.
 
 ---
 

@@ -102,6 +102,23 @@ assert_eq "backticks in a token are not executed" \
   '`echo pwned`' "$(eval_and_get TOKEN campaigns --env)"
 
 write_settings
+echo "=== {ad_account_id} substitution ==="
+
+# Stub curl on PATH so the real request is captured instead of sent.
+mkdir -p "$TMPDIR/bin"
+printf '#!/bin/bash\nfor a in "$@"; do printf "%%s\\n" "$a"; done\n' > "$TMPDIR/bin/curl"
+chmod +x "$TMPDIR/bin/curl"
+run_request() {
+  env -u CODEX_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
+    PATH="$TMPDIR/bin:$PATH" CLAUDE_PROJECT_DIR="$PROJECT" bash "$API" "$@"
+}
+out=$(run_request estimates POST "estimates/audience" '{"ad_account_id":"{ad_account_id}","x":1}')
+assert_eq "placeholder in body is replaced" \
+  "1" "$(printf '%s\n' "$out" | grep -cx '{"ad_account_id":"test_account","x":1}')"
+out=$(run_request campaigns GET "ad_accounts/{ad_account_id}/campaigns")
+assert_eq "placeholder in path is replaced" \
+  "1" "$(printf '%s\n' "$out" | grep -c '/ad_accounts/test_account/campaigns$')"
+
 echo "=== no settings file ==="
 
 mv "$PROJECT/.claude/spotify-ads-api.local.md" "$TMPDIR/settings.bak"

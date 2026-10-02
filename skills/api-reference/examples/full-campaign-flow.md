@@ -310,7 +310,7 @@ These are non-obvious requirements discovered through real API testing:
 - **`platforms` valid values are `ANDROID`, `DESKTOP`, `IOS`** — NOT "MOBILE" or "CONNECTED_DEVICE".
 - **`placements`** inside `targets` is required — typically `["MUSIC"]` or `["PODCAST"]`.
 - **`end_time` is required** when `budget.type` is `LIFETIME`.
-- **Min audience thresholds** apply — VIDEO format requires broader targeting than AUDIO. If you hit this error, try expanding the age range.
+- **Min audience thresholds** apply — VIDEO format requires broader targeting than AUDIO. "Min audience threshold was not met" is a 400 caused by targeting that is too narrow, not by a malformed payload. Do not resend the same request or change the targeting on your own; tell the user the audience is too small, suggest ways to widen it (and show `bid_suggestion` if the response includes one), then estimate again with the targeting they choose.
 - Omitting `bid_micro_amount` when using `bid_strategy: MAX_BID` will cause an error.
 
 ### Ad Creation

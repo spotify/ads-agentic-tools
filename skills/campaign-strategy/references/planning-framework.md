@@ -69,7 +69,7 @@ Prefer ad rotation when only the message differs:
 
 **Estimate endpoints are top-level** — use `POST /estimates/audience` and `POST /estimates/bid`, NOT `/ad_accounts/{id}/estimates/...`. The `ad_account_id` goes in the request body.
 
-`POST /estimates/audience` required body:
+`POST /estimates/audience` example body:
 ```json
 {
   "ad_account_id": "<from settings>",
@@ -91,9 +91,9 @@ Prefer ad rotation when only the message differs:
 }
 ```
 
-All 8 fields (`ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_strategy`, `bid_micro_amount`, `budget`, `targets`) are required. The `budget` object requires `currency` (e.g. "USD") in addition to `micro_amount` and `type`.
+The `budget` object requires `currency` (e.g. "USD") in addition to `micro_amount` and `type`.
 
-`POST /estimates/bid` required body:
+`POST /estimates/bid` example body:
 ```json
 {
   "asset_format": "AUDIO",
@@ -103,8 +103,6 @@ All 8 fields (`ad_account_id`, `start_date`, `asset_format`, `objective`, `bid_s
   "targets": { "...same Targets as ad set..." }
 }
 ```
-
-All 5 fields (`asset_format`, `objective`, `bid_strategy`, `currency`, `targets`) are required.
 
 ## Creative and Asset Guidance
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- "Min audience threshold was not met" guidance in `AGENTS.md`, `build-campaign`, `ads`, `clone`, the request-builder agent, and the full campaign flow example no longer suggests retrying or silently widening targeting. Agents now report the narrow audience, suggest broader options along with any `bid_suggestion`, and re-estimate with the targeting the user chooses. "Proceed anyway" is offered only when the estimate came back valid but low, never after a threshold 400
+- The draft VALIDATE/PUBLISH response shape in `AGENTS.md`, `drafts`, `schemas.md`, the full campaign flow example, and `tests/test-scenarios.md` now matches the API: 200 means success, hierarchy validation errors return 400 with a `PublishCampaignResult` carrying `validation_errors`. On a 400, agents check for `validation_errors` first and never retry automatically
+- Audience estimate guidance in `AGENTS.md`, `endpoints.md`, `ads`, `build-campaign`, `drafts`, and the request-builder agent no longer claims `AUTOBID` estimates can omit `bid_micro_amount` (the server returns 400 `bidMicroAmount must not be null`). The AUTOBID no-bid exception now applies only to ad set payloads. `campaign-strategy` no longer hard-codes the estimate required-field lists and relies on the live spec instead
+- `scripts/api-request.sh` now replaces `{ad_account_id}` in the request body as well as the path. Agents that wrote the placeholder into an estimate body sent it literally and got a 400
+- `drafts` now runs an audience estimate for each draft ad set before creating it, using the same rules as `build-campaign`
+- `live-openapi.md` and `AGENTS.md` now state general rules: every request payload must include every field the live spec marks as required, including nested and array-item fields, for every endpoint; only fields the spec defines may be sent; and docs must not name fields the public spec does not define
+
 ## [1.9.0] - 2026-10-01
 
 ### Added

@@ -452,8 +452,28 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 - Endpoint is top-level `/estimates/audience`, NOT under `/ad_accounts/{id}/`
 - The selected Portland geo ID is included; the plugin does not silently fall back to US-only targeting
 - Warning displayed when audience is too small
-- User given options to proceed, adjust, or cancel
-- If user adjusts targeting, estimate re-runs with new parameters
+- User given options to proceed, adjust, or cancel (proceed only when the estimate came back valid but low)
+
+---
+
+## Scenario 12a: Min Audience Threshold 400
+
+**Prompt:** Same as Scenario 12, but `POST /estimates/audience` returns HTTP 400 with "Min audience threshold was not met".
+
+**Quirks tested:** Threshold 400 is a targeting problem, not a payload problem
+
+**Expected behavior:**
+1. Plugin tells the user the audience is too small for this targeting
+2. Plugin does not resend the same estimate request
+3. Plugin does not widen the targeting on its own
+4. Plugin suggests ways to broaden (wider age range, more locations, AUDIO instead of VIDEO) and shows `bid_suggestion` if the response includes one
+5. Plugin asks the user how to broaden, then runs `POST /estimates/audience` again with the targeting the user chose
+
+**Success criteria:**
+- No second identical estimate request
+- No targeting change without the user's choice
+- "Proceed anyway" with the same targeting is not offered
+- A new estimate runs after the user picks new targeting, before any ad set is created
 
 ---
 
@@ -686,8 +706,8 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST -H "Authorization: Bearer <token
 - `action` is `"VALIDATE"`, not `"PUBLISH"`
 - `draft_hierarchy_version` in POST body matches the GET response
 - On success (HTTP 200): `validation_errors` is `null` — displays "passed validation" and suggests publish
-- On errors (HTTP 400): response body contains `validation_errors` array — displays each `HierarchyValidationError` with `validation_entity_type`, `validation_entity_id`, and `message`
-- Suggests fix commands for each error
+- On validation errors (HTTP 400 with `validation_errors`): displays each `HierarchyValidationError` with `validation_entity_type`, `validation_entity_id`, and `message`
+- Suggests fix commands for each validation error
 
 ---
 
@@ -824,7 +844,7 @@ catalog violation.
 
 **Expected behavior:**
 1. Agent loads the existing incomplete draft hierarchy.
-2. Validation returns HTTP 400 with `validation_errors` array: `AD` entity missing `companion_asset_id` for AUDIO format.
+2. Validation returns HTTP 400 with a `validation_errors` array: `AD` entity missing `companion_asset_id` for AUDIO format.
 3. Agent displays error with entity type, ID, and message.
 4. User says "fix it" or provides the missing asset.
 5. Agent applies catalog validation to the effective draft ad, then PATCHes it with the corrected `assets` object.
@@ -833,11 +853,11 @@ catalog violation.
 
 **Success criteria:**
 - The plugin does not create a knowingly invalid draft merely to exercise recovery
-- Validation catches the error with HTTP 400 (not 200) and `validation_errors` array
+- Validation reports the error as HTTP 400 with a `validation_errors` array
 - Error display includes entity type (`AD`), entity ID, and descriptive message
 - Fix uses PATCH on `/drafts/ads/<id>` (not creating a new draft ad)
 - Re-validation uses fresh `draft_hierarchy_version` from the draft campaign (not the version from before the edit; `draft_hierarchy_version` is `null` on ad drafts)
-- Full cycle: load existing draft → validate (fail @ 400) → edit → validate (pass @ 200) → offer publish
+- Full cycle: load existing draft → validate (400 with `validation_errors`) → edit → validate (200) → offer publish
 
 ---
 

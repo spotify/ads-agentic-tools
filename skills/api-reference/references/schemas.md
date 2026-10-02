@@ -557,14 +557,15 @@ Bid amounts are in micro-units. Divide by 1,000,000 for currency values.
 }
 ```
 
-On validation failure, the API returns HTTP 400 with:
+On hierarchy validation failure, the API returns HTTP 400 with:
 ```json
 {
   "validation_errors": [
     {
       "validation_entity_type": "CAMPAIGN | AD_SET | AD",
       "validation_entity_id": "uuid",
-      "message": "string"
+      "message": "string",
+      "error_codes": ["string"]
     }
   ]
 }
@@ -572,5 +573,5 @@ On validation failure, the API returns HTTP 400 with:
 
 **Notes:**
 - `draft_hierarchy_version` is read-only and is populated on draft campaign responses. Draft ad set and draft ad responses return `null`. The campaign version increments whenever any entity in the draft hierarchy is edited. Always fetch the draft campaign immediately before publishing or validating, and do not reuse a version captured before child draft entities or edits.
-- `validation_errors` is `null` on success; populated with per-entity errors on HTTP 400 validation failure.
+- `validation_errors` is `null` on success (200). On a 400, check for `validation_errors` first.
 - The same schema pitfalls apply to drafts: `bid_strategy` is a plain string, `geo_targets` is a flat object, `category` is required on ad sets, etc.

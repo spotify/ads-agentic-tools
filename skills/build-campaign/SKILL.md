@@ -65,7 +65,7 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 | asset_format | yes | AUDIO | `AUDIO`, `VIDEO`, `IMAGE`, or `CATALOG` |
 | category | yes | — | Valid `ADV_X_Y` code (fetch from `GET /ad_categories` if needed) |
 | bid_strategy | yes | MAX_BID | Plain string: `MAX_BID`, `COST_PER_RESULT`, `AUTOBID`, or `UNSET` |
-| bid_micro_amount | yes with MAX_BID/COST_PER_RESULT | 15000000 | Bid cap in micro-units. Not required with AUTOBID. |
+| bid_micro_amount | yes with MAX_BID/COST_PER_RESULT | 15000000 | Bid cap in micro-units. Omitted with AUTOBID; this applies only to ad set payloads, not audience estimates. |
 | pacing | no | PACING_EVEN | `PACING_EVEN` or `PACING_ASAP` |
 | delivery | no | ON | `ON` or `OFF` |
 | targets.age_ranges | yes | [{"min":18,"max":54}] | Array of `{min, max}` objects |
@@ -125,7 +125,7 @@ You can fetch valid categories from `GET /ad_categories` to present options.
 
 ## Step 2.5: Validate Audience Size
 
-After the user confirms the plan but before creating any entities, run an audience estimate for each ad set's targeting. For Reserved buys, use the fixed rate fetched while planning, then add `ad_product`, `end_date`, and the returned `cost_micro` as `bid_micro_amount` to the estimate request; use the returned currency and resolve other fields from the live contract and catalog. The generic example below is for auction buys:
+After the user confirms the plan but before creating any entities, run an audience estimate for each ad set's targeting. For Reserved buys, use the fixed rate fetched while planning, then add `ad_product`, `end_date`, and the returned `cost_micro` as `bid_micro_amount` to the estimate request; use the returned currency and resolve other fields from the live contract and catalog. The generic example below is for auction buys.
 
 ```bash
 api POST "estimates/audience" \
@@ -163,8 +163,10 @@ Convert any CPM micro-amounts to the ad account's billing currency for display.
 - Switching from VIDEO to AUDIO format (lower thresholds)
 - Expanding geo targeting
 
+If the API returned "Min audience threshold was not met", follow rule 9 under Critical Schema Notes: do not resend the same request, do not widen the targeting on your own, and only offer to adjust targeting (then re-estimate) or cancel. "Proceed anyway" is only for an estimate that came back valid but low.
+
 Use AskUserQuestion to ask whether to:
-1. Proceed anyway with current targeting
+1. Proceed anyway with current targeting (only when the estimate came back valid but low)
 2. Adjust targeting (then re-estimate)
 3. Cancel this ad set
 
@@ -292,4 +294,4 @@ These are non-obvious API requirements that MUST be followed:
 6. **`companion_asset_id`** is required when creating ads for AUDIO ad sets
 7. **`call_to_action`** uses field name `key` (not `type`) and `clickthrough_url` (not `url`)
 8. Budget amounts must be in **micro-units** (multiply amount by 1,000,000)
-9. **Min audience thresholds** apply — VIDEO format may require broader targeting than AUDIO. If you get a "Min audience threshold was not met" error, suggest expanding the age range or switching format.
+9. **Min audience thresholds** apply — VIDEO format may require broader targeting than AUDIO. "Min audience threshold was not met" is a 400 caused by targeting that is too narrow, not by a malformed payload. Do not resend the same request, and do not change the targeting on your own. Tell the user the audience is too small, suggest ways to widen it (for example a broader age range, more locations, or a different format), show `bid_suggestion` if the response includes one, then estimate again with the targeting the user chooses.

@@ -112,7 +112,7 @@ If budget type is LIFETIME and the user changed dates, verify that `end_time` is
 
 #### Audience estimate validation
 
-If targeting, dates, objective, bid, or budget changed for any cloned ad set, run a pre-flight audience estimate before creating it:
+If targeting, dates, objective, bid, or budget changed for any cloned ad set, run a pre-flight audience estimate before creating it.
 
 ```bash
 api POST "estimates/audience" \
@@ -128,7 +128,7 @@ api POST "estimates/audience" \
   }'
 ```
 
-If the API returns a min-audience-threshold error, pause before creating that ad set and suggest broader targeting or a lower-threshold format.
+If the API returns "Min audience threshold was not met" (400), the targeting is too narrow. Pause before creating that ad set. Do not resend the same request, and do not widen the targeting on your own. Ask the user how to broaden it (for example broader targeting or a lower-threshold format), then estimate again with their choice.
 
 ### Step 4.5: Validate the Clone Against Ad Product Rules
 
