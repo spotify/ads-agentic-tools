@@ -126,6 +126,64 @@ run_env campaigns --env >/dev/null 2>&1
 assert_eq "exits non-zero without a settings file" "1" "$?"
 mv "$TMPDIR/settings.bak" "$PROJECT/.claude/spotify-ads-api.local.md"
 
+echo "=== eval replay mode ==="
+
+write_settings TEST_TOKEN "00000000-0000-4000-8000-000000000001"
+FIXTURES="$PROJECT/.ads-api"
+mkdir -p "$FIXTURES"
+printf '201\n{"id":"c1"}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns.http"
+printf '200\n{"call":1}\n' > "$FIXTURES/GET__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.http"
+printf '200\n{"call":2}\n' > "$FIXTURES/GET__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.2.http"
+
+run_replay() {
+  env -u CODEX_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
+    CLAUDE_PROJECT_DIR="$PROJECT" EVAL_ADS_API_FIXTURES=.ads-api bash "$API" "$@"
+}
+status_of() { printf '%s' "$1" | sed -n 's/^HTTP_STATUS://p'; }
+
+out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns" '{"name":"x"}')
+assert_eq "replay returns the fixture status" "201" "$(status_of "$out")"
+assert_eq "replay returns the fixture body" '{"id":"c1"}' "$(printf '%s' "$out" | head -1)"
+
+out=$(run_replay drafts GET "ad_accounts/00000000-0000-4000-8000-000000000001/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33?fields=all")
+assert_eq "literal account ID, UUID, and query normalize to the same key" '{"call":1}' "$(printf '%s' "$out" | head -1)"
+out=$(run_replay drafts GET "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33")
+assert_eq "a numbered fixture answers the second call" '{"call":2}' "$(printf '%s' "$out" | head -1)"
+
+out=$(run_replay drafts DELETE "ad_accounts/{ad_account_id}/drafts/campaigns/c1")
+assert_eq "a missing fixture answers 404" "404" "$(status_of "$out")"
+
+printf '200\n{"validated":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-VALIDATE.http"
+printf '200\n{"published":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-PUBLISH.http"
+out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33" '{"action":"PUBLISH","draft_hierarchy_version":2}')
+assert_eq "a match fixture answers by body content" '{"published":true}' "$(printf '%s' "$out" | head -1)"
+out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33" '{"action":"VALIDATE","draft_hierarchy_version":2}')
+assert_eq "a different body picks a different match fixture" '{"validated":true}' "$(printf '%s' "$out" | head -1)"
+
+assert_eq "every request is logged" "6" "$(wc -l < "$PROJECT/.claude/.api-requests.log" | tr -d ' ')"
+assert_eq "the log records the body" "1" \
+  "$(grep -c '^POST__ad_accounts__{ad_account_id}__drafts__campaigns .* {"name":"x"}$' "$PROJECT/.claude/.api-requests.log")"
+
+echo "=== eval record mode ==="
+
+STUB_BIN="$TMPDIR/bin"
+mkdir -p "$STUB_BIN"
+printf '#!/bin/bash\nprintf %s\n' "'{\"campaigns\":[]}\nHTTP_STATUS:200'" > "$STUB_BIN/curl"
+chmod +x "$STUB_BIN/curl"
+run_record() {
+  env -u CODEX_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT PATH="$STUB_BIN:$PATH" \
+    CLAUDE_PROJECT_DIR="$PROJECT" EVAL_ADS_API_RECORD=recorded bash "$API" "$@"
+}
+
+run_record campaigns POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"x"}' >/dev/null 2>&1
+assert_eq "recording refuses writes" "1" "$?"
+assert_eq "a refused write records nothing" "0" "$(ls "$PROJECT/recorded" 2>/dev/null | wc -l | tr -d ' ')"
+
+out=$(run_record campaigns GET "ad_accounts/{ad_account_id}/campaigns?limit=50")
+assert_eq "recording passes the response through" "HTTP_STATUS:200" "$(printf '%s' "$out" | tail -1)"
+assert_eq "recording saves status and body under the fixture key" $'200\n{"campaigns":[]}' \
+  "$(cat "$PROJECT/recorded/GET__ad_accounts__{ad_account_id}__campaigns.http")"
+
 echo
 echo "Passed: $PASS  Failed: $FAIL"
 [ "$FAIL" -eq 0 ] || exit 1
