@@ -1,0 +1,2 @@
+400
+{"sp_trace_id":"0c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e55","messages":["ad_set.budget.micro_amount must be >= 50000000 for asset_format AUDIO"],"error_codes":[{"code":"INVALID_ARGUMENT","definition":"BUDGET_BELOW_MINIMUM"}]}
