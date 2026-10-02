@@ -1,5 +1,5 @@
 ---
-description: "Sheet P3-06. Asks which audience. No overwrite."
+description: "Smoke case P3-06. Asks which audience. No overwrite."
 tags: [smoke, P3, high_stakes_ask, regression]
 max_turns: 30
 timeout_seconds: 600

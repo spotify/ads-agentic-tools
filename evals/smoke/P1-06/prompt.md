@@ -1,5 +1,5 @@
 ---
-description: "Sheet P1-06. Should act: lists pacing, platform, and delivery format with display names, without asking."
+description: "Smoke case P1-06. Should act: lists pacing, platform, and delivery format with display names, without asking."
 tags: [smoke, P1, lookup_easy_edit, regression]
 max_turns: 30
 timeout_seconds: 600

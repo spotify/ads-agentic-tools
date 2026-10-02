@@ -1,5 +1,5 @@
 ---
-description: "Sheet P4-01. Should confirm: names the ad set, old and new daily budget with currency codes. No change yet."
+description: "Smoke case P4-01. Should confirm: names the ad set, old and new daily budget with currency codes. No change yet."
 tags: [smoke, P4, confirm, regression]
 max_turns: 30
 timeout_seconds: 600

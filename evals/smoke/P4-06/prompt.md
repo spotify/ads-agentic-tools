@@ -1,5 +1,5 @@
 ---
-description: "Sheet P4-06. Turn 1 (history) confirmed deleting draft Holiday Video. Doesn't delete. Brief close."
+description: "Smoke case P4-06. Turn 1 (history) confirmed deleting draft Holiday Video. Doesn't delete. Brief close."
 tags: [smoke, P4, confirm_followup, regression]
 max_turns: 30
 timeout_seconds: 600

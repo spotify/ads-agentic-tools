@@ -1,5 +1,5 @@
 ---
-description: "Sheet P3-05. Asks which, likeliest first. Doesn't submit."
+description: "Smoke case P3-05. Asks which, likeliest first. Doesn't submit."
 tags: [smoke, P3, high_stakes_ask, regression]
 max_turns: 30
 timeout_seconds: 600

@@ -1,5 +1,5 @@
 ---
-description: "Sheet P3-04. Should ask: one short question naming Summer Tour and Winter Tour. No budget change."
+description: "Smoke case P3-04. Should ask: one short question naming Summer Tour and Winter Tour. No budget change."
 tags: [smoke, P3, high_stakes_ask, regression]
 max_turns: 30
 timeout_seconds: 600

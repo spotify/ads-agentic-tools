@@ -1,5 +1,5 @@
 ---
-description: "Sheet E-02. women and non-binary people; LiveRamp."
+description: "Smoke case E-02. women and non-binary people; LiveRamp."
 tags: [smoke, enum_display, regression]
 max_turns: 30
 timeout_seconds: 600

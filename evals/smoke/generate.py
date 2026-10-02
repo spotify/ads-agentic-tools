@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Generate smoke-test cases from the design team's eval sheet.
+"""Generate the smoke-test cases.
 
-Each ROW below mirrors one sheet row: the account state becomes replay fixtures
-under <ID>/api/, the user input becomes prompt.md, and the sheet's mechanical and
-judge checks become graders. Rerun after editing a row:
+Each ROW below defines one case: the account state becomes replay fixtures under
+<ID>/api/, the user input becomes prompt.md, and the expected behavior's
+mechanical and judge checks become graders. Rerun after editing a row:
 
     python3 evals/smoke/generate.py            # writes every row below
     python3 evals/smoke/generate.py P3-01      # writes one row
@@ -503,7 +503,7 @@ def write_row(row_id, spec):
     tools = ["Read", "Glob", "Grep", "Skill"] + ([] if spec["no_api"] else ["Bash"])
     env = "" if spec["no_api"] else "env:\n  EVAL_ADS_API_FIXTURES: .git/ads-cache\n"
     with open(os.path.join(root, "prompt.md"), "w") as f:
-        description = json.dumps(f"Sheet {row_id}. {spec['expected']}", ensure_ascii=False)
+        description = json.dumps(f"Smoke case {row_id}. {spec['expected']}", ensure_ascii=False)
         f.write(f"---\ndescription: {description}\n"
                 f"tags: [{', '.join(dict.fromkeys(tags))}]\nmax_turns: 30\ntimeout_seconds: 600\n"
                 f"allowed_tools: [{', '.join(tools)}]\n"

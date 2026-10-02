@@ -1,5 +1,5 @@
 ---
-description: "Sheet P5-01. Should refuse: states the boundary, offers an alternative such as an estimated range, and stops. No guarantee."
+description: "Smoke case P5-01. Should refuse: states the boundary, offers an alternative such as an estimated range, and stops. No guarantee."
 tags: [smoke, P5, refuse, capability]
 max_turns: 30
 timeout_seconds: 600

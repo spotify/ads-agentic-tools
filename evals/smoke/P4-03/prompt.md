@@ -1,5 +1,5 @@
 ---
-description: "Sheet P4-03. Confirmation with budget and past-start-date note."
+description: "Smoke case P4-03. Confirmation with budget and past-start-date note."
 tags: [smoke, P4, confirm, regression]
 max_turns: 30
 timeout_seconds: 600

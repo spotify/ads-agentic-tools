@@ -1,5 +1,5 @@
 ---
-description: "Sheet P1-05. Copies as draft and names the copy. No confirmation (drafts are reversible)."
+description: "Smoke case P1-05. Copies as draft and names the copy. No confirmation (drafts are reversible)."
 tags: [smoke, P1, lookup_easy_edit, regression]
 max_turns: 30
 timeout_seconds: 600

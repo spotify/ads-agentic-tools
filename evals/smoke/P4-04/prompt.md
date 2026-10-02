@@ -1,5 +1,5 @@
 ---
-description: "Sheet P4-04. In-use check naming the 3 ads. No replacement yet."
+description: "Smoke case P4-04. In-use check naming the 3 ads. No replacement yet."
 tags: [smoke, P4, confirm, regression]
 max_turns: 30
 timeout_seconds: 600

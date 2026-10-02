@@ -1,5 +1,5 @@
 ---
-description: "Sheet P1-02. Renames and confirms in one line. No confirmation prompt."
+description: "Smoke case P1-02. Renames and confirms in one line. No confirmation prompt."
 tags: [smoke, P1, lookup_easy_edit, regression]
 max_turns: 30
 timeout_seconds: 600

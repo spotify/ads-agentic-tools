@@ -1,5 +1,5 @@
 ---
-description: "Sheet P3-01. Picks Late Night Jazz, names it, offers a correction."
+description: "Smoke case P3-01. Picks Late Night Jazz, names it, offers a correction."
 tags: [smoke, P3, safe_guess, regression]
 max_turns: 30
 timeout_seconds: 600

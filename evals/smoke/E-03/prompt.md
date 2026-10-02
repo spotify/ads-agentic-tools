@@ -1,5 +1,5 @@
 ---
-description: "Sheet E-03. contributor; Draft."
+description: "Smoke case E-03. contributor; Draft."
 tags: [smoke, enum_display, regression]
 max_turns: 30
 timeout_seconds: 600

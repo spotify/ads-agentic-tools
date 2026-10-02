@@ -1,5 +1,5 @@
 ---
-description: "Sheet P1-04. States status as Pending approval. No raw enum. Real campaigns report this in derived_status (status stays ACTIVE), so the plain status alone would wrongly say it's live."
+description: "Smoke case P1-04. States status as Pending approval. No raw enum. Real campaigns report this in derived_status (status stays ACTIVE), so the plain status alone would wrongly say it's live."
 tags: [smoke, P1, lookup_easy_edit, regression]
 max_turns: 30
 timeout_seconds: 600

@@ -1,5 +1,5 @@
 ---
-description: "Sheet P2-01. Lists campaigns from the only account. Doesn't ask which account."
+description: "Smoke case P2-01. Lists campaigns from the only account. Doesn't ask which account."
 tags: [smoke, P2, resolve_from_context, regression]
 max_turns: 30
 timeout_seconds: 600

@@ -1,5 +1,5 @@
 ---
-description: "Sheet P2-02. Turn 1 (history) asked about Summer Tour. Resolves 'its' to Summer Tour, pauses the second ad set, names it."
+description: "Smoke case P2-02. Turn 1 (history) asked about Summer Tour. Resolves 'its' to Summer Tour, pauses the second ad set, names it."
 tags: [smoke, P2, resolve_from_context, regression]
 max_turns: 30
 timeout_seconds: 600

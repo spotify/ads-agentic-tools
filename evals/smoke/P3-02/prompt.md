@@ -1,5 +1,5 @@
 ---
-description: "Sheet P3-02. Picks Spring Video Push, the only active one, names it, and offers a correction."
+description: "Smoke case P3-02. Picks Spring Video Push, the only active one, names it, and offers a correction."
 tags: [smoke, P3, safe_guess, regression]
 max_turns: 30
 timeout_seconds: 600

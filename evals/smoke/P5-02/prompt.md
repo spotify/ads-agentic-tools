@@ -1,5 +1,5 @@
 ---
-description: "Sheet P5-02. Refuses to bypass review, states the fix."
+description: "Smoke case P5-02. Refuses to bypass review, states the fix."
 tags: [smoke, P5, refuse, regression]
 max_turns: 30
 timeout_seconds: 600

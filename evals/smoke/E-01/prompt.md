@@ -1,5 +1,5 @@
 ---
-description: "Sheet E-01. Should display correctly: Lead generation; Food and dining services."
+description: "Smoke case E-01. Should display correctly: Lead generation; Food and dining services."
 tags: [smoke, enum_display, regression]
 max_turns: 30
 timeout_seconds: 600

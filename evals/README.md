@@ -71,7 +71,7 @@ anything personal from recorded files before committing them.
 - `fixtures/trim-transcript.py`: turns a recorded session into a case's
   `history.jsonl`. It drops the skill-loading step, so start those prompts with the
   skill's slash command and each run loads the current `SKILL.md`.
-- `smoke/<ID>/`: cases from the design team's smoke-test sheet, named by row ID.
+- `smoke/<ID>/`: the smoke-test cases, one per expected behavior, named by case ID.
   Each has its own `api/` fixtures layered over the defaults. `smoke/generate.py`
   holds the rows and writes their cases; edit a row there and rerun it rather than
   editing the generated files.

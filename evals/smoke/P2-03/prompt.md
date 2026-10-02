@@ -1,5 +1,5 @@
 ---
-description: "Sheet P2-03. Remaining budget in GBP. Doesn't ask currency."
+description: "Smoke case P2-03. Remaining budget in GBP. Doesn't ask currency."
 tags: [smoke, P2, resolve_from_context, regression]
 max_turns: 30
 timeout_seconds: 600
