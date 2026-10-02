@@ -174,29 +174,43 @@ if [ -n "$BODY" ]; then
   CURL_ARGS+=(-d "$BODY")
 fi
 
-# --- Eval replay mode ---
+# --- Eval replay and record modes ---
 #
-# For offline evals only (evals/README.md). When EVAL_ADS_API_FIXTURES names a
-# fixture directory, answer from it instead of calling the API, and append the
-# request to $EVAL_ADS_API_LOG so graders can check what was sent. A fixture is
-# <key>.http: first line the HTTP status, the rest the response body. The key is
-# METHOD__path with the query dropped, the ad account ID put back as
-# {ad_account_id}, other UUIDs as {id}, and "/" as "__". An optional
-# <key>.<n>.http answers the nth call to the same key. A request with no
-# fixture gets a plain 404.
-if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
-  case "$EVAL_ADS_API_FIXTURES" in
-    /*) FIXTURE_DIR="$EVAL_ADS_API_FIXTURES" ;;
-    *)  FIXTURE_DIR="$PROJECT_DIR/$EVAL_ADS_API_FIXTURES" ;;
-  esac
-  LOG_FILE="${EVAL_ADS_API_LOG:-$PROJECT_DIR/ads-api-requests.log}"
-
-  KEY_PATH="${PATH_ARG%%\?*}"
-  ACCOUNT_PLACEHOLDER='{ad_account_id}'
-  [ -n "$AD_ACCOUNT_ID" ] && KEY_PATH="${KEY_PATH//"$AD_ACCOUNT_ID"/$ACCOUNT_PLACEHOLDER}"
-  KEY_PATH=$(printf '%s' "$KEY_PATH" \
+# For offline evals only (evals/README.md). A fixture is <key>.http: first line
+# the HTTP status, the rest the response body. The key is METHOD__path with the
+# query dropped, the ad account ID put back as {ad_account_id}, other UUIDs as
+# {id}, and "/" as "__".
+#
+# Replay (EVAL_ADS_API_FIXTURES=<dir>): answer from fixtures instead of calling
+# the API, and append each request to $EVAL_ADS_API_LOG so graders can check
+# what was sent. <key>.<n>.http answers the nth call to a key, then
+# <key>.match-<WORD>.http answers when the request path (with its query) or
+# body contains WORD, for requests that share a key such as draft VALIDATE and
+# PUBLISH or a list filtered by query; then <key>.http.
+# A request with no fixture gets a plain 404.
+#
+# Record (EVAL_ADS_API_RECORD=<dir>): make the real request and save the
+# response as <key>.http. Only GET is allowed unless
+# EVAL_ADS_API_RECORD_ALLOW_WRITES=1, so recording can't change an account.
+fixture_key() {
+  local key_path="${PATH_ARG%%\?*}" placeholder='{ad_account_id}'
+  [ -n "$AD_ACCOUNT_ID" ] && key_path="${key_path//"$AD_ACCOUNT_ID"/$placeholder}"
+  key_path=$(printf '%s' "$key_path" \
     | sed -E 's/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/{id}/g; s#/#__#g')
-  KEY="${METHOD}__${KEY_PATH}"
+  printf '%s__%s' "$METHOD" "$key_path"
+}
+
+resolve_dir() {
+  case "$1" in
+    /*) printf '%s' "$1" ;;
+    *)  printf '%s/%s' "$PROJECT_DIR" "$1" ;;
+  esac
+}
+
+if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
+  FIXTURE_DIR=$(resolve_dir "$EVAL_ADS_API_FIXTURES")
+  LOG_FILE="${EVAL_ADS_API_LOG:-$PROJECT_DIR/ads-api-requests.log}"
+  KEY=$(fixture_key)
 
   CALL_N=1
   if [ -f "$LOG_FILE" ]; then
@@ -205,7 +219,18 @@ if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
   printf '%s %s %s\n' "$KEY" "$PATH_ARG" "$(printf '%s' "$BODY" | tr '\n' ' ')" >> "$LOG_FILE"
 
   FIXTURE="$FIXTURE_DIR/${KEY}.${CALL_N}.http"
-  [ -f "$FIXTURE" ] || FIXTURE="$FIXTURE_DIR/${KEY}.http"
+  if [ ! -f "$FIXTURE" ]; then
+    FIXTURE=""
+    for candidate in "$FIXTURE_DIR/${KEY}".match-*.http; do
+      [ -f "$candidate" ] || continue
+      word="${candidate##*.match-}"
+      word="${word%.http}"
+      case "$PATH_ARG $BODY" in
+        *"$word"*) FIXTURE="$candidate"; break ;;
+      esac
+    done
+    [ -n "$FIXTURE" ] || FIXTURE="$FIXTURE_DIR/${KEY}.http"
+  fi
   if [ ! -f "$FIXTURE" ]; then
     # Look like a real API 404 so the agent under test can't tell it's in an eval.
     # The request log above already records the key that had no fixture.
@@ -214,6 +239,21 @@ if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
   fi
   tail -n +2 "$FIXTURE"
   printf '\nHTTP_STATUS:%s\n' "$(head -1 "$FIXTURE" | tr -d '[:space:]')"
+  exit 0
+fi
+
+if [ -n "${EVAL_ADS_API_RECORD:-}" ]; then
+  if [ "$METHOD" != "GET" ] && [ "${EVAL_ADS_API_RECORD_ALLOW_WRITES:-}" != "1" ]; then
+    echo "ERROR: Recording mode only sends GET requests. Refusing $METHOD $PATH_ARG." >&2
+    exit 1
+  fi
+  RECORD_DIR=$(resolve_dir "$EVAL_ADS_API_RECORD")
+  mkdir -p "$RECORD_DIR"
+  RESPONSE=$(curl "${CURL_ARGS[@]}" "$URL")
+  STATUS="${RESPONSE##*HTTP_STATUS:}"
+  RESPONSE_BODY="${RESPONSE%$'\n'HTTP_STATUS:*}"
+  printf '%s\n%s\n' "$STATUS" "$RESPONSE_BODY" > "$RECORD_DIR/$(fixture_key).http"
+  printf '%s\n' "$RESPONSE"
   exit 0
 fi
 

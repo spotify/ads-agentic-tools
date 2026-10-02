@@ -153,9 +153,36 @@ assert_eq "a numbered fixture answers the second call" '{"call":2}' "$(printf '%
 out=$(run_replay drafts DELETE "ad_accounts/{ad_account_id}/drafts/campaigns/c1")
 assert_eq "a missing fixture answers 404" "404" "$(status_of "$out")"
 
-assert_eq "every request is logged" "4" "$(wc -l < "$PROJECT/ads-api-requests.log" | tr -d ' ')"
+printf '200\n{"validated":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-VALIDATE.http"
+printf '200\n{"published":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-PUBLISH.http"
+out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33" '{"action":"PUBLISH","draft_hierarchy_version":2}')
+assert_eq "a match fixture answers by body content" '{"published":true}' "$(printf '%s' "$out" | head -1)"
+out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33" '{"action":"VALIDATE","draft_hierarchy_version":2}')
+assert_eq "a different body picks a different match fixture" '{"validated":true}' "$(printf '%s' "$out" | head -1)"
+
+assert_eq "every request is logged" "6" "$(wc -l < "$PROJECT/ads-api-requests.log" | tr -d ' ')"
 assert_eq "the log records the body" "1" \
   "$(grep -c '^POST__ad_accounts__{ad_account_id}__drafts__campaigns .* {"name":"x"}$' "$PROJECT/ads-api-requests.log")"
+
+echo "=== eval record mode ==="
+
+STUB_BIN="$TMPDIR/bin"
+mkdir -p "$STUB_BIN"
+printf '#!/bin/bash\nprintf %s\n' "'{\"campaigns\":[]}\nHTTP_STATUS:200'" > "$STUB_BIN/curl"
+chmod +x "$STUB_BIN/curl"
+run_record() {
+  env -u CODEX_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT PATH="$STUB_BIN:$PATH" \
+    CLAUDE_PROJECT_DIR="$PROJECT" EVAL_ADS_API_RECORD=recorded bash "$API" "$@"
+}
+
+run_record campaigns POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"x"}' >/dev/null 2>&1
+assert_eq "recording refuses writes" "1" "$?"
+assert_eq "a refused write records nothing" "0" "$(ls "$PROJECT/recorded" 2>/dev/null | wc -l | tr -d ' ')"
+
+out=$(run_record campaigns GET "ad_accounts/{ad_account_id}/campaigns?limit=50")
+assert_eq "recording passes the response through" "HTTP_STATUS:200" "$(printf '%s' "$out" | tail -1)"
+assert_eq "recording saves status and body under the fixture key" $'200\n{"campaigns":[]}' \
+  "$(cat "$PROJECT/recorded/GET__ad_accounts__{ad_account_id}__campaigns.http")"
 
 echo
 echo "Passed: $PASS  Failed: $FAIL"

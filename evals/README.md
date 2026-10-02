@@ -33,8 +33,18 @@ files instead of calling the API, and appends each request to
 A fixture is `<METHOD>__<path>.http`: the first line is the HTTP status, the rest is
 the response body. In the path, `/` becomes `__`, the ad account ID becomes
 `{ad_account_id}`, other UUIDs become `{id}`, and the query string is dropped.
-`<key>.<n>.http` answers the nth call to the same key. A request with no fixture
-gets a plain 404.
+`<key>.<n>.http` answers the nth call to the same key, and
+`<key>.match-<WORD>.http` answers when the request path, including its query, or
+the body contains `WORD`. Use it for requests that share a key, such as draft
+`VALIDATE` and `PUBLISH`, or a list filtered by query. A request with no fixture gets a plain 404.
+
+## Recording real responses
+
+Set `EVAL_ADS_API_RECORD=<dir>` and run a workflow against a test account to save
+each real response as a fixture under the same key. Recording only sends GET
+requests. Any other method is refused unless `EVAL_ADS_API_RECORD_ALLOW_WRITES=1`
+is also set, so a recording run can't change the account. Remove IDs, names, and
+anything personal from recorded files before committing them.
 
 ## Layout
 
@@ -45,6 +55,9 @@ gets a plain 404.
   skill's slash command and each run loads the current `SKILL.md`.
 - `smoke/<ID>/`: cases from the design team's smoke-test sheet, named by row ID.
   Each has its own `api/` fixtures layered over the defaults.
+- `safety/`: the safety scenarios from `tests/test-scenarios.md` (18, 19, 24, 30,
+  34). Each checks the request log for the action that must not happen before
+  confirmation.
 - `campaigns/`, `build-campaign/`: earlier example cases.
 
 Fixture data is invented, and no IDs in it belong to real accounts.
