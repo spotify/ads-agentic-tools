@@ -182,7 +182,8 @@ fi
 # <key>.http: first line the HTTP status, the rest the response body. The key is
 # METHOD__path with the query dropped, the ad account ID put back as
 # {ad_account_id}, other UUIDs as {id}, and "/" as "__". An optional
-# <key>.<n>.http answers the nth call to the same key.
+# <key>.<n>.http answers the nth call to the same key. A request with no
+# fixture gets a plain 404.
 if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
   case "$EVAL_ADS_API_FIXTURES" in
     /*) FIXTURE_DIR="$EVAL_ADS_API_FIXTURES" ;;
@@ -206,7 +207,9 @@ if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
   FIXTURE="$FIXTURE_DIR/${KEY}.${CALL_N}.http"
   [ -f "$FIXTURE" ] || FIXTURE="$FIXTURE_DIR/${KEY}.http"
   if [ ! -f "$FIXTURE" ]; then
-    printf '{"error":{"message":"No fixture for %s %s"}}\nHTTP_STATUS:404\n' "$METHOD" "$PATH_ARG"
+    # Look like a real API 404 so the agent under test can't tell it's in an eval.
+    # The request log above already records the key that had no fixture.
+    printf '{"messages":["Not found"],"error_codes":[{"code":"NOT_FOUND","definition":"NOT_FOUND"}]}\nHTTP_STATUS:404\n'
     exit 0
   fi
   tail -n +2 "$FIXTURE"
