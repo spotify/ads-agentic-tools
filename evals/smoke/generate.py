@@ -19,6 +19,11 @@ import shutil
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Realistic account context for every row, standing in for what a user's own
+# project setup would provide. Without it, prompts that name a campaign but not
+# Spotify Ads (for example "Is Podcast Launch live yet?") often load no plugin
+# skill in a clean eval session, which tests routing instead of the principle.
+ACCOUNT_CONTEXT = "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
 A = "{ad_account_id}"
 ACCOUNT_ID = "00000000-0000-4000-8000-000000000001"
 LOG = "{ source: file, path: .claude/.api-requests.log }"
@@ -501,7 +506,8 @@ def write_row(row_id, spec):
         description = json.dumps(f"Sheet {row_id}. {spec['expected']}", ensure_ascii=False)
         f.write(f"---\ndescription: {description}\n"
                 f"tags: [{', '.join(dict.fromkeys(tags))}]\nmax_turns: 30\ntimeout_seconds: 600\n"
-                f"allowed_tools: [{', '.join(tools)}]\n{env}---\n\n{spec['prompt']}\n")
+                f"allowed_tools: [{', '.join(tools)}]\n"
+                f"append_system_prompt: {json.dumps(ACCOUNT_CONTEXT)}\n{env}---\n\n{spec['prompt']}\n")
 
     if not spec["no_api"]:
         os.makedirs(os.path.join(root, "api"), exist_ok=True)
