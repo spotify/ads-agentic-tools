@@ -1,0 +1,2 @@
+200
+{"paging": {"page_size": 50, "total_results": 1, "offset": 0, "current_page": 1}, "ad_account_members": [{"member_id": "03000003-0000-4000-8000-030000000003", "name": "Riley Chen", "email_address": "riley.chen@example.com", "role": "AD_ACCOUNT_CONTRIBUTOR", "ad_account_id": "00000000-0000-4000-8000-000000000001", "created_at": "2026-09-01T10:00:00Z", "updated_at": "2026-09-01T10:00:00Z"}]}
