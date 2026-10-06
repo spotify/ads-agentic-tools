@@ -25,7 +25,21 @@ same cases on two branches.
 On a Mac with Docker Desktop installed, `claude plugin eval` can't give an eval
 access to Bash, so it won't run the cases that need it
 ([anthropics/claude-code#94308](https://github.com/anthropics/claude-code/issues/94308)).
-If that happens, run them on Linux.
+If that happens, run the suite in the Linux container instead:
+
+```bash
+claude setup-token                      # once; save the token in evals/docker/.token
+evals/run-in-docker.sh --runs 3
+evals/run-in-docker.sh --case P1-01 --runs 1
+```
+
+`run-in-docker.sh` builds the image on first use (`ADS_EVAL_REBUILD=1` rebuilds it),
+adds the usual options (`--ablation none --scaffold --allow-tools Bash --trust-plugin
+--no-publish --judge-model claude-sonnet-5 --max-cost-usd 20`) unless you pass them,
+and writes results to `evals/results/`. It prints the report's path as
+`/plugin/evals/results/...`, which is `evals/results/...` in this checkout.
+`evals/docker/.token` is gitignored; you can also pass `CLAUDE_CODE_OAUTH_TOKEN`
+or `ANTHROPIC_API_KEY` in the environment.
 
 ## Example Natural Language Prompt
 
