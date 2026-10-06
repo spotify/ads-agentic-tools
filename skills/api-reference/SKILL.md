@@ -39,6 +39,9 @@ Before answering a schema question or making an Ads API v3 call, read and follow
 use the relevant operation and component definitions as the source of truth for paths,
 parameters, request bodies, responses, and enums.
 
+Before building estimate, ad set, report, or draft payloads, also read
+`references/api-behaviors.md` for runtime behaviour the spec does not express.
+
 ## Resource Hierarchy
 
 ```
@@ -221,7 +224,7 @@ curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
 
 </details>
 
-For error response format and common HTTP status codes, see `references/endpoints.md` (Error Responses section).
+For error response format, common HTTP status codes, and retry safety, see `references/api-behaviors.md` (Errors and Retry Safety section).
 
 ## Additional Resources
 
@@ -229,9 +232,8 @@ For error response format and common HTTP status codes, see `references/endpoint
 
 For detailed request/response schemas and field definitions, consult:
 - **`references/live-openapi.md`** — Mandatory workflow for fetching and inspecting the current public OpenAPI document
-- **`references/endpoints.md`** — Complete endpoint details with all parameters and response schemas
-- **`references/schemas.md`** — Request/response body schemas with field types, constraints, and required fields
-- **`references/enums.md`** — All enum values for status fields, asset formats, targeting options, report dimensions/metrics
+- **`references/api-behaviors.md`** — Runtime behavior the spec cannot express: micro-amounts, Reserved pricing and forecasting, estimates, geo lookup, reporting quirks, draft VALIDATE/PUBLISH semantics, and error handling and retry safety
+- **`references/create-retry-safety.md`** — Retry-safety procedure for create requests
 - **`references/ad-product-validation.md`** — Mandatory catalog-validation procedure for campaign, ad set, and ad mutations
 
 ### Example Files

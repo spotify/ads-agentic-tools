@@ -61,7 +61,7 @@ Prefer ad rotation when only the message differs:
 
 - Convert amounts to micro-amounts (in the ad account's billing currency) for budgets and bids.
 - For `AUCTION`, use `MAX_BID` with `bid_micro_amount` unless the user requests automated bidding. Use `AUTOBID` when the user wants automatic bid optimization (no `bid_micro_amount` required). Use `COST_PER_RESULT` only with the CLICKS objective.
-- For `CONTENT` or `FPMNG`, use the Reserved Pricing and Forecasting flow in `skills/api-reference/references/endpoints.md`. Fetch the fixed rate before forecasting; use its `cost_micro` as `bid_micro_amount` and resolve the remaining product-specific fields from the current OpenAPI contract and live catalog. Keep the fixed rate distinct from the estimated CPM and bid suggestion.
+- For `CONTENT` or `FPMNG`, use the Reserved Pricing and Forecasting flow in `skills/api-reference/references/api-behaviors.md`. Fetch the fixed rate before forecasting; use its `cost_micro` as `bid_micro_amount` and resolve the remaining product-specific fields from the current OpenAPI contract and live catalog. Keep the fixed rate distinct from the estimated CPM and bid suggestion.
 - Run `POST /estimates/bid` when recommending an auction bid cap.
 - Run `POST /estimates/audience` for every recommended ad set before presenting the final executable structure when credentials are available.
 - For reach, use `PACING_EVEN` and a frequency cap such as 2 impressions per user per week unless the user needs urgency.

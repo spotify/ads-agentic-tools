@@ -36,6 +36,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" build-campaign "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (Reserved pricing, estimates, geo lookup, draft VALIDATE/PUBLISH).
+
 To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Step 1: Parse the Campaign Description
@@ -83,7 +85,7 @@ Valid objectives: `REACH`, `CLICKS`, `VIDEO_VIEWS`, `CONVERSIONS`, `LEAD_GEN`, `
 - When geo refinements are present (`city_ids`, `postal_code_ids`, `region_ids`), include `country_code` in the same `geo_targets` object.
 - For auction buys with `bid_strategy=UNSET`, omit `bid_micro_amount` unless the current API contract or user-provided source requires it. For Reserved buys, follow the live product rules and use the fixed rate returned by `reserved_prices` as `bid_micro_amount`.
 
-For Reserved buys, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) before confirming the plan or creating ad sets. Fetch the rate for each distinct product, date, format, and targeting; use its `cost_micro` as the ad set and audience estimate `bid_micro_amount`. Resolve campaign, ad set, and forecast fields from the current OpenAPI contract and live ad product catalog rather than using auction defaults. Show the fixed rate separately from any forecast CPM or bid suggestion.
+For Reserved buys, follow `skills/api-reference/references/api-behaviors.md` (Reserved Pricing and Forecasting) before confirming the plan or creating ad sets. Fetch the rate for each distinct product, date, format, and targeting; use its `cost_micro` as the ad set and audience estimate `bid_micro_amount`. Resolve campaign, ad set, and forecast fields from the current OpenAPI contract and live ad product catalog rather than using auction defaults. Show the fixed rate separately from any forecast CPM or bid suggestion.
 
 ### Ad-level fields (one or more per ad set)
 

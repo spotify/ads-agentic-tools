@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Removed
+- Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`
+
+### Changed
+- Runtime behavior the spec cannot express now lives in `skills/api-reference/references/api-behaviors.md`. It covers micro-amounts, the Reserved Pricing and Forecasting flow, estimates, geo lookup, reporting quirks, draft VALIDATE/PUBLISH semantics, live entity lifecycle, and error handling and retry safety. `build-campaign`, `ads`, `drafts`, `campaign-strategy`, its planning framework, the request-builder agent, `api-reference`, and `AGENTS.md` now point to it
+- Audience estimates no longer rely on a static note saying `bid_micro_amount` is required. The general rule applies instead: include every field the live spec marks as required, and the AUTOBID no-bid exception applies only to ad set payloads
+- `media-plan-to-draft` now reads and follows `live-openapi.md` before its first Ads API v3 call, matching the other skills
+- Plugin version bumped to 1.10.0 in all three manifests
+
 ### Fixed
 - "Min audience threshold was not met" guidance in `AGENTS.md`, `build-campaign`, `ads`, `clone`, the request-builder agent, and the full campaign flow example no longer suggests retrying or silently widening targeting. Agents now report the narrow audience, suggest broader options along with any `bid_suggestion`, and re-estimate with the targeting the user chooses. "Proceed anyway" is offered only when the estimate came back valid but low, never after a threshold 400
 - The draft VALIDATE/PUBLISH response shape in `AGENTS.md`, `drafts`, `schemas.md`, the full campaign flow example, and `tests/test-scenarios.md` now matches the API: 200 means success, hierarchy validation errors return 400 with a `PublishCampaignResult` carrying `validation_errors`. On a 400, agents check for `validation_errors` first and never retry automatically
