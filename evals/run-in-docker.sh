@@ -43,23 +43,29 @@ has --max-cost-usd "$@" || ARGS+=(--max-cost-usd 20)
 # Claude Code's Bash sandbox (bubblewrap) needs user namespaces, which Docker's
 # default seccomp profile blocks, and must mount /proc in a new PID namespace,
 # which Docker's masked /proc paths block. These only loosen this throwaway
-# container's own confinement. The tmpfs over /plugin/.claude keeps any real
-# settings file in this checkout (with live credentials) out of the container,
-# and the one over /plugin/evals/docker does the same for the saved token.
+# container's own confinement. A tmpfs over each settings folder in this
+# checkout (.claude, .codex, .agents) keeps real settings files with live
+# credentials out of the container, and one over /plugin/evals/docker does the
+# same for the saved token. Credentials are passed by name (-e NAME), so their
+# values don't appear in the docker command line.
 #
 # Kept run sandboxes (--keep-temp) and traces go to a host folder outside the
 # plugin: plugin eval refuses to load cases while they sit inside the plugin dir.
 EVAL_TMP="${ADS_EVAL_TMP:-$HOME/.cache/ads-plugin-evals/tmp}"
 mkdir -p "$EVAL_TMP"
+RUN_ARGS=(--mount type=tmpfs,destination=/plugin/evals/docker)
+for dir in .claude .codex .agents; do
+  [ -d "$REPO/$dir" ] && RUN_ARGS+=(--mount "type=tmpfs,destination=/plugin/$dir")
+done
+for var in CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_API_KEY; do
+  [ -n "${!var:-}" ] && { export "${var?}"; RUN_ARGS+=(-e "$var"); }
+done
 docker run --rm -i \
   --security-opt seccomp=unconfined \
   --security-opt apparmor=unconfined \
   --security-opt systempaths=unconfined \
-  -e CLAUDE_CODE_OAUTH_TOKEN="${CLAUDE_CODE_OAUTH_TOKEN:-}" \
-  -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
   -e TMPDIR=/evaltmp \
   -v "$EVAL_TMP:/evaltmp" \
   -v "$REPO:/plugin" \
-  --mount type=tmpfs,destination=/plugin/.claude \
-  --mount type=tmpfs,destination=/plugin/evals/docker \
+  "${RUN_ARGS[@]}" \
   "$IMAGE" "${ARGS[@]}"
