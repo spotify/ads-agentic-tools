@@ -37,6 +37,13 @@ fi
 
 PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
 
+# Eval runs only: agents sometimes cd into the plugin before calling this script,
+# which moves PWD away from the workspace that holds the settings and fixtures.
+# plugin eval puts the workspace at $HOME/cwd, so fall back to it there.
+if [ -n "${EVAL_ADS_API_FIXTURES:-}" ] && [ ! -d "$PROJECT_DIR/.claude" ] && [ -d "${HOME:-}/cwd/.claude" ]; then
+  PROJECT_DIR="$HOME/cwd"
+fi
+
 # --- Settings file discovery ---
 find_settings_file() {
   local order dir candidate
@@ -172,6 +179,90 @@ fi
 if [ -n "$BODY" ]; then
   CURL_ARGS+=(-H "Content-Type: application/json")
   CURL_ARGS+=(-d "$BODY")
+fi
+
+# --- Eval replay and record modes ---
+#
+# For offline evals only (evals/README.md). A fixture is <key>.http: first line
+# the HTTP status, the rest the response body. The key is METHOD__path with the
+# query dropped, the ad account ID put back as {ad_account_id}, other UUIDs as
+# {id}, and "/" as "__".
+#
+# Replay (EVAL_ADS_API_FIXTURES=<dir>): answer from fixtures instead of calling
+# the API, and append each request to $EVAL_ADS_API_LOG so graders can check
+# what was sent. <key>.<n>.http answers the nth call to a key, then
+# <key>.match-<WORD>.http answers when the request path (with its query) or
+# body contains WORD, for requests that share a key such as draft VALIDATE and
+# PUBLISH or a list filtered by query; then <key>.http.
+# A request with no fixture gets a plain 404.
+#
+# Record (EVAL_ADS_API_RECORD=<dir>): make the real request and save the
+# response as <key>.http. Only GET is allowed unless
+# EVAL_ADS_API_RECORD_ALLOW_WRITES=1, so recording can't change an account.
+fixture_key() {
+  local key_path="${PATH_ARG%%\?*}" placeholder='{ad_account_id}'
+  [ -n "$AD_ACCOUNT_ID" ] && key_path="${key_path//"$AD_ACCOUNT_ID"/$placeholder}"
+  key_path=$(printf '%s' "$key_path" \
+    | sed -E 's/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/{id}/g; s#/#__#g')
+  printf '%s__%s' "$METHOD" "$key_path"
+}
+
+resolve_dir() {
+  case "$1" in
+    /*) printf '%s' "$1" ;;
+    *)  printf '%s/%s' "$PROJECT_DIR" "$1" ;;
+  esac
+}
+
+if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
+  FIXTURE_DIR=$(resolve_dir "$EVAL_ADS_API_FIXTURES")
+  LOG_FILE="${EVAL_ADS_API_LOG:-$PROJECT_DIR/.claude/.api-requests.log}"
+  KEY=$(fixture_key)
+
+  CALL_N=1
+  if [ -f "$LOG_FILE" ]; then
+    CALL_N=$(( $(awk -v k="$KEY " 'index($0, k) == 1' "$LOG_FILE" | wc -l) + 1 ))
+  fi
+  printf '%s %s %s\n' "$KEY" "$PATH_ARG" "$(printf '%s' "$BODY" | tr '\n' ' ')" >> "$LOG_FILE"
+
+  FIXTURE="$FIXTURE_DIR/${KEY}.${CALL_N}.http"
+  if [ ! -f "$FIXTURE" ]; then
+    FIXTURE=""
+    for candidate in "$FIXTURE_DIR/${KEY}".match-*.http; do
+      [ -f "$candidate" ] || continue
+      word="${candidate##*.match-}"
+      word="${word%.http}"
+      case "$PATH_ARG $BODY" in
+        *"$word"*) FIXTURE="$candidate"; break ;;
+      esac
+    done
+    [ -n "$FIXTURE" ] || FIXTURE="$FIXTURE_DIR/${KEY}.http"
+  fi
+  if [ ! -f "$FIXTURE" ]; then
+    # Look like a real API 404 so the agent under test can't tell it's in an eval.
+    # The request log above already records the key that had no fixture.
+    # Same shape as the real API's 404 body (recorded), including its camelCase key.
+    printf '{"errorCodes":[],"messages":["Resource not found"]}\nHTTP_STATUS:404\n'
+    exit 0
+  fi
+  tail -n +2 "$FIXTURE"
+  printf '\nHTTP_STATUS:%s\n' "$(head -1 "$FIXTURE" | tr -d '[:space:]')"
+  exit 0
+fi
+
+if [ -n "${EVAL_ADS_API_RECORD:-}" ]; then
+  if [ "$METHOD" != "GET" ] && [ "${EVAL_ADS_API_RECORD_ALLOW_WRITES:-}" != "1" ]; then
+    echo "ERROR: Recording mode only sends GET requests. Refusing $METHOD $PATH_ARG." >&2
+    exit 1
+  fi
+  RECORD_DIR=$(resolve_dir "$EVAL_ADS_API_RECORD")
+  mkdir -p "$RECORD_DIR"
+  RESPONSE=$(curl "${CURL_ARGS[@]}" "$URL")
+  STATUS="${RESPONSE##*HTTP_STATUS:}"
+  RESPONSE_BODY="${RESPONSE%$'\n'HTTP_STATUS:*}"
+  printf '%s\n%s\n' "$STATUS" "$RESPONSE_BODY" > "$RECORD_DIR/$(fixture_key).http"
+  printf '%s\n' "$RESPONSE"
+  exit 0
 fi
 
 exec curl "${CURL_ARGS[@]}" "$URL"
