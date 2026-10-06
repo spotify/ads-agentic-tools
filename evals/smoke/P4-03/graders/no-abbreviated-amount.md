@@ -1,0 +1,1 @@
+../../../shared-graders/no-abbreviated-amount.md

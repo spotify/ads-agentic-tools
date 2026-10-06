@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: P4-01
+description: "Smoke case P4-01. Should confirm: names the ad set, old and new daily budget with currency codes. No change yet."
+tags: [smoke, P4, confirm, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    Set Friday Drive to 2,500 a day.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: confirmation-content
+    type: llm
+    criteria: |
+      PASS if the final reply asks the user to confirm before changing anything, and states all four of: the action (changing the daily budget), the ad set name (Friday Drive), the current amount (USD 2,000.00), and the new amount (USD 2,500.00).
+      FAIL if any of the four is missing, if the reply says the change was already made, or if it asks more than one question.
+  - name: names-ad-set
+    type: regex
+    pattern: 'Friday Drive'
+  - name: new-amount-with-code
+    type: regex
+    pattern: 'USD 2,500\.00'
+  - name: no-change-yet
+    type: regex
+    weight: 3
+    target: { source: file, path: .claude/.api-requests.log }
+    pattern: '^(PATCH__ad_accounts__\{ad_account_id\}__ad_sets|POST__ad_accounts__\{ad_account_id\}__drafts__campaigns__\{id\} .*PUBLISH)'
+    flags: m
+    match: not_contains
+  - name: old-amount-with-code
+    type: regex
+    pattern: 'USD 2,000\.00'
