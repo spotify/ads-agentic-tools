@@ -1,0 +1,1 @@
+../../../shared-graders/one-question.md

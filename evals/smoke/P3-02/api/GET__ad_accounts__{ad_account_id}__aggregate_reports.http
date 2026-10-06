@@ -1,0 +1,2 @@
+200
+{"report_start": "2026-09-01T00:00:00Z", "report_end": "2026-10-01T00:00:00Z", "rows": [{"entity_type": "CAMPAIGN", "entity_id": "30200001-0000-4000-8000-302000000001", "entity_name": "Spring Video Push", "entity_status": "ACTIVE", "start_time": "2026-09-01T00:00:00Z", "end_time": "2026-10-01T00:00:00Z", "stats": [{"field_type": "IMPRESSIONS", "field_value": 210400}, {"field_type": "COMPLETION_RATE", "field_value": 86.2}, {"field_type": "VIDEO_VIEWS", "field_value": 181355}]}]}

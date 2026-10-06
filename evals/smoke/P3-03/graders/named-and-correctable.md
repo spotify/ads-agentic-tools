@@ -1,0 +1,1 @@
+../../../shared-graders/named-and-correctable.md

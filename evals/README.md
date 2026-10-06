@@ -115,6 +115,10 @@ Each case is a folder holding:
 The suite is organized as:
 
 - `fixtures/`: the dummy settings files, the shared scaffold, and default API responses.
+- `fixtures/dry-run.sh` records a session against a case's fixtures, and
+  `fixtures/trim-transcript.py` turns it into the case's `history.jsonl`. It drops
+  the skill-loading step, so start those prompts with the skill's slash command and
+  each run loads the current `SKILL.md`.
 - `shared-graders/`: checks used by more than one case. A case links to one with a
   relative symlink under its own file name (`graders/date-range.md ->
   ../../../shared-graders/date-range.md`), so editing the shared file changes every
