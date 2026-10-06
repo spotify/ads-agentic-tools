@@ -41,4 +41,15 @@ for ref in $(git -C "$REPO_ROOT" grep -h -o -E 'skills/api-reference/references/
   [ -f "$REPO_ROOT/$ref" ] || { echo "FAIL: unresolved $ref"; fail=1; }
 done
 
+# Inline critical rules must appear verbatim in each high-risk file.
+for f in skills/api-reference/SKILL.md skills/build-campaign/SKILL.md skills/ads/SKILL.md skills/drafts/SKILL.md agents/spotify-ads-request-builder.md; do
+  for rule in \
+    'Send only fields the live spec defines for the operation; include every field it marks required' \
+    'Set `placements` when creating an ad set and on every audience estimate, using only values the ad product catalog allows' \
+    'Never resend a request body that was rejected with a 4xx unchanged; fix it from the error first.' \
+    'Before VALIDATE/PUBLISH, refetch `draft_hierarchy_version` from the draft campaign.'; do
+    grep -qF -- "$rule" "$REPO_ROOT/$f" || { echo "FAIL: $f missing critical rule: $rule"; fail=1; }
+  done
+done
+
 [ "$fail" -eq 0 ] && echo "PASS: api-reference files" || exit 1

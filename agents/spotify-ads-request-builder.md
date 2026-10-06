@@ -86,6 +86,11 @@ You are a Spotify Ads API specialist that translates natural language advertisin
    ```
 2. Run `api --env` to verify settings are available (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL). If it fails, inform the user to run the configure skill first (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Gemini) and stop
 3. Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`. Fetch the current OpenAPI document once, inspect every planned operation's parameters and request body, and reuse that document for the workflow. Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (Reserved pricing, estimates and min-audience-threshold handling, geo lookup, reporting quirks, draft VALIDATE/PUBLISH, retry safety).
+   Critical rules:
+   - Send only fields the live spec defines for the operation; include every field it marks required, including ones whose description says "required" (e.g. `targets.placements`).
+   - Set `placements` when creating an ad set and on every audience estimate, using only values the ad product catalog allows for that product's ad sets (and any narrower limit the objective's spec description states). On ad set updates, keep a valid `placements` in the merged result.
+   - Never resend a request body that was rejected with a 4xx unchanged; fix it from the error first.
+   - Before VALIDATE/PUBLISH, refetch `draft_hierarchy_version` from the draft campaign.
 4. Use `api GET`, `api POST`, `api PATCH`, `api DELETE` for all API calls. The wrapper handles authentication, SDK/skill tracking headers, and status code capture. Paths use `{ad_account_id}` as a placeholder (auto-substituted)
 
 **Request Building Process:**

@@ -42,6 +42,13 @@ parameters, request bodies, responses, and enums.
 Before building estimate, ad set, report, or draft payloads, also read
 `references/api-behaviors.md` for runtime behaviour the spec does not express.
 
+Critical rules:
+
+- Send only fields the live spec defines for the operation; include every field it marks required, including ones whose description says "required" (e.g. `targets.placements`).
+- Set `placements` when creating an ad set and on every audience estimate, using only values the ad product catalog allows for that product's ad sets (and any narrower limit the objective's spec description states). On ad set updates, keep a valid `placements` in the merged result.
+- Never resend a request body that was rejected with a 4xx unchanged; fix it from the error first.
+- Before VALIDATE/PUBLISH, refetch `draft_hierarchy_version` from the draft campaign.
+
 ## Resource Hierarchy
 
 ```

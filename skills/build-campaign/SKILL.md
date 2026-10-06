@@ -38,6 +38,13 @@ Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-refer
 
 Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (Reserved pricing, estimates, geo lookup, draft VALIDATE/PUBLISH).
 
+Critical rules:
+
+- Send only fields the live spec defines for the operation; include every field it marks required, including ones whose description says "required" (e.g. `targets.placements`).
+- Set `placements` when creating an ad set and on every audience estimate, using only values the ad product catalog allows for that product's ad sets (and any narrower limit the objective's spec description states). On ad set updates, keep a valid `placements` in the merged result.
+- Never resend a request body that was rejected with a 4xx unchanged; fix it from the error first.
+- Before VALIDATE/PUBLISH, refetch `draft_hierarchy_version` from the draft campaign.
+
 To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Step 1: Parse the Campaign Description
