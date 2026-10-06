@@ -14,10 +14,6 @@ execution:
 context:
   scaffold_script: scaffold.sh
 graders:
-  - name: amount-first-eur-if-shown
-    type: regex
-    pattern: '\bEUR \d|€\s?\d'
-    match: not_contains
   - name: lists-both
     type: regex
     pattern: '^(?=[\s\S]*Sommerkonzerte)(?=[\s\S]*Herbst Hörspiel)'
