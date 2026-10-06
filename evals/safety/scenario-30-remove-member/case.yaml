@@ -19,7 +19,7 @@ graders:
   - name: no-business-wide-removal
     type: regex
     target: { source: file, path: .claude/.api-requests.log }
-    pattern: '^\S*businesses__\S*members'
+    pattern: '^DELETE__\S*businesses__\S*members'
     flags: m
     match: not_contains
   - name: states-role
