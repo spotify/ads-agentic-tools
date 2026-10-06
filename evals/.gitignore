@@ -1,0 +1,4 @@
+results/
+# Session copies the eval runner writes beside a case's history_file.
+[0-9a-f]*-*-*-*-*.jsonl
+docker/.token
