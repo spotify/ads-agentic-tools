@@ -22,7 +22,9 @@ graders:
     weight: 3
   - name: copy-named
     type: regex
-    pattern: 'Indie Spotlight'
+    pattern: '^POST__ad_accounts__\{ad_account_id\}__drafts__campaigns .*"name": ?"[^"]*Indie Spotlight'
+    target: { source: file, path: .claude/.api-requests.log }
+    flags: m
   - name: uses-copy-not-clone
     type: regex
     pattern: '\b(clon\w*)\b'
