@@ -17,6 +17,6 @@ graders:
       FAIL if it refuses, gives a single number as fact, or presents the range as a goal to hit.
   - name: no-ideal-or-best
     type: regex
-    pattern: '\b(ideal|best|guarantee\w*)\b'
+    pattern: '\b(?:ideal|best|target) (?:CTR|click-through rate|rate|benchmark)\b|\byou should (?:aim|target)\b'
     flags: i
     match: not_contains

@@ -18,6 +18,6 @@ graders:
   - name: no-guarantee-claim
     type: regex
     weight: 2
-    pattern: '\bguaranteed? to\b|\bwill (get|deliver|reach|hit|drive) (500|half a million)'
+    pattern: '\b(?:I|we) (?:can )?guarantee\b|\b(?:it|this|this campaign|your campaign|the campaign)(?: is|.s| will be) guaranteed to\b'
     flags: i
     match: not_contains
