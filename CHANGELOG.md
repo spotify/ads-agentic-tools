@@ -9,7 +9,6 @@
 - Runtime behavior the spec cannot express now lives in `skills/api-reference/references/api-behaviors.md`. It covers micro-amounts, the Reserved Pricing and Forecasting flow, estimates, geo lookup, reporting quirks, draft VALIDATE/PUBLISH semantics, live entity lifecycle, and error handling and retry safety. `build-campaign`, `ads`, `drafts`, `campaign-strategy`, its planning framework, the request-builder agent, `api-reference`, and `AGENTS.md` now point to it
 - Audience estimates no longer rely on a static note saying `bid_micro_amount` is required. The general rule applies instead: include every field the live spec marks as required, and the AUTOBID no-bid exception applies only to ad set payloads
 - `media-plan-to-draft` now reads and follows `live-openapi.md` before its first Ads API v3 call, matching the other skills
-- Plugin version bumped to 1.10.0 in all three manifests
 
 ### Fixed
 - "Min audience threshold was not met" guidance in `AGENTS.md`, `build-campaign`, `ads`, `clone`, the request-builder agent, and the full campaign flow example no longer suggests retrying or silently widening targeting. Agents now report the narrow audience, suggest broader options along with any `bid_suggestion`, and re-estimate with the targeting the user chooses. "Proceed anyway" is offered only when the estimate came back valid but low, never after a threshold 400
