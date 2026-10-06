@@ -1,0 +1,2 @@
+200
+{"paging": {"page_size": 50, "total_results": 2, "offset": 0, "current_page": 1}, "campaigns": [{"id": "30200001-0000-4000-8000-302000000001", "name": "Spring Video Push", "status": "ACTIVE", "objective": "UNSET", "delivery_goal_group": "VIDEO_VIEWS", "created_at": "2026-09-01T10:00:00Z", "updated_at": "2026-09-01T10:00:00Z"}, {"id": "30200002-0000-4000-8000-302000000002", "name": "Autumn Reel", "status": "ARCHIVED", "objective": "UNSET", "delivery_goal_group": "VIDEO_VIEWS", "created_at": "2026-09-01T10:00:00Z", "updated_at": "2026-09-01T10:00:00Z"}]}
