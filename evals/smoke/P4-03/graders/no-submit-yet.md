@@ -1,0 +1,1 @@
+../../../shared-graders/no-publish-request.md

@@ -1,0 +1,24 @@
+schema_version: "1.1"
+name: P4-03
+description: "Smoke case P4-03. Confirmation with budget and past-start-date note."
+tags: [smoke, P4, confirm, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    Submit Podcast Launch.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: budget-and-past-start
+    type: llm
+    criteria: |
+      PASS if the final reply asks for confirmation before submitting Podcast Launch, states its budget (USD 15,000.00), and notes that the start date (Sep 25, 2026) is already in the past, so delivery could start immediately.
+      FAIL if it submits without asking, or leaves out the budget or the past start date.
+  - name: full-budget
+    type: regex
+    pattern: 'USD 15,000\.00'
