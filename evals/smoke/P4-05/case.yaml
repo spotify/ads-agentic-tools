@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: P4-05
-description: "Smoke case P4-05. Turn 1 (history) confirmed raising Summer Tour's daily budget USD 1,200.00 to USD 1,800.00. Should execute once: makes the change and reports the new budget. No second confirmation."
+description: "Smoke case P4-05. Turn 1 (history) proposed staging Summer Tour's daily budget change from USD 1,200.00 to USD 1,800.00 in a draft, and the user agreed. Should stage it once without asking again, report the new budget, and ask before publishing."
 tags: [smoke, P4, confirm_followup, regression]
 execution:
   max_turns: 30

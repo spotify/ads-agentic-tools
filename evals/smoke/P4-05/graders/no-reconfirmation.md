@@ -1,1 +1,0 @@
-../../../shared-graders/no-trailing-question.md
