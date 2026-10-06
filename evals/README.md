@@ -46,9 +46,9 @@ to `.git/ads-cache`. When fixtures sat in a visible folder, the agent under test
 sometimes listed the workspace and read them directly instead of calling the API.
 They can't go outside the workspace either, because eval runs can't read `/tmp`.
 Keep fixtures, settings, and names free of anything that marks the run as a test.
-The scaffold downloads the current public OpenAPI document (reusing a copy under a
-day old in `~/.cache/ads-plugin-evals/`), and `scripts/fetch-openapi-schema.sh`
-serves it from there, so a case fails if the download does.
+Each case's scaffold downloads the current public OpenAPI document into the
+workspace, and `scripts/fetch-openapi-schema.sh` serves it from there, so a case
+fails if the download does.
 
 A fixture is `<METHOD>__<path>.http`: the first line is the HTTP status, the rest is
 the response body. In the path, `/` becomes `__`, the ad account ID becomes
@@ -81,8 +81,8 @@ The suite is organized as:
 
 - `fixtures/`: the dummy settings files, the shared scaffold, and default API responses.
 - `shared-graders/`: checks used by more than one case. A case links to one with a
-  relative symlink under its own file name (`graders/did-not-ask.md ->
-  ../../../shared-graders/did-not-ask.md`), so editing the shared file changes every
+  relative symlink under its own file name (`graders/date-range.md ->
+  ../../../shared-graders/date-range.md`), so editing the shared file changes every
   case that uses it. Add one when a second case needs an identical check.
 - `smoke/<ID>/`: the smoke-test cases, one per expected behavior, named by case ID.
 

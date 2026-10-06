@@ -9,20 +9,19 @@ set -euo pipefail
 HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 SETTINGS="${1:-settings.local.md}"; [ $# -gt 0 ] && shift
 FIXTURES=".git/ads-cache"
+# Runs in the fresh eval workspace. Refuse to run anywhere that already has a
+# settings file, such as a plugin checkout, so it can't overwrite real settings.
+if [ -e .claude/spotify-ads-api.local.md ]; then
+  echo "ERROR: $PWD/.claude/spotify-ads-api.local.md already exists; run this in an empty workspace." >&2
+  exit 1
+fi
 [ -d .git ] || git init -q
 rm -rf "$FIXTURES"; mkdir -p "$FIXTURES" .claude
 cp "$HERE/$SETTINGS" .claude/spotify-ads-api.local.md
 cp "$HERE/api/default/"* "$FIXTURES/"
 for extra in "$@"; do cp "$extra/"* "$FIXTURES/"; done
 # Download the current public OpenAPI document for the replayed
-# fetch-openapi-schema.sh to serve. A copy under a day old is reused so a suite
-# run downloads it once. Without it every case would test the wrong thing, so a
-# failed download fails the case.
-SPEC_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/ads-plugin-evals/openapi.yaml"
-if [ -z "$(find "$SPEC_CACHE" -mmin -1440 2>/dev/null)" ]; then
-  mkdir -p "$(dirname "$SPEC_CACHE")"
-  env -u EVAL_ADS_API_FIXTURES bash "$HERE/../../scripts/fetch-openapi-schema.sh" "$SPEC_CACHE.tmp"
-  mv "$SPEC_CACHE.tmp" "$SPEC_CACHE"
-fi
-cp "$SPEC_CACHE" "$FIXTURES/openapi.yaml"
+# fetch-openapi-schema.sh to serve. Without it every case would test the wrong
+# thing, so a failed download fails the case.
+env -u EVAL_ADS_API_FIXTURES bash "$HERE/../../scripts/fetch-openapi-schema.sh" "$FIXTURES/openapi.yaml"
 : > .claude/.api-requests.log
