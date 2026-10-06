@@ -1,0 +1,34 @@
+schema_version: "1.1"
+name: E-01
+description: "Smoke case E-01. Should display correctly: Lead generation; Food and dining services."
+tags: [smoke, enum_display, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    What objective and industry is Burger Nights set to?
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: display-Food-and-dining-services
+    type: regex
+    pattern: 'food and dining services'
+    flags: i
+  - name: display-Lead-generation
+    type: regex
+    pattern: 'lead generation'
+    flags: i
+  - name: enum-FOOD_DINING_SERVICES-absent
+    type: regex
+    weight: 2
+    pattern: 'FOOD_DINING_SERVICES'
+    match: not_contains
+  - name: enum-LEAD_GEN-absent
+    type: regex
+    weight: 2
+    pattern: 'LEAD_GEN'
+    match: not_contains
