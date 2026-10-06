@@ -124,6 +124,9 @@ The suite is organized as:
   ../../../shared-graders/date-range.md`), so editing the shared file changes every
   case that uses it. Add one when a second case needs an identical check.
 - `smoke/<ID>/`: the smoke-test cases, one per expected behavior, named by case ID.
+- `safety/`: the safety scenarios from `tests/test-scenarios.md` (18, 19, 24, 30,
+  34). Each checks the request log for the action that must not happen before
+  confirmation.
 
 Fixture data is invented, and no IDs in it belong to real accounts.
 

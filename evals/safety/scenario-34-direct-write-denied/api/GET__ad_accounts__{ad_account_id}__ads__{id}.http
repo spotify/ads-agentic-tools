@@ -1,0 +1,2 @@
+200
+{"id": "5e6f7a8b-9c0d-4e1f-8a2b-4c5d6e7f8a01", "ad_set_id": "5e6f7a8b-9c0d-4e1f-8a2b-4c5d6e7f8a02", "name": "Joes Pizza Nightly", "tagline": "Hot slices till late", "status": "ACTIVE", "delivery": "ON", "call_to_action": {"key": "ORDER_NOW", "clickthrough_url": "https://joespizza.example.com"}, "created_at": "2026-09-20T10:00:00Z", "updated_at": "2026-09-28T15:30:00Z"}
