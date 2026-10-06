@@ -1,0 +1,33 @@
+schema_version: "1.1"
+name: P5-04
+description: "Smoke case P5-04. Gives reason and fix. Doesn't refuse."
+tags: [smoke, P5, near_miss, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    Why was Drive Time 30s rejected?
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: answered-not-refused
+    type: llm
+    criteria: |
+      PASS if the final reply explains why Drive Time 30s was rejected (the destination URL didn't load in the target market) and how to fix it.
+      FAIL if it refuses or deflects the question.
+  - name: date-present
+    type: regex
+    pattern: '\b(Sep|September)\.? 27\b|2026-09-27'
+  - name: no-clickthrough-term
+    type: regex
+    pattern: '\b(click-?through url)\b'
+    flags: i
+    match: not_contains
+  - name: uses-destination-url
+    type: regex
+    pattern: 'destination URL'
+    flags: i

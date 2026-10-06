@@ -1,2 +1,2 @@
 200
-{"estimated_reach": {"min": 410000, "max": 520000}}
+{"audience_forecast": [{"estimated_reach_min": 410000, "estimated_reach_max": 520000, "forecast_type": "DAILY"}], "likely_to_deliver_budget": true}

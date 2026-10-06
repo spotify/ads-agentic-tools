@@ -1,0 +1,34 @@
+schema_version: "1.1"
+name: E-03
+description: "Smoke case E-03. contributor; Draft."
+tags: [smoke, enum_display, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    What's my role, and what's the status of ad Promo B?
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: display-Draft
+    type: regex
+    pattern: 'draft'
+    flags: i
+  - name: display-contributor
+    type: regex
+    pattern: 'contributor'
+    flags: i
+  - name: enum-ACTIVE_RESTRICTED-absent
+    type: regex
+    pattern: '\bACTIVE_RESTRICTED\b'
+    match: not_contains
+    weight: 2
+  - name: enum-AD_ACCOUNT_CONTRIBUTOR-absent
+    type: regex
+    pattern: '\bAD_ACCOUNT_CONTRIBUTOR\b'
+    match: not_contains
+    weight: 2
