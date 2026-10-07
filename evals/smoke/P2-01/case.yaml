@@ -1,0 +1,25 @@
+schema_version: "1.1"
+name: P2-01
+description: "Smoke case P2-01. Lists campaigns from the only account. Doesn't ask which account."
+tags: [smoke, P2, resolve_from_context, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    Show my active campaigns.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: lists-both
+    type: regex
+    pattern: '^(?=[\s\S]*Sommerkonzerte)(?=[\s\S]*Herbst Hörspiel)'
+    weight: 2
+  - name: no-account-question
+    type: llm
+    criteria: |
+      PASS if the final reply lists the active campaigns without asking which ad account to use.
+      FAIL if it asks which account, or asks anything the account data already answers.
