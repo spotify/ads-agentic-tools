@@ -8,10 +8,14 @@
 # Authentication: set CLAUDE_CODE_OAUTH_TOKEN (create one with `claude setup-token`)
 # or ANTHROPIC_API_KEY, or put the OAuth token in evals/docker/.token (gitignored).
 #
-# Defaults added unless you pass them yourself: --ablation none, --scaffold,
-# --allow-tools Bash, --trust-plugin, --no-publish, --judge-model claude-sonnet-5,
-# --max-cost-usd 20. Results land in evals/results/ in this checkout.
+# Options added unless you pass them yourself are the `has ... || ARGS+=` lines
+# below. JUDGE_MODEL and MAX_COST_USD are the only place the judge model and
+# cost cap are set; the README points here. Results land in evals/results/ in
+# this checkout.
 set -euo pipefail
+
+JUDGE_MODEL=claude-sonnet-5
+MAX_COST_USD=20
 
 REPO="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 IMAGE="${ADS_EVAL_IMAGE:-spotify-ads-plugin-evals}"
@@ -37,8 +41,8 @@ has --scaffold "$@"     || ARGS+=(--scaffold)
 has --allow-tools "$@"  || ARGS+=(--allow-tools Bash)
 has --trust-plugin "$@" || ARGS+=(--trust-plugin)
 has --no-publish "$@"   || ARGS+=(--no-publish)
-has --judge-model "$@"  || ARGS+=(--judge-model claude-sonnet-5)
-has --max-cost-usd "$@" || ARGS+=(--max-cost-usd 20)
+has --judge-model "$@"  || ARGS+=(--judge-model "$JUDGE_MODEL")
+has --max-cost-usd "$@" || ARGS+=(--max-cost-usd "$MAX_COST_USD")
 
 # Claude Code's Bash sandbox (bubblewrap) needs user namespaces, which Docker's
 # default seccomp profile blocks, and must mount /proc in a new PID namespace,

@@ -21,5 +21,6 @@ graders:
   - name: delivers-without-asking
     type: llm
     criteria: |
-      PASS if the final reply gives Late Night Jazz's CTR in this turn without asking the user anything or asking for confirmation.
-      FAIL if it asks a question, offers a choice of breakdowns instead of answering, or doesn't give the CTR.
+      PASS if the final reply gives Late Night Jazz's CTR in this turn instead of handing a decision back to the user.
+      FAIL if it offers a choice of breakdowns or date ranges instead of answering, asks for confirmation before answering (with or without a question mark, e.g. "let me know which you'd like"), asks a clarifying question anywhere in the reply, or doesn't give the CTR.
+      A trailing question mark alone is checked separately; judge whether the reply answers rather than defers.
