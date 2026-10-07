@@ -69,6 +69,8 @@ Prompt the user for fields to update (at least 1 required):
 - **name** (string, optional)
 - **status** (ACTIVE, PAUSED, ARCHIVED, optional)
 
+**Paused is not an ad set or ad status**: only campaigns use `statuses=PAUSED`. For paused ad sets, list `api GET "ad_accounts/{ad_account_id}/ad_sets?delivery=OFF"` and report `is_paused`/`pause_reason`; never send `statuses=PAUSED` to ad sets or ads. **Updates are PATCH, never PUT**: the spec defines no PUT on Ads API v3 endpoints. **Ad sets for a campaign**: `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID"`. There is no nested `/campaigns/{id}/ad_sets` route.
+
 Before the PATCH, read and follow
 `$PLUGIN_ROOT/skills/api-reference/references/ad-product-validation.md`. Fetch the live
 catalog and current campaign once for this operation, deep-merge the proposed changes,

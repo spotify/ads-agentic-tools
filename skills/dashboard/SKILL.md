@@ -128,6 +128,8 @@ limit=50"
 api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID&limit=50"
 ```
 
+**Ad sets for a campaign**: `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID"`. There is no nested `/campaigns/{id}/ad_sets` route.
+
 ### Display format
 
 ```

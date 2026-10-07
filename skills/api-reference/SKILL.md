@@ -79,7 +79,10 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - **Pagination**: All list endpoints support `limit` (1-50, default 50) and `offset` (default 0).
 - **Sorting**: Most list endpoints support `sort_direction` (ASC/DESC) and entity-specific sort fields.
 - **Updates use PATCH**: Partial updates with minimum 1 property required. For campaign, ad set, and ad changes, PATCH the draft endpoint by default.
-- **No DELETE on live campaigns/ad sets/ads**: Use status changes (ARCHIVED, PAUSED) instead. Draft entities _can_ be deleted.
+- **Updates are PATCH, never PUT**: the spec defines no PUT on Ads API v3 endpoints.
+- **No DELETE on live campaigns/ad sets/ads**: Archive with `status: ARCHIVED` instead. Draft entities _can_ be deleted.
+- **Paused is not an ad set or ad status**: ad set and ad statuses have no `PAUSED` (only campaigns do). Pause or resume an ad set or ad with a live PATCH of `{"delivery":"OFF"}` or `{"delivery":"ON"}` (an ad set PATCH carrying `delivery` must contain only that field), and find paused ad sets from the read-only `is_paused` response field, never `statuses=PAUSED`.
+- **Ad sets for a campaign**: `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID"`. There is no nested `/campaigns/{id}/ad_sets` route.
 
 ## Public Endpoint Groups
 
@@ -96,7 +99,7 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 
 ### Ads
 - `POST /ad_accounts/{id}/ads` — Create ad (required: name, assets; also needs tagline, advertiser_name, ad_set_id, call_to_action)
-- `GET /ad_accounts/{id}/ads` — List ads (filterable by ad_set_ids, campaign_ids, statuses)
+- `GET /ad_accounts/{id}/ads` — List ads (filterable by ad_set_ids, asset_ids, statuses; no campaign_ids filter, so list the campaign's ad sets first)
 - `GET /ad_accounts/{id}/ads/{ad_id}` — Get ad by ID
 - `PATCH /ad_accounts/{id}/ads/{ad_id}` — Update ad
 

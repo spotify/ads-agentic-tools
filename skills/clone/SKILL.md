@@ -50,12 +50,15 @@ api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID&limit=50&sort_direction=DESC"
 ```
 
+**Ad sets for a campaign**: `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID"`. There is no nested `/campaigns/{id}/ad_sets` route.
+
 Paginate with `offset` if `total_results > 50`.
 
 #### Fetch all ads under the campaign
 
 ```bash
-api GET "ad_accounts/{ad_account_id}/ads?campaign_ids=$CAMPAIGN_ID&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ads?ad_set_ids=$AD_SET_ID_1&ad_set_ids=$AD_SET_ID_2&limit=50&sort_direction=DESC"
+# ads have no campaign_ids filter: pass the campaign's ad set IDs as repeated ad_set_ids
 ```
 
 Paginate with `offset` if `total_results > 50`.

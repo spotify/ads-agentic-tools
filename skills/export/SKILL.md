@@ -65,6 +65,8 @@ api GET "ad_accounts/{ad_account_id}/campaigns/$CAMPAIGN_ID"
 api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&offset=0"
 ```
 
+**Ad sets for a campaign**: `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID"`. There is no nested `/campaigns/{id}/ad_sets` route.
+
 For a single campaign: add `&campaign_ids=$CAMPAIGN_ID`. Paginate with `offset` until all ad sets are fetched.
 
 ### Fetch ads

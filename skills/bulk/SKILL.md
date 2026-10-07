@@ -1,6 +1,6 @@
 ---
 name: bulk
-description: Stage batch changes to Spotify Ads API campaigns, ad sets, and ads through drafts by default — pause, resume, budgets, delivery, archive, creative, and tracking changes. Use direct live writes only when explicitly requested.
+description: Stage batch changes to Spotify Ads API campaigns, ad sets, and ads through drafts by default — pause, resume, budgets, delivery, archive, creative, and tracking changes. Ad set and ad pause, resume, and delivery toggles are confirmed live writes because drafts cannot carry delivery; other live writes only when explicitly requested.
 argument-hint: "pause | resume | budget | delivery | archive | creative | tracking"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
@@ -88,6 +88,8 @@ per-field checklists or add a separate confirmation.
 
 ### 4. Stage changes
 
+Ad set and ad pause, resume, and delivery toggles skip this step: they are confirmed live `delivery` PATCHes (see Operations), with no draft and no VALIDATE. Report them as "Applied live".
+
 Group selected entities by parent campaign. For each target, check for an existing same-ID draft and disclose pending changes. If none exists, create a draft from the published entity, then PATCH the draft endpoint. Preserve fields the user did not request to change.
 
 After staging all selected changes, fetch each affected draft campaign's current `draft_hierarchy_version` and validate once per campaign. Continue on per-entity staging failures, but do not validate a campaign until all successful edits for that campaign are staged.
@@ -98,14 +100,16 @@ Display a final summary table:
 
 ```
 Bulk Pause Staging Results:
-| Ad Set | Status | Result |
+| Campaign | Status | Result |
 |--------|--------|--------|
-| US 18-34 Audio | PAUSED | Staged; validation passed |
-| UK All Audio | PAUSED | Staged; validation passed |
-| US All Display | — | Failed: error details |
+| Summer Sale | PAUSED | Staged; validation passed |
+| Holiday Promo | PAUSED | Staged; validation passed |
+| Spring Launch | — | Failed: error details |
 
 2/3 changes staged. Nothing was published.
 ```
+
+For live `delivery` changes, use the result "Applied live" and say the changes are already in effect instead of "Nothing was published".
 
 ---
 
@@ -131,16 +135,16 @@ api GET "ad_accounts/{ad_account_id}/campaigns?statuses=ACTIVE&limit=50&sort_dir
 
 #### Apply
 
-For each selected ad set, create or reuse its draft, then:
+Ad sets have no `PAUSED` status; they pause through `delivery`. Draft ad sets and ads cannot carry `delivery`, so this is a live change: show the full list and get explicit confirmation before the first request. Then, for each selected ad set (`delivery` must be the only field in the body):
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$AD_SET_ID" \
-  '{"status":"PAUSED"}'
+api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+  '{"delivery":"OFF"}'
 ```
 
-For campaigns, create or reuse the campaign draft and PATCH `/drafts/campaigns/{id}` instead.
+For campaigns, create or reuse the campaign draft and PATCH `/drafts/campaigns/{id}` with `{"status":"PAUSED"}` instead.
 
-Skip entities that are already PAUSED — note them as "Already paused, skipped" in the results.
+Skip entities that are already paused (ad sets with `is_paused: true`, campaigns with status `PAUSED`) — note them as "Already paused, skipped" in the results.
 
 ---
 
@@ -151,17 +155,21 @@ Resume paused ad sets or campaigns.
 #### List candidates
 
 ```bash
-api GET "ad_accounts/{ad_account_id}/ad_sets?statuses=PAUSED&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ad_sets?delivery=OFF&limit=50&sort_direction=DESC"
 ```
+
+Keep only ad sets with `is_paused: true` and `pause_reason: USER_PAUSED` (`statuses=PAUSED` is not a valid ad set filter). Ad sets paused for an account-level reason cannot be resumed through `delivery`; list them separately and tell the user the account issue must be resolved. For campaigns, list with `statuses=PAUSED`.
 
 #### Apply
 
-For each selected ad set, create or reuse its draft, then:
+Draft ad sets and ads cannot carry `delivery`, so this is a live change: show the full list and get explicit confirmation before the first request. Then, for each selected ad set:
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$AD_SET_ID" \
-  '{"status":"ACTIVE"}'
+api PATCH "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID" \
+  '{"delivery":"ON"}'
 ```
+
+For campaigns, create or reuse the campaign draft and PATCH `/drafts/campaigns/{id}` with `{"status":"ACTIVE"}`.
 
 ---
 
@@ -221,7 +229,7 @@ Toggle ad delivery ON or OFF across multiple ads.
 api GET "ad_accounts/{ad_account_id}/ads?limit=50&sort_direction=DESC"
 ```
 
-To filter by campaign or ad set: add `&campaign_ids=$CAMPAIGN_ID` or `&ad_set_ids=$AD_SET_ID`.
+To filter by ad set: add `&ad_set_ids=$AD_SET_ID` (repeat per ad set). Ads have no `campaign_ids` filter, so for a campaign list its ad sets first with `ad_sets?campaign_ids=$CAMPAIGN_ID`.
 
 Present the table showing current delivery status (ON/OFF), ad name, ad set name, and status.
 
@@ -231,10 +239,10 @@ Ask the user: toggle all selected to ON, or toggle all to OFF?
 
 #### Apply
 
-For each selected ad, create or reuse its draft, then:
+Draft ad sets and ads cannot carry `delivery`, so this is a live change: show the full list and get explicit confirmation before the first request. Then, for each selected ad:
 
 ```bash
-api PATCH "ad_accounts/{ad_account_id}/drafts/ads/$AD_ID" \
+api PATCH "ad_accounts/{ad_account_id}/ads/$AD_ID" \
   '{"delivery":"ON"}'
 ```
 
@@ -256,7 +264,8 @@ Fetch non-archived entities of the selected type:
 
 ```bash
 # For ad sets:
-api GET "ad_accounts/{ad_account_id}/ad_sets?statuses=ACTIVE&statuses=PAUSED&limit=50&sort_direction=DESC"
+api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
+# then drop ad sets whose status is already ARCHIVED (paused ad sets are not a status; they show is_paused: true)
 ```
 
 #### Confirm with warning

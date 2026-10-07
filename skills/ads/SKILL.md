@@ -260,6 +260,8 @@ Prompt for required fields:
     ]
     ```
 
+**Paused is not an ad set or ad status**: ad set and ad statuses have no `PAUSED` (only campaigns do). Pause or resume an ad set or ad with a live PATCH of `{"delivery":"OFF"}` or `{"delivery":"ON"}` (an ad set PATCH carrying `delivery` must contain only that field), and find paused ad sets from the read-only `is_paused` response field, never `statuses=PAUSED`. **Ad sets for a campaign**: `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID"`. There is no nested `/campaigns/{id}/ad_sets` route. **Updates are PATCH, never PUT**: the spec defines no PUT on Ads API v3 endpoints.
+
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/ads" \
   '{...}'
