@@ -37,11 +37,19 @@ fi
 
 PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
 
-# Eval runs only: agents sometimes cd into the plugin before calling this script,
-# which moves PWD away from the workspace that holds the settings and fixtures.
-# plugin eval puts the workspace at $HOME/cwd, so fall back to it there.
-if [ -n "${EVAL_ADS_API_FIXTURES:-}" ] && [ ! -d "$PROJECT_DIR/.claude" ] && [ -d "${HOME:-}/cwd/.claude" ]; then
-  PROJECT_DIR="$HOME/cwd"
+# Eval replay only: settings must come from the eval workspace. Agents sometimes cd
+# into the plugin before calling this script, and a plugin checkout can hold a real
+# settings file. The workspace is the folder holding the (relative) fixtures dir:
+# the project dir, else $HOME/cwd, where plugin eval puts it. With neither, stop
+# instead of reading whatever settings file is nearby.
+if [ -n "${EVAL_ADS_API_FIXTURES:-}" ] && [ "${EVAL_ADS_API_FIXTURES#/}" = "$EVAL_ADS_API_FIXTURES" ] \
+  && [ ! -d "$PROJECT_DIR/$EVAL_ADS_API_FIXTURES" ]; then
+  if [ -d "${HOME:-}/cwd/$EVAL_ADS_API_FIXTURES" ]; then
+    PROJECT_DIR="$HOME/cwd"
+  else
+    echo "ERROR: No settings file found. Run the configure skill first." >&2
+    exit 1
+  fi
 fi
 
 # --- Settings file discovery ---

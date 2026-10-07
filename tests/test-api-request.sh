@@ -164,6 +164,42 @@ assert_eq "every request is logged" "6" "$(wc -l < "$PROJECT/.claude/.api-reques
 assert_eq "the log records the body" "1" \
   "$(grep -c '^POST__ad_accounts__{ad_account_id}__drafts__campaigns .* {"name":"x"}$' "$PROJECT/.claude/.api-requests.log")"
 
+echo "=== eval replay ignores settings outside the workspace ==="
+
+# The agent under test cd's into a plugin checkout that holds a real settings file,
+# while plugin eval's workspace (settings and fixtures) sits at $HOME/cwd.
+CHECKOUT="$TMPDIR/checkout"
+EVAL_HOME="$TMPDIR/eval-home"
+mkdir -p "$CHECKOUT/.claude" "$EVAL_HOME/cwd/.claude" "$EVAL_HOME/cwd/.ads-api"
+printf -- '---\naccess_token: "REAL_TOKEN"\nad_account_id: "real_account"\nauto_execute: false\n---\n' \
+  > "$CHECKOUT/.claude/spotify-ads-api.local.md"
+printf -- '---\naccess_token: "EVAL_TOKEN"\nad_account_id: "eval_account"\nauto_execute: true\n---\n' \
+  > "$EVAL_HOME/cwd/.claude/spotify-ads-api.local.md"
+printf '200\n{"from":"workspace"}\n' > "$EVAL_HOME/cwd/.ads-api/GET__ad_accounts__{ad_account_id}__campaigns.http"
+
+run_from_checkout() {
+  local home="$1"; shift
+  (cd "$CHECKOUT" && env -u CODEX_PROJECT_DIR -u CLAUDE_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
+    HOME="$home" EVAL_ADS_API_FIXTURES=.ads-api bash "$API" "$@")
+}
+
+assert_eq "--env reads the workspace settings, not the checkout's" \
+  "TOKEN='EVAL_TOKEN'" "$(run_from_checkout "$EVAL_HOME" campaigns --env | grep '^TOKEN=')"
+out=$(run_from_checkout "$EVAL_HOME" campaigns GET "ad_accounts/{ad_account_id}/campaigns")
+assert_eq "requests replay from the workspace fixtures" '{"from":"workspace"}' "$(printf '%s' "$out" | head -1)"
+assert_eq "the workspace's request log records them" "1" \
+  "$(wc -l < "$EVAL_HOME/cwd/.claude/.api-requests.log" | tr -d ' ')"
+assert_eq "nothing is logged in the checkout" "no" "$([ -e "$CHECKOUT/.claude/.api-requests.log" ] && echo yes || echo no)"
+
+out=$(env -u CODEX_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
+  CLAUDE_PROJECT_DIR="$CHECKOUT" HOME="$EVAL_HOME" EVAL_ADS_API_FIXTURES=.ads-api bash "$API" campaigns --env)
+assert_eq "a project dir without the fixtures falls back to the workspace" \
+  "TOKEN='EVAL_TOKEN'" "$(printf '%s\n' "$out" | grep '^TOKEN=')"
+
+out=$(run_from_checkout "$TMPDIR/no-such-home" campaigns --env 2>&1)
+assert_eq "with no workspace holding the fixtures, it stops" "1" "$(run_from_checkout "$TMPDIR/no-such-home" campaigns --env >/dev/null 2>&1; echo $?)"
+assert_eq "and never prints the checkout's token" "0" "$(printf '%s' "$out" | grep -c REAL_TOKEN)"
+
 echo "=== eval record mode ==="
 
 STUB_BIN="$TMPDIR/bin"
