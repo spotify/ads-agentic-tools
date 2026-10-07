@@ -158,6 +158,80 @@ BODY="${BODY//\{ad_account_id\}/$AD_ACCOUNT_ID}"
 
 URL="${BASE_URL}/${PATH_ARG}"
 
+# --- Check the request against the OpenAPI document before sending ---
+#
+# Catches invented paths, methods, query parameters, enum values, body fields,
+# wrong types, and missing required fields without contacting the API. The
+# document comes from SPOTIFY_ADS_OPENAPI_FILE when set, otherwise from a
+# per-user cache refreshed hourly. If the document or Python is unavailable the
+# request is sent unchecked with a warning. Set SPOTIFY_ADS_SKIP_SPEC_CHECK=1
+# to skip the check.
+find_python() {
+  local candidate
+  for candidate in python3 python py; do
+    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 8))' 2>/dev/null; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+openapi_file() {
+  if [ -n "${SPOTIFY_ADS_OPENAPI_FILE:-}" ]; then
+    [ -f "$SPOTIFY_ADS_OPENAPI_FILE" ] && printf '%s' "$SPOTIFY_ADS_OPENAPI_FILE"
+    return
+  fi
+  local cache_dir="${TMPDIR:-/tmp}" uid
+  uid="$(id -u 2>/dev/null || echo 0)"
+  if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
+    # Replay runs check against the eval snapshot itself, never a cached copy.
+    local snapshot
+    case "$EVAL_ADS_API_FIXTURES" in
+      /*) snapshot="$EVAL_ADS_API_FIXTURES/openapi.yaml" ;;
+      *)  snapshot="$PROJECT_DIR/$EVAL_ADS_API_FIXTURES/openapi.yaml" ;;
+    esac
+    [ -f "$snapshot" ] && printf '%s' "$snapshot"
+    return
+  fi
+  local cache="${cache_dir%/}/spotify-ads-openapi-${uid}.yaml"
+  # Ignore a cache someone else created in a shared temporary directory.
+  if [ -e "$cache" ] && [ ! -O "$cache" ]; then
+    return
+  fi
+  if [ ! -f "$cache" ] || [ -n "$(find "$cache" -mmin +60 2>/dev/null)" ]; then
+    if ! SPOTIFY_ADS_FETCH_MAX_TIME=10 "$SCRIPT_DIR/fetch-openapi-schema.sh" "$cache" >/dev/null 2>&1; then
+      # Keep a stale copy rather than retrying the download on every call.
+      [ -f "$cache" ] && touch "$cache"
+    fi
+  fi
+  [ -f "$cache" ] && printf '%s' "$cache"
+}
+
+if [ "${SPOTIFY_ADS_SKIP_SPEC_CHECK:-}" != "1" ]; then
+  SPEC_FILE="$(openapi_file)"
+  CHECK_PYTHON="$(find_python || true)"
+  if [ -z "$SPEC_FILE" ] || [ -z "$CHECK_PYTHON" ]; then
+    echo "WARNING: request not checked against the OpenAPI document (document or Python 3.8+ unavailable)." >&2
+  else
+    CHECK_OUTPUT=$("$CHECK_PYTHON" -I "$SCRIPT_DIR/check-request.py" "$SPEC_FILE" "$METHOD" "$PATH_ARG" "$BODY" 2>&1)
+    CHECK_STATUS=$?
+    if [ "$CHECK_STATUS" -eq 1 ]; then
+      if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
+        # Let eval graders see what the agent attempted. The prefix keeps these
+        # lines out of the replay call counter, which matches lines by key.
+        printf 'NOT_SENT %s %s %s\n' "$METHOD" "$PATH_ARG" "$(printf '%s' "$BODY" | tr '\n' ' ')" \
+          >> "${EVAL_ADS_API_LOG:-$PROJECT_DIR/.claude/.api-requests.log}"
+      fi
+      printf 'NOT SENT: %s %s does not match the Ads API OpenAPI document.\n%s\n' "$METHOD" "${PATH_ARG%%\?*}" "$CHECK_OUTPUT"
+      printf 'Fix the request using the details above, then call api again. Nothing reached the API.\n'
+      exit 3
+    elif [ "$CHECK_STATUS" -ne 0 ]; then
+      echo "WARNING: request check failed to run; sending unchecked. $CHECK_OUTPUT" >&2
+    fi
+  fi
+fi
+
 # --- Build and execute curl ---
 CURL_ARGS=(-s -w "\nHTTP_STATUS:%{http_code}")
 CURL_ARGS+=(-X "$METHOD")

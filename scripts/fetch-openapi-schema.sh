@@ -24,7 +24,7 @@ if [ -n "${EVAL_ADS_API_FIXTURES:-}" ]; then
     echo "ERROR: Could not fetch the public Spotify Ads API OpenAPI schema from $OPENAPI_URL." >&2
     exit 1
   }
-elif ! curl --fail --silent --show-error --location --output "$DOWNLOAD_FILE" "$OPENAPI_URL"; then
+elif ! curl --fail --silent --show-error --location ${SPOTIFY_ADS_FETCH_MAX_TIME:+--max-time "$SPOTIFY_ADS_FETCH_MAX_TIME"} --output "$DOWNLOAD_FILE" "$OPENAPI_URL"; then
   echo "ERROR: Could not fetch the public Spotify Ads API OpenAPI schema from $OPENAPI_URL." >&2
   exit 1
 fi

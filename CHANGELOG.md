@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+- `scripts/api-request.sh` now checks every request against the OpenAPI document before sending it, using `scripts/check-request.py` (standard library only). Invented paths, methods, query parameters, enum values, and body fields, wrong value types, comma-joined array parameters, and missing required fields on non-PATCH requests are blocked with a `NOT SENT:` message that lists the valid options, and nothing reaches the API. The document is cached per user and refreshed hourly; the request is sent unchecked with a warning if the document or Python is unavailable, and `SPOTIFY_ADS_SKIP_SPEC_CHECK=1` disables the check
+- `tests/test-check-request.sh`, covering the checker against a small fixture document, the wrapper integration in eval replay mode, caching, and (when Ruby and the network are available) parser parity with a full YAML loader on the live document
+
 ### Removed
 - Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`
 

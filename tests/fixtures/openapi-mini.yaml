@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info:
+  title: "Mini spec: check-request tests"
+  version: 1.0.0
+# A comment line, and a value with a # that is not a comment.
+paths:
+  /ad_accounts/{ad_account_id}/ad_sets:
+    parameters:
+      - $ref: '#/components/parameters/ad_account_id'
+    get:
+      parameters:
+        - name: campaign_ids
+          in: query
+          schema:
+            type: array
+            items: {type: string, format: uuid}
+        - name: statuses
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/AdSetStatus'
+        - name: delivery
+          in: query
+          schema: {$ref: '#/components/schemas/Delivery'}
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdSetCreate'
+  /ad_accounts/{ad_account_id}/ad_sets/{ad_set_id}:
+    get:
+      description: |
+        Multi-line description
+        with "quotes" and a # mark.
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdSetCreate'
+  /ad_accounts/{ad_account_id}/ad_sets/summary:
+    get:
+      description: >
+        Folded text.
+  /ad_accounts/{ad_account_id}/campaigns/{campaign_id}:
+    get: {}
+    patch: {}
+components:
+  parameters:
+    ad_account_id:
+      name: ad_account_id
+      in: path
+      required: true
+      schema: {type: string}
+  schemas:
+    AdSetStatus:
+      type: string
+      enum: [ACTIVE, ARCHIVED]
+    Delivery:
+      type: string
+      enum:
+        - "ON"
+        - "OFF"
+    Base:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    AdSetCreate:
+      allOf:
+        - $ref: '#/components/schemas/Base'
+        - type: object
+          required: [bid_strategy]
+          properties:
+            bid_strategy:
+              type: string
+              enum: ['MAX_BID', 'AUTOBID']
+            delivery:
+              $ref: '#/components/schemas/Delivery'
+            targets:
+              type: object
+              properties:
+                platforms:
+                  type: array
+                  items:
+                    type: string
+                    enum: [ANDROID, DESKTOP, IOS]
+                age_ranges:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      min: {type: integer}
+                      max: {type: integer}
+            metadata:
+              type: object
+              additionalProperties: true
