@@ -31,6 +31,15 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" drafts "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (draft VALIDATE/PUBLISH and `draft_hierarchy_version`, estimates, Reserved pricing).
+
+Critical rules:
+
+- Send only fields the live spec defines for the operation; include every field it marks required, including ones whose description says "required" (e.g. `targets.placements`).
+- Set `placements` when creating an ad set and on every audience estimate, using only values the ad product catalog allows for that product's ad sets (and any narrower limit the objective's spec description states). On ad set updates, keep a valid `placements` in the merged result.
+- Never resend a request body that was rejected with a 4xx unchanged; fix it from the error first.
+- Before VALIDATE/PUBLISH, refetch `draft_hierarchy_version` from the draft campaign.
+
 To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Operations
@@ -113,7 +122,7 @@ catalog once for this draft-build workflow, resolve the planned campaign product
 use the applicable rules while constructing the draft plan. Do not display a per-field
 checklist.
 
-For reserved `CONTENT` or `FPMNG` buys, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) before presenting the plan or creating draft ad sets. Fetch the fixed rate for the planned product, dates, format, and targeting, then use its `cost_micro` as the draft ad set `bid_micro_amount`. Show the fixed rate separately from any audience estimate.
+For reserved `CONTENT` or `FPMNG` buys, follow `skills/api-reference/references/api-behaviors.md` (Reserved Pricing and Forecasting) before presenting the plan or creating draft ad sets. Fetch the fixed rate for the planned product, dates, format, and targeting, then use its `cost_micro` as the draft ad set `bid_micro_amount`. Show the fixed rate separately from any audience estimate.
 
 Before creating draft ad sets, run the audience estimate from `build-campaign` Step 2.5 for each ad set. The `AUTOBID` omission of `bid_micro_amount` applies only to ad set payloads, not to the estimate request.
 

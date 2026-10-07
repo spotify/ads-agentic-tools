@@ -20,6 +20,15 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" ads "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (estimates and min-audience-threshold handling, geo lookup, micro-amounts, Reserved pricing).
+
+Critical rules:
+
+- Send only fields the live spec defines for the operation; include every field it marks required, including ones whose description says "required" (e.g. `targets.placements`).
+- Set `placements` when creating an ad set and on every audience estimate, using only values the ad product catalog allows for that product's ad sets (and any narrower limit the objective's spec description states). On ad set updates, keep a valid `placements` in the merged result.
+- Never resend a request body that was rejected with a 4xx unchanged; fix it from the error first.
+- Before VALIDATE/PUBLISH, refetch `draft_hierarchy_version` from the draft campaign.
+
 To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Parsing Arguments
@@ -147,7 +156,7 @@ Response includes `id`, `type`, `name`, and `parent_geo_name` for each geo.
 5. Build `geo_targets` object with appropriate IDs
 6. NEVER fall back to country-only without asking user first
 
-**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting. If the parent campaign uses `CONTENT` or `FPMNG`, follow `skills/api-reference/references/endpoints.md` (Reserved Pricing and Forecasting) first: fetch the fixed rate for the planned product, dates, format, and targeting; use `cost_micro` in both the ad set and audience estimate as `bid_micro_amount`; set `ad_product` and the returned currency in the estimate, and resolve the other product-specific fields from the current OpenAPI contract and live catalog. Report the fixed rate separately from forecast CPM and bid suggestions. The generic example below is for auction buys.
+**Pre-flight audience estimate:** Before executing the POST, run an audience estimate to validate targeting. If the parent campaign uses `CONTENT` or `FPMNG`, follow `skills/api-reference/references/api-behaviors.md` (Reserved Pricing and Forecasting) first: fetch the fixed rate for the planned product, dates, format, and targeting; use `cost_micro` in both the ad set and audience estimate as `bid_micro_amount`; set `ad_product` and the returned currency in the estimate, and resolve the other product-specific fields from the current OpenAPI contract and live catalog. Report the fixed rate separately from forecast CPM and bid suggestions. The generic example below is for auction buys.
 
 ```bash
 api POST "estimates/audience" \
