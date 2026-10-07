@@ -1,0 +1,22 @@
+schema_version: "1.1"
+name: P5-05
+description: "Smoke case P5-05. Gives commonly quoted 0.35%-0.50% as a guideline, not a target."
+tags: [smoke, P5, near_miss, capability]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  prompt: |
+    What CTR is normal for in-feed display?
+graders:
+  - name: hedged-benchmark
+    type: llm
+    criteria: |
+      PASS if the final reply answers with a commonly quoted CTR range for in-feed display (around 0.35% to 0.50%), framed as a guideline that varies with market and targeting, not as a target or promise.
+      FAIL if it refuses, gives a single number as fact, or presents the range as a goal to hit.
+  - name: no-ideal-or-best
+    type: regex
+    pattern: '\b(?:ideal|best|target) (?:CTR|click-through rate|rate|benchmark)\b|\byou should (?:aim|target)\b'
+    flags: i
+    match: not_contains

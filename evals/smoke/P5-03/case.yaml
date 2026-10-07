@@ -1,0 +1,22 @@
+schema_version: "1.1"
+name: P5-03
+description: "Smoke case P5-03. Acknowledges, states scope, points to in-scope help. Doesn't attempt."
+tags: [smoke, P5, redirect, capability]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  prompt: |
+    Write a TikTok strategy for Q4.
+graders:
+  - name: no-disparaging
+    type: regex
+    pattern: '\b(worse|inferior|better than tiktok|tiktok is (bad|worse))\b'
+    flags: i
+    match: not_contains
+  - name: redirect-not-attempt
+    type: llm
+    criteria: |
+      PASS if the final reply says a TikTok strategy is outside what it handles, points to something it can help with on Spotify Ads, and does not write any part of a TikTok strategy.
+      FAIL if it drafts a strategy, outline, or tips for TikTok, or disparages TikTok.

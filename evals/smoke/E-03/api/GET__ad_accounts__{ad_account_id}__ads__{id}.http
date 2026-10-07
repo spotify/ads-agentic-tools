@@ -1,0 +1,2 @@
+200
+{"id": "03000002-0000-4000-8000-030000000002", "name": "Promo B", "ad_set_id": "03000001-0000-4000-8000-030000000001", "status": "ACTIVE_RESTRICTED", "delivery": "ON", "tagline": "Listen now", "call_to_action": {"key": "LEARN_MORE", "clickthrough_url": "https://example.com"}, "created_at": "2026-09-01T10:00:00Z", "updated_at": "2026-09-01T10:00:00Z"}
