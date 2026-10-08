@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+- `scripts/api-request.sh` now checks every request against the OpenAPI document before sending it, using `scripts/check-request.py` (standard library only). Invented paths, methods, query parameters, enum values, and body fields, wrong value types, comma-joined array parameters, and missing required fields on non-PATCH requests are blocked with a `NOT SENT:` message that lists the valid options, and nothing reaches the API. The document is cached per user and refreshed hourly; the request is sent unchecked with a warning if the document or Python is unavailable, and `SPOTIFY_ADS_SKIP_SPEC_CHECK=1` disables the check
+- `tests/test-check-request.sh`, covering the checker against a small fixture document, the wrapper integration in eval replay mode, caching, and (when Ruby and the network are available) parser parity with a full YAML loader on the live document
+
 ### Removed
 - Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`
 
@@ -12,6 +16,9 @@
 - `api-reference`, `build-campaign`, `ads`, `drafts`, and the request-builder agent now list a few critical rules inline, so agents see them without opening `api-behaviors.md`: send only spec-defined fields and every required one, including fields whose description says required; set `placements` when creating an ad set and on every estimate from catalog-allowed values, and keep it valid on ad set updates; never resend a 4xx-rejected body unchanged; and refetch `draft_hierarchy_version` before VALIDATE/PUBLISH
 
 ### Fixed
+- `api-reference` and the request-builder agent now state three easy-to-miss rules, which the request checker also enforces: only campaigns have a `PAUSED` status (ad sets and ads pause through `delivery: OFF`, and paused ad sets are found via the read-only `is_paused` field); a campaign's ad sets are listed with `ad_sets?campaign_ids=`, not a nested `/campaigns/{id}/ad_sets` route; and updates use PATCH, never PUT
+- `bulk` pause, resume, and delivery for ad sets and ads no longer stage `status: PAUSED` or `delivery` on drafts, which the draft schemas do not accept. They now send a confirmed live `delivery` PATCH, resume now lists ad sets with `delivery=OFF` and reports account-level pauses separately instead of trying to resume them, and resume and archive no longer filter ad sets with `statuses=PAUSED`
+- `monitor`, `clone`, `bulk`, and `api-reference` no longer list ads with `campaign_ids`, which the ad list endpoint does not accept. They list a campaign's ad sets first and pass repeated `ad_set_ids`
 - "Min audience threshold was not met" guidance in `AGENTS.md`, `build-campaign`, `ads`, `clone`, the request-builder agent, and the full campaign flow example no longer suggests retrying or silently widening targeting. Agents now report the narrow audience, suggest broader options along with any `bid_suggestion`, and re-estimate with the targeting the user chooses. "Proceed anyway" is offered only when the estimate came back valid but low, never after a threshold 400
 - The draft VALIDATE/PUBLISH response shape in `AGENTS.md`, `drafts`, the static API references (since removed), the full campaign flow example, and `tests/test-scenarios.md` now matches the API: 200 means success, hierarchy validation errors return 400 with a `PublishCampaignResult` carrying `validation_errors`. On a 400, agents check for `validation_errors` first and never retry automatically
 - Audience estimate guidance in `AGENTS.md`, the static API references (since removed), `ads`, `build-campaign`, `drafts`, and the request-builder agent no longer claims `AUTOBID` estimates can omit `bid_micro_amount` (the server returns 400 `bidMicroAmount must not be null`). The AUTOBID no-bid exception now applies only to ad set payloads. `campaign-strategy` no longer hard-codes the estimate required-field lists and relies on the live spec instead

@@ -1,13 +1,13 @@
 ---
 name: assets
 description: Upload, list, and manage Spotify Ads API creative assets — audio, video, and images for ad campaigns.
-argument-hint: "upload <file_path> | list [audio|video|image] | get <asset_id> | archive <asset_id>"
+argument-hint: "upload <file_path> | list [audio|video|image] | get <asset_id>"
 allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 ---
 
 # Spotify Ads API — Asset Management
 
-Upload, list, retrieve, and archive creative assets (audio, video, images) for use in ads.
+Upload, list, and retrieve creative assets (audio, video, images) for use in ads.
 
 ## Setup
 
@@ -28,8 +28,6 @@ The argument format is: `<operation> [arg]`
 - `upload <file_path>` — Upload a new asset
 - `list [audio|video|image]` — List assets, optionally filtered by type
 - `get <asset_id>` — Get details of a specific asset
-- `archive <asset_id>` — Archive an asset
-- `unarchive <asset_id>` — Unarchive an asset
 - If no argument, ask which operation.
 
 ---
@@ -189,21 +187,6 @@ Display all fields in readable format:
 - For **audio**: show name, type, status, duration, URL
 - For **video**: show name, type, status, duration, aspect ratio, dimensions, has_audio, URL
 - For **image**: show name, type, status, dimensions, aspect ratio, URL
-
----
-
-### `archive <asset_id>` / `unarchive <asset_id>`
-
-Archive or unarchive an asset using the bulk action endpoint.
-
-```bash
-api PATCH "ad_accounts/{ad_account_id}/assets" \
-  '{"action":"ARCHIVE","ids":["<asset_id>"]}'
-```
-
-For unarchive, use `"action":"UNARCHIVE"`.
-
-Confirm the action completed by displaying the updated asset status.
 
 ---
 

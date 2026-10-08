@@ -180,7 +180,8 @@ Preserve explicit user boundaries such as “plan only,” “read-only,” “k
 - Dates: "next Monday" → compute ISO 8601 UTC datetime
 - Age: "18-34" → `{"age_ranges": [{"min": 18, "max": 34}]}`
 - Platforms: → `["ANDROID", "DESKTOP", "IOS"]` — **NOT "MOBILE" or "CONNECTED_DEVICE"**
-- "Pause" → `{"status": "PAUSED"}`
+- "Pause" → campaigns: `{"status": "PAUSED"}` on the draft campaign; ad sets and ads have no `PAUSED` status, so pause them with a confirmed live PATCH of `{"delivery": "OFF"}` (alone in an ad set body) and read paused ad sets from `is_paused`
+- List a campaign's ad sets with `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID"`; there is no `/campaigns/{id}/ad_sets` route
 - "Archive" → `{"status": "ARCHIVED"}`
 - Audience estimates: Display projected_unique_users, reach ranges, and CPM ranges in human-readable format. Convert CPM micro-amounts to the billing currency.
 

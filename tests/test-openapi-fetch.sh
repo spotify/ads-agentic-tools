@@ -108,7 +108,10 @@ else
 fi
 assert_eq "request-builder requires the live OpenAPI preflight" "true" "$request_builder_preflight"
 
-if grep -Fq 'fetch-openapi-schema.sh' "$REPO_ROOT/scripts/api-request.sh"; then
+# The wrapper checks requests against a cached copy refreshed at most hourly
+# (tests/test-check-request.sh covers the behavior); it must never fetch per call.
+if grep -Fq 'fetch-openapi-schema.sh' "$REPO_ROOT/scripts/api-request.sh" \
+  && ! grep -Fq -- '-mmin +60' "$REPO_ROOT/scripts/api-request.sh"; then
   wrapper_fetches_schema="true"
 else
   wrapper_fetches_schema="false"

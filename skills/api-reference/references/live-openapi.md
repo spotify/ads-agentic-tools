@@ -19,6 +19,8 @@ explain that the current API contract could not be checked. OAuth token exchange
 uploads to API-provided signed asset URLs are transport exceptions, not Ads API v3
 operations.
 
+The request wrapper also checks each request against a cached copy of this document before sending it. A blocked request prints `NOT SENT:` with the reasons and valid options and exits 3; nothing reaches the API. Fix the request from that output and call `api` again. The wrapper check catches invented paths, methods, parameters, enum values, fields, wrong types, and missing required fields, but not runtime rules such as catalog combinations, so the inspection below still applies.
+
 ## 2. Inspect Every Planned Operation
 
 Use the same downloaded document for all calls in the current workflow. Before each
