@@ -108,7 +108,6 @@ For draft `VALIDATE` and `PUBLISH`, always fetch the draft campaign immediately 
 - `GET /ad_accounts/{id}/assets` — List assets
 - `GET /ad_accounts/{id}/assets/{asset_id}` — Get asset by ID
 - `PATCH /ad_accounts/{id}/assets/{asset_id}` — Update asset
-- `PATCH /ad_accounts/{id}/assets` — Bulk archive/unarchive
 
 ### Audiences
 - `POST /ad_accounts/{id}/audiences` — Create audience (CUSTOM or LOOKALIKE)
