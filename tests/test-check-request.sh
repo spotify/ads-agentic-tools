@@ -63,6 +63,7 @@ echo ""
 echo "=== Query parameters ==="
 expect_check "unknown parameter" 1 "query parameter 'is_paused' is not defined" GET "$ACCOUNT/ad_sets?is_paused=true"
 expect_check "enum value not allowed" 1 "query statuses=PAUSED is not one of" GET "$ACCOUNT/ad_sets?statuses=PAUSED"
+expect_check "enum error lists the other parameters" 1 "Other query parameters for GET /ad_accounts/{ad_account_id}/ad_sets: campaign_ids, delivery" GET "$ACCOUNT/ad_sets?statuses=PAUSED"
 expect_check "comma-joined array" 1 "Repeat the parameter instead: statuses=ACTIVE&statuses=ARCHIVED" GET "$ACCOUNT/ad_sets?statuses=ACTIVE,ARCHIVED"
 
 echo ""

@@ -384,7 +384,9 @@ def check(spec, method, target, body_text):
             continue
         allowed = enum_of(spec, schema)
         if allowed and value not in allowed:
-            problems.append(f"query {name}={value} is not one of {allowed}")
+            others = ", ".join(n for n in query_names if n != name) or "none"
+            problems.append(f"query {name}={value} is not one of {allowed}. "
+                            f"Other query parameters for {method.upper()} {template}: {others}")
     if body_text:
         try:
             body = json.loads(body_text)
