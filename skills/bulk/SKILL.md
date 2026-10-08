@@ -265,7 +265,7 @@ Fetch non-archived entities of the selected type:
 ```bash
 # For ad sets:
 api GET "ad_accounts/{ad_account_id}/ad_sets?limit=50&sort_direction=DESC"
-# then drop ad sets whose status is already ARCHIVED (paused ad sets are not a status; they show is_paused: true)
+# then drop ad sets whose status is already ARCHIVED
 ```
 
 #### Confirm with warning

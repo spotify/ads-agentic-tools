@@ -372,8 +372,6 @@ api PATCH "ad_accounts/{ad_account_id}/drafts/ad_sets/$DRAFT_AD_SET_ID" \
 
 Updatable ad set fields: `name`, `start_time`, `end_time`, `budget`, `bid_micro_amount`, `bid_strategy`, `targets`, `pacing`, `asset_format`, `category`, `frequency_caps`, `cost_model`, `delivery_goal`, `promotion`, `video_delivery_formats`, `status`.
 
-Draft ad sets and ads have no `delivery` field and their statuses have no `PAUSED`, so pausing an ad set or ad is a live PATCH of `{"delivery":"OFF"}`, not a draft edit; only draft campaigns take `status: PAUSED`. Draft updates are PATCH, never PUT.
-
 **Update draft ad:**
 ```bash
 api PATCH "ad_accounts/{ad_account_id}/drafts/ads/$DRAFT_AD_ID" \
