@@ -13,6 +13,9 @@ execution:
     Make a draft copy of Indie Spotlight.
 context:
   scaffold_script: scaffold.sh
+# Each source ad set's draft copy and ads come back with their own IDs: the
+# api/ responses match on the ad set's name or ID in the request. A single
+# GET ads that names two ad sets at once gets only the first one's ads.
 graders:
   - name: copy-created
     type: regex

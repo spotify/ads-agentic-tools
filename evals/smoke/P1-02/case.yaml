@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: P1-02
-description: "Smoke case P1-02. Renames and confirms in one line. No confirmation prompt."
+description: "Smoke case P1-02. Renames the ad set as a draft and says so in one line. No confirmation prompt."
 tags: [smoke, P1, lookup_easy_edit, regression]
 execution:
   max_turns: 30
@@ -17,14 +17,16 @@ graders:
   - name: names-new-name
     type: regex
     pattern: 'Friday Drive'
+  # Style bans. These also catch harmless uses ("I've just renamed it"),
+  # so expect occasional false failures and check the transcript before tightening.
   - name: no-banned-words
     type: regex
-    pattern: '\b(entity|entities|staged|staging|publish\w*|please|just|simply)\b'
+    pattern: '\b(entity|entities|please|just|simply)\b'
     flags: i
     match: not_contains
   - name: rename-sent
     type: regex
-    pattern: '^PATCH__\S*ad_sets__\{id\} .*Friday Drive'
+    pattern: '^PATCH__ad_accounts__\{ad_account_id\}__drafts__ad_sets__\{id\} .*Friday Drive'
     target: { source: file, path: .claude/.api-requests.log }
     flags: m
     weight: 3

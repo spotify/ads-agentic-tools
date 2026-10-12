@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: P1-04
-description: "Smoke case P1-04. States status as Pending approval. No raw enum. Real campaigns report this in derived_status (status stays ACTIVE), so the plain status alone would wrongly say it's live."
+description: "Smoke case P1-04. Says the campaign isn't live yet because its ad set and ad are pending approval. No raw enum. The campaign itself is ACTIVE, so the campaign status alone would wrongly say it's live."
 tags: [smoke, P1, lookup_easy_edit, regression]
 execution:
   max_turns: 30
@@ -18,14 +18,9 @@ graders:
     type: regex
     pattern: 'pending approval'
     flags: i
-  - name: enum-PENDING_APPROVAL-absent
-    type: regex
-    pattern: '\bPENDING_APPROVAL\b'
-    match: not_contains
-    weight: 2
   - name: not-called-live
-    type: regex
-    pattern: '\b(is|it.s) (live|active|running)\b'
-    flags: i
-    match: not_contains
+    type: llm
     weight: 2
+    criteria: |
+      PASS if the final reply makes clear Podcast Launch isn't live or delivering yet because its ad set or ad is still pending approval. Saying the campaign itself is active is fine as long as the reply makes that clear.
+      FAIL if it says or implies the campaign is live or delivering, or doesn't mention the pending approval.

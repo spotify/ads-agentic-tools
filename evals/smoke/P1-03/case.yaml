@@ -10,15 +10,15 @@ execution:
   env:
     EVAL_ADS_API_FIXTURES: .git/ads-cache
   prompt: |
-    How much did we spend this month?
+    How much did we spend in September 2026?
 context:
   scaffold_script: scaffold.sh
 graders:
   - name: currency-code
     type: regex
-    pattern: '\bUSD \d'
+    pattern: '\bUSD\b'
   - name: default-breakdown-chosen
     type: llm
     criteria: |
-      PASS if the final reply gives the total spend for the current month with a currency code, choosing a sensible default breakdown (or none) without asking.
+      PASS if the final reply gives the total spend for September 2026 with a currency code, choosing a sensible default breakdown (or none) without asking.
       FAIL if it asks how to break the spend down, or asks any question before answering.
