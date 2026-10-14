@@ -143,6 +143,9 @@ Using `smoke/P1-01/` as the template:
 5. Link the shared checks it needs from `graders/`, for example
    `ln -s ../../../shared-graders/no-write-requests.md graders/no-mutation.md`.
    Keep `scaffold.sh` as a regular file, not a symlink.
+   For a case that replies to a confirmation request, have `scaffold.sh` pass
+   `settings.confirm.local.md` instead of the default settings, as `smoke/P4-05/`
+   does, so the skill has to ask before each change.
 6. Run it with `--case <ID> --runs 1`, then confirm with three runs.
 
 ## Debugging a failing case

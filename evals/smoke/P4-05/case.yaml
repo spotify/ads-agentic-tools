@@ -12,6 +12,10 @@ execution:
   prompt: |
     /spotify-ads-api:drafts Yes, go.
 context:
+  # Uses settings.confirm.local.md (auto_execute: false), so the skill must ask
+  # before each change. The case then checks that "Yes, go." counts as that
+  # approval. Use it for any case testing a reply to a confirmation request; with
+  # auto_execute: true, not asking again would pass without testing anything.
   scaffold_script: scaffold.sh
   history_file: history.jsonl
 graders:
