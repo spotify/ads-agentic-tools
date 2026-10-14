@@ -17,9 +17,9 @@ WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/project.XXXXXX")"
 cd "$WORKSPACE" || exit 1
 
 if [ -x "$CASE/scaffold.sh" ]; then
-  bash "$CASE/scaffold.sh" >/dev/null
+  bash "$CASE/scaffold.sh" >/dev/null || exit 1
 else
-  bash "$PLUGIN_ROOT/evals/fixtures/scaffold.sh" >/dev/null
+  bash "$PLUGIN_ROOT/evals/fixtures/scaffold.sh" >/dev/null || exit 1
 fi
 
 SESSION_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
@@ -31,4 +31,4 @@ echo
 echo "--- requests"
 cut -c1-200 .claude/.api-requests.log
 echo "--- session $SESSION_ID"
-[ "${DRY_RUN_KEEP:-}" = "1" ] && echo "--- workspace $WORKSPACE"
+if [ "${DRY_RUN_KEEP:-}" = "1" ]; then echo "--- workspace $WORKSPACE"; fi

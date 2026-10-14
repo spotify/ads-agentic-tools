@@ -22,7 +22,9 @@ KEEP_KEYS = {"type", "uuid", "parentUuid", "message", "isMeta", "isSidechain",
 
 
 def scrub(text, plugin_root, workspace):
-    text = text.replace(plugin_root, "/plugin")
+    # The plugin root differs per run, so point replayed commands at the variable.
+    text = text.replace("${CLAUDE_PLUGIN_ROOT:-" + plugin_root + "}", "${CLAUDE_PLUGIN_ROOT}")
+    text = text.replace(plugin_root, "${CLAUDE_PLUGIN_ROOT}")
     text = text.replace(workspace, "/workspace")
     text = re.sub(r"/var/folders/[^\s\"'\\]+/T/+", "/tmp/", text)
     return re.sub(r"/Users/[^/\s\"'\\]+", "/Users/user", text)
@@ -46,7 +48,7 @@ def main():
             skill_calls |= {b["id"] for b in content if b.get("type") == "tool_use" and b.get("name") == "Skill"}
     kept, parent = [], None
     for i, m in enumerate(lines):
-        if stop is not None and i > stop:
+        if stop is not None and i >= stop:
             break
         if m.get("type") not in ("user", "assistant"):
             continue
