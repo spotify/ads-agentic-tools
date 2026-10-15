@@ -172,6 +172,8 @@ api POST "estimates/audience" \
   }'
 ```
 
+**Estimate payload checks** (most estimate 400s come from these): send the request body as one JSON object containing every field the live spec marks required for `POST /estimates/audience`; set `budget.currency` to the ad account's billing currency (never omit it); always include `bid_micro_amount`, even when `bid_strategy` is `AUTOBID` (the AUTOBID no-bid exception applies only to ad set payloads); always send `targets.placements` with at least one placement the ad product catalog allows for the chosen ad product; and omit `targets.platforms` when the catalog does not allow platform targeting for that product.
+
 **Note:** This endpoint is NOT scoped under `/ad_accounts/{id}/` — it's at the top level: `POST /estimates/audience`. Use the base URL directly followed by `/estimates/audience`.
 
 Display the estimate summary:
