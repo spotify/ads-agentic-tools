@@ -453,7 +453,7 @@ if command -v jq &>/dev/null; then
   FAKE_BIN="$TMPDIR/fake-bin"
   FAKE_PLUGIN="$TMPDIR/plugin"
   mkdir -p "$FAKE_BIN" "$FAKE_PLUGIN/skills/configure/scripts"
-  printf '%s\n' '#!/bin/sh' 'printf invoked > "$FAKE_PYTHON_MARKER"' 'cat > "$FAKE_REFRESH_INPUT"' 'if [ "${FAKE_REFRESH_MODE:-success}" = "invalid" ]; then exit 1; fi' 'printf "%s\n" "$FAKE_REFRESH_JSON"' > "$FAKE_BIN/python3"
+  printf '%s\n' '#!/bin/sh' 'printf invoked > "$FAKE_PYTHON_MARKER"' 'cat > "$FAKE_REFRESH_INPUT"' 'if [ "${FAKE_REFRESH_MODE:-success}" = "invalid" ]; then exit 1; fi' 'if [ "${FAKE_REFRESH_MODE:-success}" = "error" ]; then echo "Token refresh failed (HTTP 503): unavailable" >&2; exit 2; fi' 'printf "%s\n" "$FAKE_REFRESH_JSON"' > "$FAKE_BIN/python3"
   printf '%s\n' '#!/bin/sh' 'printf invoked > "$FAKE_SECURITY_MARKER"' 'exit 99' > "$FAKE_BIN/security"
   chmod +x "$FAKE_BIN/python3" "$FAKE_BIN/security"
 
@@ -515,6 +515,54 @@ if command -v jq &>/dev/null; then
   printf '%s\n' 'access_token: "old_access"' 'refresh_token: "bad_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/.codex/spotify-ads-api.local.md"
   output=$(run_codex_hook "$project" '{}' invalid)
   assert_contains "invalid grant requests reauthorization" "invalid_grant" "$(echo "$output" | jq -r '.systemMessage')"
+
+  # Skills call the API through api() -> scripts/api-request.sh, so the command
+  # names neither the host nor $BASE_URL. The hook must still refresh.
+  API_CMD='api() { "$PLUGIN_ROOT/scripts/api-request.sh" campaigns "$@"; }; api GET "ad_accounts/{ad_account_id}/campaigns?limit=5"'
+  run_api_hook() {
+    local project="$1" platform_var="$2" payload
+    if [ "$platform_var" = "antigravity" ]; then
+      payload=$(jq -n --arg c "$API_CMD" '{toolCall:{args:{CommandLine:$c}}}')
+    else
+      payload=$(jq -n --arg c "$API_CMD" '{tool_input:{command:$c}}')
+    fi
+    rm -f "$TMPDIR/python-called"
+    printf '%s' "$payload" | env -u CODEX_PROJECT_DIR -u CLAUDE_PROJECT_DIR \
+      PATH="$FAKE_BIN:$PATH" \
+      ${platform_var:+$( [ "$platform_var" != antigravity ] && echo "$platform_var=$project")} \
+      CODEX_PLUGIN_ROOT="$FAKE_PLUGIN" \
+      FAKE_PYTHON_MARKER="$TMPDIR/python-called" \
+      FAKE_REFRESH_INPUT="$TMPDIR/refresh-input" \
+      FAKE_SECURITY_MARKER="$TMPDIR/security-called" \
+      FAKE_REFRESH_JSON='{"access_token":"api_access","expires_in":3600}' \
+      FAKE_REFRESH_MODE="${3:-success}" \
+      bash -c 'cd "$1" && bash "$2"' _ "$project" "$HOOK"
+  }
+
+  for platform_var in CODEX_PROJECT_DIR CLAUDE_PROJECT_DIR antigravity; do
+    case "$platform_var" in
+      CODEX_PROJECT_DIR) dir=.codex ;; CLAUDE_PROJECT_DIR) dir=.claude ;; *) dir=.agents ;;
+    esac
+    project="$TMPDIR/api-wrapper-$dir"
+    mkdir -p "$project/$dir"
+    printf '%s\n' 'access_token: "old_access"' 'refresh_token: "old_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/$dir/spotify-ads-api.local.md"
+    output=$(run_api_hook "$project" "$platform_var")
+    assert_eq "api() wrapper call refreshes ($dir)" "invoked" "$(cat "$TMPDIR/python-called" 2>/dev/null)"
+    assert_eq "api() wrapper call stores token ($dir)" 'access_token: "api_access"' "$(grep '^access_token:' "$project/$dir/spotify-ads-api.local.md")"
+    if [ "$dir" = .agents ]; then
+      assert_eq "Antigravity api() refresh allows" "allow" "$(echo "$output" | jq -r '.decision')"
+      assert_contains "Antigravity api() refresh gives reason" "refreshed automatically" "$(echo "$output" | jq -r '.reason')"
+    else
+      assert_contains "api() refresh tells agent ($dir)" "refreshed automatically" "$(echo "$output" | jq -r '.systemMessage')"
+    fi
+  done
+
+  project="$TMPDIR/api-wrapper-error"
+  mkdir -p "$project/.codex"
+  printf '%s\n' 'access_token: "old_access"' 'refresh_token: "old_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/.codex/spotify-ads-api.local.md"
+  output=$(run_api_hook "$project" CODEX_PROJECT_DIR error)
+  assert_contains "refresh failure surfaces helper stderr" "HTTP 503" "$(echo "$output" | jq -r '.systemMessage')"
+  assert_eq "failed refresh leaves token" 'access_token: "old_access"' "$(grep '^access_token:' "$project/.codex/spotify-ads-api.local.md")"
 
   UV_ONLY_BIN="$TMPDIR/uv-only-bin"
   mkdir -p "$UV_ONLY_BIN"
