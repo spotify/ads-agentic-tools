@@ -5,6 +5,8 @@ description: This skill should be used when the user asks to "call the Spotify A
 
 # Spotify Ads API v3 Reference
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 ## Overview
 
 The Spotify Ads API v3 enables programmatic management of advertising campaigns on Spotify. It follows a strict resource hierarchy and uses OAuth 2.0 bearer token authentication.

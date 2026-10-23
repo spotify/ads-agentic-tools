@@ -16,6 +16,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" measurement-setup "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 Measurement paths require a `business_id`. Discover it with `GET businesses` when absent; do not confuse it with `ad_account_id`.
 
 Read [implementation-guide.md](references/implementation-guide.md) before recommending Pixel, CAPI, datasets, advanced matching, event names, parameters, identifiers, or GTM.

@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: L-04
+description: "Language case L-04. Missing data. Winter Preview starts December 1, 2026 and has no delivery yet, so the report is empty. Reply says there is no CTR yet, why, and when data will be available, and invents no metrics."
+tags: [smoke, language, missing_data, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    What's the CTR on Winter Preview?
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: no-invented-ctr
+    type: regex
+    weight: 3
+    pattern: '\d+[.,]\d+\s?%'
+    match: not_contains
+  - name: says-no-delivery-yet
+    type: regex
+    weight: 2
+    pattern: "hasn'?t (started|begun)|not (started|delivering|delivered)|no (delivery|impressions|data)|hasn'?t (delivered|served)|starts (on )?December"
+    flags: i
+  - name: gives-start-date
+    type: regex
+    pattern: 'December 1\b'
+  - name: no-raw-error
+    type: regex
+    weight: 2
+    pattern: '\b(4\d\d|5\d\d)\b|HTTP|ERR-\d+'
+    match: not_contains
+  - name: missing-data-shape
+    type: llm
+    criteria: |
+      Winter Preview is active but its only ad set starts December 1, 2026, so the report came back with no data.
+      PASS if the reply says there's no CTR yet because the campaign hasn't started delivering, gives the December 1, 2026 start, and says when data will be available (for example, once it starts delivering or within a day of the first impression). It stops there or makes at most one offer.
+      FAIL if it gives or estimates a CTR, says the report failed or errored, guesses at another cause, shows raw output, or ends with a question.

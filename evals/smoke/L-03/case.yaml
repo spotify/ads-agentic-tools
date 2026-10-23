@@ -1,0 +1,47 @@
+schema_version: "1.1"
+name: L-03
+description: "Language case L-03. Turn 1 (history) asked to confirm pausing both Summer Tour ad sets. After a yes, one of the two fails. Reply leads with the count, names the failure, its cause, and the fix."
+tags: [smoke, language, partial_success, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    /spotify-ads-api:bulk Yes, pause both on the live ad sets.
+context:
+  # Uses the default settings: with auto_execute false the bulk skill lists every
+  # write and asks again, so the yes in this turn never reaches the pauses.
+  scaffold_script: scaffold.sh
+  history_file: history.jsonl
+graders:
+  - name: pause-attempted-both
+    type: regex
+    pattern: '^(?=[\s\S]*^PATCH__\S*ad_sets__\{id\} \S*20200010)(?=[\s\S]*^PATCH__\S*ad_sets__\{id\} \S*20200011)'
+    target: { source: file, path: .claude/.api-requests.log }
+    flags: m
+  - name: states-count
+    type: regex
+    weight: 2
+    pattern: '\b1 of (the )?2\b|\bone of (the )?two\b'
+    flags: i
+  - name: names-failed
+    type: regex
+    weight: 2
+    pattern: 'Summer Tour - Commuters'
+  - name: names-paused
+    type: regex
+    pattern: 'Summer Tour - Weekend'
+  - name: no-raw-error
+    type: regex
+    weight: 2
+    pattern: 'ERR-\d+|\b400\b|HTTP'
+    match: not_contains
+  - name: partial-success-shape
+    type: llm
+    criteria: |
+      Summer Tour - Weekend was paused. Summer Tour - Commuters failed because its creative is in review.
+      PASS if the reply says how many of the two were paused, names the one that failed, gives the cause (creative in review), and gives a fix for that cause (try again once review finishes, or similar). It keeps the failure to that one cause.
+      FAIL if it reports full success, merges or guesses at causes, leaves out which ad set failed, or shows a raw error code or HTTP status.

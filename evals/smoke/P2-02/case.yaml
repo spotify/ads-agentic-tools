@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: P2-02
-description: "Smoke case P2-02. Turn 1 (history) asked about Summer Tour. Resolves 'its' to Summer Tour, pauses the second ad set, names it."
+description: "Smoke case P2-02. Turn 1 (history) asked about Summer Tour. Resolves 'its' to Summer Tour and asks once to confirm pausing the second ad set, naming it. Sends no pause yet."
 tags: [smoke, P2, resolve_from_context, regression]
 execution:
   max_turns: 30
@@ -24,9 +24,16 @@ graders:
   - name: names-it
     type: regex
     pattern: 'Summer Tour - Weekend'
-  - name: pauses-second-ad-set
+  - name: no-pause-yet
     type: regex
-    pattern: '^PATCH__\S*ad_sets__\{id\} \S*20200011-0000-4000-8000-202000000011'
+    pattern: '^(PATCH|POST)__\S* \S*20200011-0000-4000-8000-202000000011'
     target: { source: file, path: .claude/.api-requests.log }
     flags: m
+    match: not_contains
     weight: 3
+  - name: confirms-pause
+    type: llm
+    criteria: |
+      "Its" refers to Summer Tour, whose second ad set is Summer Tour - Weekend. Pausing needs one confirmation first.
+      PASS if the reply names Summer Tour - Weekend, says pausing stops its delivery (and may say it can be resumed), and asks once whether to pause it.
+      FAIL if it says the ad set was paused, picks a different ad set, asks which ad set "its" means, or asks more than one question.

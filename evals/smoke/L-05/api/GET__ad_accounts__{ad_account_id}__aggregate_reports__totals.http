@@ -1,0 +1,2 @@
+200
+{"report_start": "2026-09-03T00:00:00Z", "report_end": "2026-10-01T00:00:00Z", "stats": [{"field_type": "IMPRESSIONS", "field_value": 412870}, {"field_type": "CLICKS", "field_value": 1569}, {"field_type": "CTR", "field_value": 0.38}]}

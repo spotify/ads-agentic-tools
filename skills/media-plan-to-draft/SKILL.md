@@ -12,6 +12,8 @@ Read `references/intake-and-review-contract.md` before processing the plan.
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (Reserved pricing, estimates, micro-amounts, draft VALIDATE/PUBLISH).
 
 ## Authority Boundary

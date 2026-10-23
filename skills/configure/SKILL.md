@@ -9,6 +9,8 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 
 Set up or update the plugin's local settings file for the active platform.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 ## Modes
 
 ### `oauth [client_id]` (default)

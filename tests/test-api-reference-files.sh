@@ -11,7 +11,7 @@ fail=0
 for f in endpoints.md schemas.md enums.md; do
   if [ -e "$REFS/$f" ]; then echo "FAIL: $f should not exist"; fail=1; fi
 done
-for f in api-behaviors.md live-openapi.md ad-product-validation.md create-retry-safety.md; do
+for f in api-behaviors.md live-openapi.md ad-product-validation.md create-retry-safety.md language-standards.md; do
   if [ ! -f "$REFS/$f" ]; then echo "FAIL: missing $f"; fail=1; fi
 done
 
@@ -35,6 +35,12 @@ if ! grep -qF "Also read \`\$PLUGIN_ROOT/$BEHAVIORS\`" "$REPO_ROOT/agents/spotif
   echo "FAIL: request-builder agent lacks api-behaviors.md pointer"; fail=1
 fi
 grep -qF '`references/api-behaviors.md`' "$REPO_ROOT/skills/api-reference/SKILL.md" || { echo "FAIL: api-reference SKILL.md lacks api-behaviors.md pointer"; fail=1; }
+
+# Every skill and the agent read the language standards before replying to a user.
+STANDARDS='Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.'
+for f in "$REPO_ROOT"/skills/*/SKILL.md "$REPO_ROOT/agents/spotify-ads-request-builder.md"; do
+  grep -qF -- "$STANDARDS" "$f" || { echo "FAIL: ${f#"$REPO_ROOT"/} lacks language-standards.md pointer"; fail=1; }
+done
 
 # Every $PLUGIN_ROOT/skills/api-reference/references/*.md path mentioned anywhere must resolve.
 for ref in $(git -C "$REPO_ROOT" grep -h -o -E 'skills/api-reference/references/[A-Za-z0-9_-]+\.md' -- skills agents AGENTS.md ':!CHANGELOG.md' | sort -u) "$BEHAVIORS"; do

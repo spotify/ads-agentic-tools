@@ -1,0 +1,47 @@
+schema_version: "1.1"
+name: L-02
+description: "Language case L-02. Turn 1 (history) asked to confirm pausing Summer Tour - Weekend. After a yes, the pause fails with a no-edit-access error. Reply states the cause, then the fix, with no raw code or HTTP status."
+tags: [smoke, language, error, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    /spotify-ads-api:bulk Yes, pause it on the live ad set.
+context:
+  # Uses the default settings: with auto_execute false the bulk skill lists every
+  # write and asks again, so the yes in this turn never reaches the pause.
+  scaffold_script: scaffold.sh
+  history_file: history.jsonl
+graders:
+  - name: names-ad-set
+    type: regex
+    pattern: 'Summer Tour - Weekend'
+  - name: states-access-cause
+    type: regex
+    weight: 2
+    pattern: "edit access|permission|don't have access|do not have access"
+    flags: i
+  - name: gives-admin-fix
+    type: regex
+    pattern: 'ad account admin|admin'
+    flags: i
+  - name: no-raw-error
+    type: regex
+    weight: 2
+    pattern: 'ERR-\d+|\b403\b|HTTP'
+    match: not_contains
+  - name: no-pause-claimed
+    type: regex
+    pattern: '\b(is|was|now|been) paused\b|\bpaused it\b|ad set paused'
+    flags: i
+    match: not_contains
+  - name: cause-then-fix
+    type: llm
+    criteria: |
+      Pausing the ad set failed because the user doesn't have edit access.
+      PASS if the reply says the ad set wasn't paused, gives that cause tied to what the user tried, and gives a fix that answers it (ask an ad account admin for access, or similar). No blame, no guessing at other causes, no dead end.
+      FAIL if it claims the ad set was paused, blames the user, guesses at causes the error didn't give, shows a raw error code or HTTP status, or gives no way forward.
