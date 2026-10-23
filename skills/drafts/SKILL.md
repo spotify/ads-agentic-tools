@@ -31,6 +31,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" drafts "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (draft VALIDATE/PUBLISH and `draft_hierarchy_version`, estimates, Reserved pricing).
 
 Critical rules:
