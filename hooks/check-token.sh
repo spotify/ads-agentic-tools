@@ -47,11 +47,34 @@ json_extract_string() {
   printf '%s' "$1" | sed -n 's/.*"'"$2"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1
 }
 
-# Detect platform from env vars; Antigravity sets none of the known
-# *_PROJECT_DIR vars, so it falls through to the default.
-if [ -n "${CODEX_PROJECT_DIR:-}" ]; then
+# --- Platform detection ---
+# Codex passes no CODEX_* variable to hook processes (only CLAUDE_PLUGIN_ROOT and
+# CLAUDE_PLUGIN_DATA, so those do not identify Claude). Its PreToolUse payload has
+# a top-level turn_id, which Claude's does not, so that identifies a Codex hook.
+# Detecting it here rather than in .codex-plugin/hooks.json matters: Codex pins
+# each plugin hook command by hash and skips it once the command changes.
+# Otherwise this mirrors scripts/api-request.sh. Explicit *_PROJECT_DIR vars win
+# over the shell markers below, which a nested agent can inherit from its parent.
+# Claude Code sets CLAUDE_PROJECT_DIR only for hooks; its Bash tool shell has
+# CLAUDECODE=1 instead. Codex exports CODEX_THREAD_ID (or CODEX_SESSION_ID) to
+# every shell command and never CODEX_PROJECT_DIR, which is kept for overrides.
+# Antigravity sets no known marker, so it is the default.
+payload_has_turn_id() {
+  if [ "$HAS_JQ" = true ]; then
+    printf '%s' "$input" | jq -e 'type == "object" and has("turn_id")' >/dev/null 2>&1
+  else
+    # A "turn_id" inside a string value is escaped as \"turn_id\", so skip those.
+    printf '%s' "$input" | grep -q '[^\\]"turn_id"[[:space:]]*:'
+  fi
+}
+
+if [ -n "${CODEX_PROJECT_DIR:-}" ] || payload_has_turn_id; then
   PLATFORM="codex"
 elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
+  PLATFORM="claude"
+elif [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SESSION_ID:-}" ]; then
+  PLATFORM="codex"
+elif [ "${CLAUDECODE:-}" = "1" ]; then
   PLATFORM="claude"
 else
   PLATFORM="antigravity"
