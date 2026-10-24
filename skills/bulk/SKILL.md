@@ -92,7 +92,27 @@ Ad set and ad pause, resume, and delivery toggles skip this step: they are confi
 
 Group selected entities by parent campaign. For each target, check for an existing same-ID draft and disclose pending changes. If none exists, create a draft from the published entity, then PATCH the draft endpoint. Preserve fields the user did not request to change.
 
-After staging all selected changes, fetch each affected draft campaign's current `draft_hierarchy_version` and validate once per campaign. Continue on per-entity staging failures, but do not validate a campaign until all successful edits for that campaign are staged.
+Draft creates may run in a loop, one loop per campaign, but the loop must stop at the first non-2xx `HTTP_STATUS:` so a failure can stop the rest of the batch:
+
+```bash
+for AD_SET_ID in $AD_SET_IDS; do
+  out=$(api POST "ad_accounts/{ad_account_id}/ad_sets/$AD_SET_ID/drafts")
+  echo "$out"
+  case "$out" in *"HTTP_STATUS:2"*) ;; *) break ;; esac
+done
+```
+
+After a failure, read the error before continuing.
+
+If creating a draft fails, skip every step that depends on it: its PATCH, draft ads under it, reads of it, and its campaign's VALIDATE. Report those targets as skipped. Continue only with targets that don't depend on the failed draft.
+
+A campaign can hold only a limited number of ad set drafts, and stale drafts accumulate on heavily edited campaigns. The limit isn't a fixed public value. If create-from-published returns 400 saying the campaign has reached the maximum number of ad set drafts, stop all remaining work for that campaign, because every further create there fails the same way. Don't retry. Report the error message and which targets were staged and which were skipped. Then list the campaign's ad set drafts (`api GET "ad_accounts/{ad_account_id}/drafts/ad_sets?campaign_ids=$CAMPAIGN_ID&limit=50"`, paging with `offset`) and offer to validate and publish them, or to delete stale ones (draft DELETE is safe to retry). Resume only after the user chooses. Continue with other campaigns. A bulk draft-create request (`drafts/ad_sets/bulk`, `drafts/ads/bulk`) fails as a whole when existing plus requested drafts would exceed the limit. Split the request or clean up first. The spec also caps each request: bulk create takes at most 40 draft ad sets or 100 draft ads, and bulk delete (`DELETE drafts/ad_sets` or `DELETE drafts/ads`) takes at most 40 draft ad set IDs or 100 draft ad IDs.
+
+After staging all selected changes, fetch each affected draft campaign's current `draft_hierarchy_version` and validate once per campaign. Run the start-time recheck below before each VALIDATE. Do not validate a campaign until all successful edits for that campaign are staged, and skip VALIDATE for a campaign stopped by the draft limit.
+
+### 5. Recheck start times before VALIDATE
+
+The live ad product catalog's `start_time` constraint text (in its constraint and required-field lists) states the minimum lead time. Apply it when choosing start times. When the user gives no exact start time, propose one well clear of that minimum, such as the start of the hour after next, so it stays valid through staging and confirmation. If the user wants an exact time close to the minimum, warn that it can expire before validation. Times that were valid at staging can expire during a long batch. Immediately before each VALIDATE (and again before PUBLISH), compare every staged ad set `start_time` in that campaign with the current UTC time and the catalog's minimum. If any falls short, don't validate. Show the affected ad sets and propose a later start time, or ask whether the exact time matters. PATCH only after the user agrees, then refetch `draft_hierarchy_version`. If VALIDATE still returns `INVALID.AD_SET.START_TIME_TOO_CLOSE`, follow the error message and handle it the same way. Never re-validate an unchanged hierarchy.
 
 ### 6. Show results
 
