@@ -1389,3 +1389,50 @@ rules, effective PATCH validation, minimal user interruption, and draft validati
 - No request targets `/campaigns/{id}/ad_sets`.
 - No request uses PUT.
 - No live entity is mutated and nothing is published.
+
+---
+
+## Scenario 45: Bulk Edit Hits the Campaign Ad Set Draft Limit
+
+**Prompt:** "Raise the daily budgets on both `<campaign_name>` ad sets by 20%." (the campaign has already reached its ad set draft limit; confirm when asked)
+
+**Quirks tested:** Per-campaign ad set draft limit, stopping on the first limit 400, skipping dependent steps, safe draft cleanup, no retry of a rejected create-from-published
+
+**Expected behavior:**
+
+1. Resolves the campaign, lists its ad sets, and confirms the change.
+2. The first `api POST "ad_accounts/{ad_account_id}/ad_sets/<ad_set_id>/drafts"` returns 400 saying the campaign has reached the maximum number of ad set drafts.
+3. Stops all remaining work for that campaign: no create for the second ad set, no draft PATCH, no draft-ad request, no VALIDATE, and no retry.
+4. Reports the error and which ad sets were not staged.
+5. Lists the campaign's drafts with `api GET "ad_accounts/{ad_account_id}/drafts/ad_sets?campaign_ids=<campaign_id>&limit=50"` and offers to publish or delete stale ones (draft DELETE is safe to retry).
+6. Deletes or publishes nothing without the user's choice; publishing still needs explicit confirmation.
+
+**Success criteria:**
+
+- Exactly one create-from-published request is sent for the campaign.
+- No request depending on the failed draft is sent after the 400.
+- The reply explains the limit and offers cleanup.
+- No draft is deleted or published without the user's choice.
+
+---
+
+## Scenario 46: Staged Ad Set Start Time Too Close Before Validate
+
+**Prompt:** "Validate and publish draft campaign `<draft_campaign_id>`." (one staged ad set's `start_time` is now very close to the current time, or already past)
+
+**Quirks tested:** Start-time recheck before VALIDATE/PUBLISH, `INVALID.AD_SET.START_TIME_TOO_CLOSE` handling, no blind re-validation
+
+**Expected behavior:**
+
+1. Reads the draft campaign and its draft ad sets, and fetches the current `draft_hierarchy_version`.
+2. Before VALIDATE or PUBLISH, checks that no staged ad set `start_time` has passed or is close to now.
+3. When one is not, names the ad set and proposes a new start time, or asks whether the exact time matters, before validating.
+4. After the user agrees, PATCHes the draft ad set, refetches `draft_hierarchy_version`, then validates.
+5. If VALIDATE returns 400 with error code `INVALID.AD_SET.START_TIME_TOO_CLOSE`, treats it the same way and does not re-validate unchanged drafts.
+
+**Success criteria:**
+
+- No VALIDATE or PUBLISH request is sent while a staged start time has passed or is close to now.
+- The start time is not changed without the user's agreement.
+- A `START_TIME_TOO_CLOSE` 400 never leads to an immediate identical VALIDATE.
+- PUBLISH still needs explicit confirmation immediately before the request.
