@@ -67,7 +67,8 @@ Use this flow for `CONTENT` (Reserved Podcasts) and `FPMNG` (Reserved Music):
 
 ## Errors and Retry Safety
 
-- Error bodies are based on the live spec's error response schema: `messages`, a list of error codes (each with a `code` and a `definition` that suggests a fix), and `sp_trace_id`. Live responses do not always use the spec's casing for the error-code key. Read `messages` and whichever error-code key is present, without depending on one spelling. Show the messages and codes to the user, and always surface `sp_trace_id`. Check the live spec for endpoint-specific error shapes, such as `validation_errors` on draft publish.
+- Error bodies are based on the live spec's error response schema: `messages`, a list of error codes (each with a `code` and a `definition` that suggests a fix), and `sp_trace_id`. Live responses do not always use the spec's casing for the error-code key. Read `messages` and whichever error-code key is present, without depending on one spelling. Explain the error in plain words using the messages. Keep error codes and `sp_trace_id` out of the reply unless the user asks for them. Check the live spec for endpoint-specific error shapes, such as `validation_errors` on draft publish.
 - Common statuses: 400 validation error, 403 insufficient permissions, 404 not found, 422 unprocessable (e.g., insufficient insight data), 500 server error.
 - Check the wrapper's `HTTP_STATUS:` line first.
 - Retry only on network errors or 5xx, and only for idempotent methods (GET). Never retry a POST or PATCH automatically. A non-timeout 4xx means the request was received and rejected. A 5xx may mean the change was already applied, so check for the created or modified resource before suggesting a retry. For creates, follow `create-retry-safety.md`.
+- On a 429 (too many requests), don't retry. Tell the user the wait time the API returned, using the rate-limit wording in `language-standards.md`.

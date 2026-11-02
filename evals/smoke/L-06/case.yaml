@@ -22,7 +22,7 @@ graders:
   - name: gives-wait-time
     type: regex
     weight: 2
-    pattern: '\b60 seconds\b|\b(one|1) minute\b'
+    pattern: '\b60[- ]seconds?\b|\b(one|1|a) minute\b'
     flags: i
   - name: no-invented-ctr
     type: regex
