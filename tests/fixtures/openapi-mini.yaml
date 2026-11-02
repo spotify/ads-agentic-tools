@@ -1,0 +1,249 @@
+openapi: 3.0.3
+info:
+  title: Mini Ads API
+  version: 3.0.0
+  description: |
+    Literal block scalar.
+      Indented line kept.
+
+    Trailing paragraph.
+  summary: >
+    Folded block
+    scalar joined.
+servers:
+  - url: https://api-partner.spotify.com/ads/v3
+    description: Production server.
+paths:
+  /ad_accounts/{ad_account_id}/campaigns:
+    parameters:
+      - $ref: '#/components/parameters/ad_account_id'
+    get:
+      operationId: getCampaigns
+      summary: List campaigns
+      tags:
+        - campaigns
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+        - name: fields
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ID, NAME, STATUS]
+        - name: sort_field
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    post:
+      operationId: createCampaign
+      summary: Create a campaign
+      tags:
+        - campaigns
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignCreateRequest'
+      responses:
+        '201':
+          description: Created
+  /ad_accounts/{ad_account_id}/campaigns/{campaign_id}:
+    parameters:
+      - $ref: '#/components/parameters/ad_account_id'
+      - name: campaign_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getCampaign
+      summary: Get a campaign by ID
+      responses:
+        '200':
+          description: OK
+    patch:
+      operationId: updateCampaign
+      summary: Update a campaign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignPatchRequest'
+      responses:
+        '200':
+          description: OK
+  /ad_accounts/{ad_account_id}/ad_sets:
+    post:
+      operationId: createAdSet
+      summary: Create an ad set
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdSetCreateRequest'
+      responses:
+        '201':
+          description: Created
+  /ad_accounts/{ad_account_id}/audiences:
+    post:
+      operationId: createAudience
+      summary: Create an audience
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAudienceRequest'
+      responses:
+        '201':
+          description: Created
+  /ad_accounts/{ad_account_id}/assets:
+    post:
+      operationId: uploadAsset
+      summary: Upload an asset file
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+components:
+  parameters:
+    ad_account_id:
+      name: ad_account_id
+      in: path
+      required: true
+      description: A unique identifier for an Ad Account.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Name:
+      type: string
+      minLength: 2
+      maxLength: 10
+    CampaignBase:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/Name'
+        objective:
+          type: string
+          enum:
+            - REACH
+            - CLICKS
+    CampaignCreateRequest:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CampaignBase'
+        - type: object
+          required:
+            - name
+            - objective
+          properties:
+            id:
+              type: string
+              readOnly: true
+    CampaignPatchRequest:
+      $ref: '#/components/schemas/CampaignBase'
+    AdSetCreateRequest:
+      type: object
+      x-spotify-common-mistakes:
+        - field: bid_strategy
+          mistake: Sending an object
+          correct: 'bid_strategy is a plain string, e.g. "MAX_BID".'
+      required: [name, budget, targets, bid_strategy]
+      properties:
+        name:
+          type: string
+        bid_strategy:
+          type: string
+          enum: [MAX_BID, AUTOBID]
+        bid_micro_amount:
+          type: integer
+          format: int64
+          nullable: true
+        budget:
+          type: object
+          required:
+            - micro_amount
+            - type
+          properties:
+            micro_amount:
+              type: integer
+              format: int64
+              minimum: 1
+            type:
+              type: string
+              enum: [DAILY, LIFETIME]
+        targets:
+          type: object
+          properties:
+            geo_targets:
+              type: object
+              required: [country_code]
+              properties:
+                country_code:
+                  type: string
+                  minLength: 2
+                  maxLength: 2
+                region_ids:
+                  type: array
+                  maxItems: 3
+                  items:
+                    type: string
+            platforms:
+              type: array
+              items:
+                type: string
+                enum: [ANDROID, DESKTOP, IOS]
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    CreateAudienceRequest:
+      oneOf:
+        - $ref: '#/components/schemas/CustomAudience'
+        - $ref: '#/components/schemas/LookalikeAudience'
+      discriminator:
+        propertyName: audience_type
+        mapping:
+          CUSTOM: '#/components/schemas/CustomAudience'
+          LOOKALIKE: '#/components/schemas/LookalikeAudience'
+    CustomAudience:
+      type: object
+      required: [audience_type, name]
+      properties:
+        audience_type:
+          type: string
+        name:
+          type: string
+    LookalikeAudience:
+      type: object
+      required: [audience_type, name, seed_audience_id]
+      properties:
+        audience_type:
+          type: string
+        name:
+          type: string
+        seed_audience_id:
+          type: string

@@ -166,6 +166,48 @@ BODY="${BODY//\{ad_account_id\}/$AD_ACCOUNT_ID}"
 
 URL="${BASE_URL}/${PATH_ARG}"
 
+# --- Pre-send validation against the workflow's OpenAPI document ---
+#
+# Enforces the AGENTS.md contract in code: every required field present (at any
+# depth), no field or query parameter the spec does not define, and correct
+# types, enums, and bounds. A violation is reported on stderr and the request is
+# NOT sent (exit 3), so it never reaches the API, consumes no retry, and cannot
+# be half-applied. The document is the one the live OpenAPI preflight already
+# downloaded for this workflow; nothing is downloaded here.
+#
+# Fails open by design when it cannot judge: no document fetched yet, python
+# missing, or an operation the public spec does not list. Those cases send the
+# request as before (with a warning for the unlisted operation).
+validate_against_spec() {
+  local py out rc
+  for py in python3 python py; do
+    command -v "$py" >/dev/null 2>&1 && break
+    py=""
+  done
+  [ -n "$py" ] || return 0
+  [ -n "$("$py" "$SCRIPT_DIR/openapi_tool.py" locate 2>/dev/null)" ] || return 0
+  out=$(printf '%s' "$BODY" | "$py" "$SCRIPT_DIR/openapi_tool.py" validate "$METHOD" "$PATH_ARG" 2>&1)
+  rc=$?
+  case "$rc" in
+    0) return 0 ;;
+    3)
+      {
+        echo "ERROR: Request not sent. $METHOD ${PATH_ARG%%\?*} does not match the Spotify Ads API OpenAPI spec:"
+        printf '%s\n' "$out" | sed 's/^/  - /'
+        echo "Fix the request and send it again. See: scripts/openapi-op.sh describe $METHOD \"${PATH_ARG%%\?*}\""
+      } >&2
+      return 3
+      ;;
+    4) echo "WARNING: $out The request was sent without spec validation." >&2 ;;
+    *) echo "WARNING: Spec validation was skipped: $out" >&2 ;;
+  esac
+  return 0
+}
+
+if [ "${SPOTIFY_ADS_SKIP_SPEC_VALIDATION:-}" != "1" ]; then
+  validate_against_spec || exit $?
+fi
+
 # --- Build and execute curl ---
 CURL_ARGS=(-s -w "\nHTTP_STATUS:%{http_code}")
 CURL_ARGS+=(-X "$METHOD")
