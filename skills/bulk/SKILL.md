@@ -106,7 +106,7 @@ Bulk Pause Staging Results:
 |--------|--------|--------|
 | Summer Sale | PAUSED | Staged; validation passed |
 | Holiday Promo | PAUSED | Staged; validation passed |
-| Spring Launch | — | Failed: error details |
+| Spring Launch | — | Failed: [what went wrong, in plain words] |
 
 2/3 changes staged. Nothing was published.
 ```
@@ -393,7 +393,7 @@ Creative Swap Results:
 - If `auto_execute` is `false`, present each curl command and ask for confirmation before executing.
 - Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
 - On error for any individual entity, log the error and continue with remaining entities. Never automatically retry POST or PATCH requests.
-- Display a final summary showing success/failure count and per-entity results.
+- Display a final summary showing success/failure count and per-entity results. For each failure, give the cause and the fix in plain words; never show raw error codes or HTTP statuses.
 - For accounts with >50 entities, show the first 50 and suggest using a campaign filter (`--campaign <id>`) to narrow results.
 - Never publish staged bulk changes automatically. Publishing is a separate operation and requires explicit confirmation immediately before each affected campaign's `PUBLISH` request.
 - Only use direct published endpoints when the user explicitly asks for immediate/direct live changes. If such a request returns HTTP 403 or an edit-permission error, describe only the direct-write denial and offer draft staging; do not infer that the credentials are read-only.

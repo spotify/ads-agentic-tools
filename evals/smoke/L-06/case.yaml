@@ -17,7 +17,7 @@ graders:
   - name: says-too-many-requests
     type: regex
     weight: 2
-    pattern: 'too many requests|rate limit'
+    pattern: 'too many requests|rate[- ]limit'
     flags: i
   - name: gives-wait-time
     type: regex
