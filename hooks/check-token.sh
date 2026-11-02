@@ -28,10 +28,12 @@ input=$(cat)
 
 # Fast path: skip anything that cannot be a Spotify Ads API call. The literal
 # host covers most calls; $BASE_URL covers the variable form used by the assets
-# and audiences upload flows. Precise matching happens on the extracted command.
+# and audiences upload flows; api-request.sh covers the skills' api() wrapper,
+# whose commands name neither. Precise matching happens on the extracted command.
 case "$input" in
   *api-partner.spotify.com*) ;;
   *BASE_URL*) ;;
+  *api-request.sh*) ;;
   *) exit 0 ;;
 esac
 
@@ -121,11 +123,12 @@ else
 fi
 
 # Does this command actually target the Spotify Ads API? The literal host is
-# unambiguous. $BASE_URL is not, since any project may define it, so require
+# unambiguous, as is delegation to the plugin's api-request.sh wrapper.
+# $BASE_URL is not, since any project may define it, so require
 # Spotify-specific corroboration before claiming the command as ours.
 is_spotify_api_call() {
   case "$1" in
-    *api-partner.spotify.com*) return 0 ;;
+    *api-partner.spotify.com*|*api-request.sh*) return 0 ;;
   esac
   case "$1" in
     *BASE_URL*)
@@ -191,10 +194,18 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
       fi
 
       refresh_status=0
+      refresh_detail=""
       if [ "${#refresh_runner[@]}" -gt 0 ]; then
+        # Keep stderr separate from the token JSON on stdout, so a failure can
+        # surface the helper's diagnostic (it never prints token values).
+        refresh_err="$(mktemp "${TMPDIR:-/tmp}/spotify-ads-refresh.XXXXXX" 2>/dev/null || true)"
         refresh_result=$(printf '%s' "$refresh_token" | "${refresh_runner[@]}" "$REFRESH_SCRIPT" \
           --client-id "$client_id" \
-          --refresh-token-stdin 2>/dev/null) || refresh_status=$?
+          --refresh-token-stdin 2>"${refresh_err:-/dev/null}") || refresh_status=$?
+        if [ -n "$refresh_err" ]; then
+          refresh_detail="$(tail -n 1 "$refresh_err" 2>/dev/null | cut -c1-300)"
+          rm -f "$refresh_err"
+        fi
       fi
 
       if [ "${#refresh_runner[@]}" -gt 0 ] && [ "$refresh_status" -eq 0 ]; then
@@ -246,7 +257,7 @@ if [ -n "$SETTINGS_FILE" ] && [ -f "$SETTINGS_FILE" ]; then
         if [ "$refresh_status" -eq 1 ]; then
           system_message="Spotify OAuth refresh was rejected (invalid_grant). Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
         else
-          system_message="Failed to refresh Spotify API token. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
+          system_message="Failed to refresh Spotify API token${refresh_detail:+ ($refresh_detail)}. Run the configure skill (/spotify-ads-api:configure on Claude/Codex, /configure on Antigravity) to authorize again."
         fi
       fi
     fi

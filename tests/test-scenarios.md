@@ -1367,3 +1367,25 @@ rules, effective PATCH validation, minimal user interruption, and draft validati
 - A material plan change invalidates prior approval and produces a refreshed preview.
 - Incomplete drafts are labeled `created but incomplete`; a failed validation is never reported as publish-ready.
 - No `PUBLISH` request occurs in this workflow.
+
+---
+
+## Scenario 44: Paused Filters, Campaign Ad Set Listing, and PATCH-Only Updates
+
+**Prompts:** "Show my paused campaigns and paused ad sets", "List the ad sets for campaign <campaign_id>", "Rename campaign <campaign_id> to Test Rename" (decline before any write)
+
+**Quirks tested:** `PAUSED` exists only in the campaign status enum, ad set pause state is the read-only `is_paused` field, ad sets are listed by `campaign_ids` query parameter, and updates use PATCH
+
+**Expected behavior:**
+
+1. Lists campaigns with `api GET "ad_accounts/{ad_account_id}/campaigns?statuses=PAUSED"`.
+2. Lists ad sets without `statuses=PAUSED` and reports those with `is_paused: true`.
+3. Lists a campaign's ad sets with `api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=<campaign_id>"`.
+4. Proposes the rename as a PATCH to the draft campaign and stops when the user declines.
+
+**Success criteria:**
+
+- No request sends `statuses=PAUSED` to the ad sets or ads list endpoints.
+- No request targets `/campaigns/{id}/ad_sets`.
+- No request uses PUT.
+- No live entity is mutated and nothing is published.
