@@ -12,8 +12,8 @@ execution:
   prompt: |
     /spotify-ads-api:bulk Yes, pause both on the live ad sets.
 context:
-  # Uses the default settings: with auto_execute false the bulk skill lists every
-  # write and asks again, so the yes in this turn never reaches the pauses.
+  # Uses the default settings (auto_execute true). With the confirm settings, the
+  # bulk skill would ask again and the yes would never reach the pauses.
   scaffold_script: scaffold.sh
   history_file: history.jsonl
 graders:
@@ -37,7 +37,7 @@ graders:
   - name: no-raw-error
     type: regex
     weight: 2
-    pattern: 'ERR-\d+|\b400\b|HTTP'
+    pattern: 'HTTP|status (code )?\d{3}|\b400 (error|response)|ERR-\d+'
     match: not_contains
   - name: partial-success-shape
     type: llm

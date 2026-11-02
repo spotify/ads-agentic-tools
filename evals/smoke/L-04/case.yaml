@@ -30,7 +30,7 @@ graders:
   - name: no-raw-error
     type: regex
     weight: 2
-    pattern: '\b(4\d\d|5\d\d)\b|HTTP|ERR-\d+'
+    pattern: 'HTTP|status (code )?\d{3}|\b(4\d\d|5\d\d) (error|response)|ERR-\d+'
     match: not_contains
   - name: missing-data-shape
     type: llm

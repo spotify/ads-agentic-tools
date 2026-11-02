@@ -124,10 +124,11 @@ The suite is organized as:
   ../../../shared-graders/date-range.md`), so editing the shared file changes every
   case that uses it. Add one when a second case needs an identical check.
 - `smoke/<ID>/`: the smoke-test cases, one per expected behavior, named by case ID.
-  `L-01` to `L-05` cover the language standards
+  `L-01` to `L-06` cover the language standards
   (`skills/api-reference/references/language-standards.md`) in situations the other
   cases don't reach: a German account's number, currency, and date formats, an API
-  error, a partial success, missing report data, and a reply in Spanish.
+  error, a partial success, missing report data, a reply in Spanish, and a rate
+  limit.
 - Every case links the same language checks: `no-em-dash`, `no-ellipsis`,
   `no-exclamation`, `no-filler-words` ("just", "simply", "successfully"),
   `no-leaked-enums` (SCREAMING_SNAKE_CASE values and bare statuses like `ACTIVE`),
