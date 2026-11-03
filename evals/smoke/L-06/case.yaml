@@ -34,6 +34,15 @@ graders:
     weight: 2
     pattern: 'HTTP|status (code )?\d{3}|\b429 (error|response)|ERR-\d+'
     match: not_contains
+  # Every report endpoint answers 429, and api-behaviors.md says not to retry one,
+  # so a second report request of any kind is a retry.
+  - name: no-retry-after-429
+    type: regex
+    weight: 2
+    pattern: '^GET__ad_accounts__\{ad_account_id\}__(aggregate|insight)_reports[\s\S]*^GET__ad_accounts__\{ad_account_id\}__(aggregate|insight)_reports'
+    target: { source: file, path: .claude/.api-requests.log }
+    flags: m
+    match: not_contains
   - name: rate-limit-shape
     type: llm
     criteria: |
