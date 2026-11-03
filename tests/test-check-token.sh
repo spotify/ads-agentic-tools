@@ -4,6 +4,10 @@
 
 set -uo pipefail
 
+# Host markers leak in when tests run inside an agent shell; start from none so
+# each case sets exactly the platform it means to test.
+unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID
+
 PASS=0
 FAIL=0
 TMPDIR=$(mktemp -d)
@@ -520,16 +524,26 @@ if command -v jq &>/dev/null; then
   # names neither the host nor $BASE_URL. The hook must still refresh.
   API_CMD='api() { "$PLUGIN_ROOT/scripts/api-request.sh" campaigns "$@"; }; api GET "ad_accounts/{ad_account_id}/campaigns?limit=5"'
   run_api_hook() {
-    local project="$1" platform_var="$2" payload
+    local project="$1" platform_var="$2" payload marker
     if [ "$platform_var" = "antigravity" ]; then
       payload=$(jq -n --arg c "$API_CMD" '{toolCall:{args:{CommandLine:$c}}}')
     else
       payload=$(jq -n --arg c "$API_CMD" '{tool_input:{command:$c}}')
     fi
+    if [ "$platform_var" = codex_payload ]; then
+      payload=$(jq -n --arg c "$API_CMD" '{turn_id:"turn-1",hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')
+    fi
+    case "$platform_var" in
+      antigravity) marker= ;;
+      CLAUDECODE) marker=CLAUDECODE=1 ;;
+      CODEX_THREAD_ID) marker=CODEX_THREAD_ID=thread-1 ;;
+      codex_payload) marker=CLAUDE_PLUGIN_ROOT="$FAKE_PLUGIN" ;;
+      *) marker="$platform_var=$project" ;;
+    esac
     rm -f "$TMPDIR/python-called"
     printf '%s' "$payload" | env -u CODEX_PROJECT_DIR -u CLAUDE_PROJECT_DIR \
       PATH="$FAKE_BIN:$PATH" \
-      ${platform_var:+$( [ "$platform_var" != antigravity ] && echo "$platform_var=$project")} \
+      $marker \
       CODEX_PLUGIN_ROOT="$FAKE_PLUGIN" \
       FAKE_PYTHON_MARKER="$TMPDIR/python-called" \
       FAKE_REFRESH_INPUT="$TMPDIR/refresh-input" \
@@ -539,11 +553,14 @@ if command -v jq &>/dev/null; then
       bash -c 'cd "$1" && bash "$2"' _ "$project" "$HOOK"
   }
 
-  for platform_var in CODEX_PROJECT_DIR CLAUDE_PROJECT_DIR antigravity; do
+  # CLAUDECODE and CODEX_THREAD_ID are the markers the agents' own shells carry.
+  # Codex hook processes get neither, only CLAUDE_PLUGIN_ROOT, so codex_payload
+  # relies on the turn_id that Codex puts in its hook payload.
+  for platform_var in CODEX_PROJECT_DIR CODEX_THREAD_ID codex_payload CLAUDE_PROJECT_DIR CLAUDECODE antigravity; do
     case "$platform_var" in
-      CODEX_PROJECT_DIR) dir=.codex ;; CLAUDE_PROJECT_DIR) dir=.claude ;; *) dir=.agents ;;
+      CODEX_*|codex_payload) dir=.codex ;; CLAUDE*) dir=.claude ;; *) dir=.agents ;;
     esac
-    project="$TMPDIR/api-wrapper-$dir"
+    project="$TMPDIR/api-wrapper-$platform_var"
     mkdir -p "$project/$dir"
     printf '%s\n' 'access_token: "old_access"' 'refresh_token: "old_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/$dir/spotify-ads-api.local.md"
     output=$(run_api_hook "$project" "$platform_var")
