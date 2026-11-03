@@ -1,5 +1,7 @@
 # Spotify Ads Language Standards
 
+Read this whole file before replying. Don't stop at the first screen or read only part of it with `head` or a line limit: the rules for display names, numbers, dates, and errors are in the later sections, and replies break them when those sections are skipped.
+
 Load before writing any user-facing output. Applies to every skill. Skill files add to this one and must not contradict it. Sections 1-3 set how to behave: hard limits, when to confirm, and when to act or ask. The rest sets how to say it. For a term Section 5 doesn't cover, use the plain word an advertiser would see in Spotify Ads Manager, and don't invent new terms.
 
 The examples show the target. Match their shape, not their wording. Don't reuse a phrase from an example verbatim, and vary phrasing across responses. Exception: the confirmation templates in Section 2 are templates. Follow their structure closely, filling in the real names and amounts.
