@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+- `scripts/api-request.sh` now checks every request against the workflow's OpenAPI document before sending it. The check covers query parameters and the JSON body at every depth: required fields, fields the spec does not define, read-only fields, types, enums, length, range, and item-count bounds, `nullable`, and `oneOf` discriminators. A violation exits with status 3, prints `ERROR: Request not sent.` with one line per problem and a "did you mean" suggestion where one fits, and never reaches the API. The check fails open, sending as before, when no document has been fetched, Python is missing, or the operation is not in the public spec (such as `ad_product_catalog`, which prints a warning). `SPOTIFY_ADS_SKIP_SPEC_VALIDATION=1` turns the check off for a confirmed spec bug only
+- `scripts/openapi-op.sh describe <METHOD> <path>` prints a compact view of one operation, with `$ref`s resolved, `allOf` merged, `oneOf` branches labelled, required fields marked, read-only fields hidden, and the spec's common-mistake hints shown inline. `openapi-op.sh search <words>` ranks operations by relevance. `live-openapi.md` now tells agents to use it instead of reading the 400 KB YAML
+- `scripts/openapi_tool.py`, a standard-library-only OpenAPI loader, describer, searcher, and validator. It needs no new dependencies
+- `tests/test-openapi-tool.sh` with 84 offline assertions. Setting `OPENAPI_TOOL_LIVE_SPEC` also checks that the published spec parses the same as with Ruby's YAML
+
+### Changed
+- `scripts/fetch-openapi-schema.sh` records where it saved the document, so later shells, which do not inherit `OPENAPI_FILE`, can find it for validation and `openapi-op.sh`. A recorded document is used for up to 6 hours
+
 ### Removed
 - Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`
 
