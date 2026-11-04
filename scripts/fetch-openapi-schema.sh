@@ -35,3 +35,11 @@ if ! grep -Eq '^openapi: 3\.' "$DOWNLOAD_FILE" || ! grep -Eq '^paths:' "$DOWNLOA
 fi
 
 mv "$DOWNLOAD_FILE" "$DESTINATION"
+
+# Record where this workflow's document lives so api-request.sh (request
+# validation) and openapi-op.sh find it from later shells, which do not inherit
+# OPENAPI_FILE. Path must match current_spec_pointer() in openapi_tool.py.
+# A stale parse cache from an earlier document at the same path is dropped.
+rm -f "${DESTINATION}.parsed.json"
+DEST_ABS="$(CDPATH= cd -- "$(dirname -- "$DESTINATION")" && pwd)/$(basename -- "$DESTINATION")"
+printf '%s\n' "$DEST_ABS" > "${TMPDIR:-/tmp}/spotify-ads-api-openapi-$(id -u).current" 2>/dev/null || true
