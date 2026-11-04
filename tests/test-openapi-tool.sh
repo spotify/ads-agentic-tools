@@ -181,6 +181,25 @@ assert_contains "unknown discriminator value" '"OTHER" is not one of: CUSTOM, LO
 validate POST "ad_accounts/abc/audiences" '{"name":"Fans"}'
 assert_contains "missing discriminator" "body.audience_type: required discriminator is missing" "$OUT"
 
+# Regression: an object or array discriminator used to crash the validator
+# (unhashable dict key), and the wrapper then failed open and sent the request.
+for bad in '{}' '[]' '["CUSTOM"]' '1' 'true' 'null'; do
+  validate POST "ad_accounts/abc/audiences" "{\"audience_type\":$bad,\"name\":\"Fans\"}"
+  assert_eq "discriminator $bad is a violation, not a crash" "3" "$RC"
+  assert_not_contains "discriminator $bad produces no traceback" "Traceback" "$OUT"
+done
+validate POST "ad_accounts/abc/audiences" '{"audience_type":{},"name":"Fans"}'
+assert_contains "non-string discriminator names the type and allowed values" \
+  "body.audience_type: expected string, got object (one of: CUSTOM, LOOKALIKE)." "$OUT"
+
+echo "=== array item constraints ==="
+
+validate POST "ad_accounts/abc/async_reports" '{"dimensions":["CAMPAIGN_NAME"],"metrics":["IMPRESSIONS"]}'
+assert_eq "valid array-of-enum body" "0" "$RC"
+validate POST "ad_accounts/abc/async_reports" '{"dimensions":["CAMPAIGN"],"metrics":[]}'
+assert_contains "enum on \$ref items is enforced" 'body.dimensions[0]: "CAMPAIGN" is not one of' "$OUT"
+assert_contains "minItems on the array is enforced" "body.metrics: has 0 items; at least 1 required." "$OUT"
+
 echo "=== non-JSON bodies ==="
 
 validate POST "ad_accounts/abc/assets" ''
@@ -200,6 +219,25 @@ assert_contains "allOf merged into one field list" "objective*: string; enum: RE
 assert_not_contains "read-only fields hidden" "  id:" "$desc"
 desc=$(python3 "$TOOL" describe --spec "$SPEC" GET "ad_accounts/abc/campaigns")
 assert_contains "array query parameter usage" "fields: array of string; items enum: ID, NAME, STATUS; repeat the name for each value" "$desc"
+
+# Regression: body arrays showed only "array of string", even with --full, so
+# agents told not to read the raw YAML had no way to see the allowed values.
+for mode in "" "--full"; do
+  desc=$(python3 "$TOOL" describe --spec "$SPEC" POST "ad_accounts/abc/async_reports" $mode)
+  assert_contains "body array shows \$ref item enum ${mode:-(short)}" \
+    "dimensions*: array of string; items enum: AD_ACCOUNT_NAME, CAMPAIGN_NAME, AD_SET_NAME" "$desc"
+  assert_contains "body array shows inline item enum and array bounds ${mode:-(short)}" \
+    "metrics*: array of string; minItems=1; items enum: IMPRESSIONS, SPEND" "$desc"
+done
+desc=$(python3 "$TOOL" describe --spec "$SPEC" POST "ad_accounts/abc/ad_sets")
+assert_contains "nested body array shows its item enum" \
+  "platforms: array of string; items enum: ANDROID, DESKTOP, IOS" "$desc"
+
+if [ -n "${OPENAPI_TOOL_LIVE_SPEC:-}" ]; then
+  desc=$(python3 "$TOOL" describe --spec "$OPENAPI_TOOL_LIVE_SPEC" POST "ad_accounts/abc/async_reports")
+  assert_contains "live async report dimensions list their values" "dimensions*: array of string; items enum: " "$desc"
+  assert_contains "live async report metrics list their values" "metrics*: array of string; items enum: " "$desc"
+fi
 desc=$(python3 "$TOOL" describe --spec "$SPEC" POST "ad_accounts/abc/audiences")
 assert_contains "oneOf branches labelled by discriminator" "[when audience_type=LOOKALIKE → LookalikeAudience]" "$desc"
 python3 "$TOOL" describe --spec "$SPEC" GET "nope" >/dev/null 2>&1
@@ -237,6 +275,19 @@ assert_eq "OPENAPI_FILE overrides the pointer" "$SPEC" "$(OPENAPI_FILE="$SPEC" p
 bash "$OP" bogus >/dev/null 2>&1
 assert_eq "openapi-op.sh rejects an unknown subcommand" "1" "$?"
 
+# Regression: the docs run these directly, so they must be executable. Invoke
+# without `bash` so a missing mode bit fails here, not for the user.
+for script in "$OP" "$TOOL"; do
+  assert_eq "$(basename "$script") is executable on disk" "yes" "$([ -x "$script" ] && echo yes || echo no)"
+  if git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1 \
+    && git -C "$REPO_ROOT" ls-files --error-unmatch "$script" >/dev/null 2>&1; then
+    assert_eq "$(basename "$script") is committed as 100755" "100755" \
+      "$(git -C "$REPO_ROOT" ls-files -s "$script" | cut -d' ' -f1)"
+  fi
+done
+out=$("$OP" describe GET "ad_accounts/abc/campaigns" 2>&1)
+assert_contains "openapi-op.sh runs when invoked directly" "GET /ad_accounts/{ad_account_id}/campaigns" "$out"
+
 touch -t 202001010000 "$FETCHED"
 python3 "$TOOL" locate >/dev/null 2>&1
 assert_eq "a stale fetched spec is not used" "2" "$?"
@@ -269,6 +320,11 @@ assert_not_contains "error never echoes the token" "TEST_TOKEN" "$out"
 
 out=$(run_api GET "ad_accounts/{ad_account_id}/campaigns?report_fields=ID")
 assert_eq "invalid query parameter blocks a GET" "3" "$?"
+
+out=$(run_api POST "ad_accounts/{ad_account_id}/audiences" '{"audience_type":{},"name":"Fans"}')
+assert_eq "object discriminator is blocked by the wrapper" "3" "$?"
+assert_not_contains "object discriminator never reaches curl" "CURL_CALLED" "$out"
+assert_not_contains "object discriminator does not fail open" "validation was skipped" "$out"
 
 out=$(run_api GET "ad_product_catalog")
 assert_eq "operation missing from the public spec is still sent" "0" "$?"

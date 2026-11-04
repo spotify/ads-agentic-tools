@@ -112,6 +112,21 @@ paths:
       responses:
         '201':
           description: Created
+  /ad_accounts/{ad_account_id}/async_reports:
+    post:
+      operationId: createAsyncReport
+      summary: Create a CSV report asynchronously
+      parameters:
+        - $ref: '#/components/parameters/ad_account_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsyncReportRequest'
+      responses:
+        '201':
+          description: Created
   /ad_accounts/{ad_account_id}/assets:
     post:
       operationId: uploadAsset
@@ -220,6 +235,24 @@ components:
           type: object
           additionalProperties:
             type: string
+    ReportDimension:
+      type: string
+      enum: [AD_ACCOUNT_NAME, CAMPAIGN_NAME, AD_SET_NAME]
+    AsyncReportRequest:
+      type: object
+      required: [dimensions, metrics]
+      properties:
+        dimensions:
+          type: array
+          description: Dimensions to populate as report columns.
+          items:
+            $ref: '#/components/schemas/ReportDimension'
+        metrics:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [IMPRESSIONS, SPEND]
     CreateAudienceRequest:
       oneOf:
         - $ref: '#/components/schemas/CustomAudience'

@@ -707,6 +707,12 @@ class Validator:
                 self.error("%s.%s" % (where, prop), "required discriminator is missing (one of: %s)." % (
                     ", ".join(mapping)))
                 return
+            # Check the type before the lookup: an object or array is unhashable and
+            # would crash mapping.get(), and a non-string can never select a branch.
+            if not isinstance(value[prop], str):
+                self.error("%s.%s" % (where, prop), "expected string, got %s (one of: %s)." % (
+                    _type_name(value[prop]), ", ".join(mapping) or "a string"))
+                return
             ref = mapping.get(value[prop])
             if ref is None and mapping:
                 self.error("%s.%s" % (where, prop), "%s is not one of: %s." % (
@@ -852,6 +858,21 @@ def _constraints(schema):
     return bits
 
 
+def _item_constraints(spec, schema):
+    """Constraints of an array's resolved items, prefixed so they read as such.
+
+    Without this, a field like async report `dimensions` shows only "array of
+    string" and the allowed values are invisible in the compact view.
+    """
+    if schema.get("type") != "array":
+        return []
+    items = spec.flatten(schema.get("items") or {})
+    bits = ["items " + c for c in _constraints(items)]
+    if items.get("type") == "array":
+        bits += ["items " + c for c in _item_constraints(spec, items)]
+    return bits
+
+
 def _describe_schema(spec, schema, indent, full, lines, stack):
     schema = spec.flatten(schema)
     if "oneOf" in schema or "anyOf" in schema:
@@ -875,7 +896,7 @@ def _describe_schema(spec, schema, indent, full, lines, stack):
         if prop.get("readOnly"):
             continue
         mark = "*" if name in required else ""
-        bits = [_type_label(spec, prop)] + _constraints(prop)
+        bits = [_type_label(spec, prop)] + _constraints(prop) + _item_constraints(spec, prop)
         desc = _short(prop.get("description"), full)
         lines.append("%s%s%s: %s%s" % (" " * indent, name, mark, "; ".join(bits),
                                       (" — " + desc) if desc else ""))
@@ -892,7 +913,9 @@ def _describe_schema(spec, schema, indent, full, lines, stack):
             _describe_schema(spec, target, indent + 2, full, lines, stack | {key})
     extra = schema.get("additionalProperties")
     if isinstance(extra, dict):
-        lines.append("%s<any key>: %s" % (" " * indent, _type_label(spec, extra)))
+        flat = spec.flatten(extra)
+        bits = [_type_label(spec, extra)] + _constraints(flat) + _item_constraints(spec, flat)
+        lines.append("%s<any key>: %s" % (" " * indent, "; ".join(bits)))
 
 
 def describe(spec, method, raw_path, full=False):
@@ -916,8 +939,7 @@ def describe(spec, method, raw_path, full=False):
         for p in group:
             schema = spec.flatten(p.get("schema") or {})
             bits = [_type_label(spec, p.get("schema") or {})] + _constraints(schema)
-            items = spec.flatten(schema.get("items") or {}) if schema.get("type") == "array" else {}
-            bits += ["items " + c for c in _constraints(items)]
+            bits += _item_constraints(spec, schema)
             if schema.get("type") == "array":
                 bits.append("repeat the name for each value")
             desc = _short(p.get("description"), full)
