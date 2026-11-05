@@ -1,0 +1,2 @@
+400
+{"errorCodes": ["ERR-40012"], "messages": ["Status PAUSED is not allowed for draft ad sets"]}

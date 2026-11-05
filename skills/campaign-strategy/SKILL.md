@@ -9,6 +9,8 @@ Plan campaign structure and targeting before creating entities. This skill resea
 
 For detailed planning heuristics, read `references/planning-framework.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 ## Inputs
 
 Accept any combination of:

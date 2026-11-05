@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: L-05
+description: "Language case L-05. User writes in Spanish. Reply is in Spanish, translates statuses, keeps the en-US account's number style, writes dates in Spanish, keeps product names in English, and gives the CTR with a date range."
+tags: [smoke, language, non_english, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    ¿Cuál es el CTR de Late Night Jazz?
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: ctr-shown
+    type: regex
+    weight: 2
+    pattern: '0[.,]38\s?%'
+  - name: campaign-name-kept
+    type: regex
+    pattern: 'Late Night Jazz'
+  - name: reply-in-spanish
+    type: regex
+    weight: 2
+    pattern: '\b(campaña|del|entre|impresiones|clics|septiembre)\b'
+    flags: i
+  - name: spanish-date-range
+    type: regex
+    pattern: '\b\d{1,2}\s+(de\s+)?septiembre\b|\bsept?\.?\s'
+    flags: i
+  - name: non-english-rules
+    type: llm
+    criteria: |
+      The user wrote in Spanish.
+      PASS if the reply is written in natural Spanish, gives Late Night Jazz's CTR with a date range, keeps the campaign name as is, translates any status into Spanish everywhere, including labels and table cells ("activa", not "Active" or "ACTIVE"), keeps the en-US account's number style ("0.38%", "412,870", "USD 2,890.11"), and writes dates in Spanish ("3 de septiembre de 2026"). Spotify product names stay in English.
+      FAIL if the reply is mostly in English, translates the campaign name, shows a status in English or as a raw enum, uses another locale's number style ("0,38 %", "412.870", "2.890,11 USD"), or gives the CTR without a date range.

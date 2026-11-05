@@ -36,6 +36,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" build-campaign "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (Reserved pricing, estimates, geo lookup, draft VALIDATE/PUBLISH).
 
 Critical rules:
