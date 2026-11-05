@@ -62,6 +62,20 @@ Use this flow for `CONTENT` (Reserved Podcasts) and `FPMNG` (Reserved Music):
 - The live ad product catalog's constraint text for campaign and ad set `start_time` states the minimum lead time; it is rule text, not a separate field. VALIDATE and PUBLISH reject start times inside it with `INVALID.AD_SET.START_TIME_TOO_CLOSE` and an explanatory message. Choose start times well clear of it when the user gives no exact time. A time that was valid at staging can expire before validation, so recheck staged start times right before each VALIDATE and PUBLISH. Propose a later time, or ask whether the exact time matters, and never re-validate an unchanged hierarchy.
 - Create-from-published (`POST .../campaigns/{id}/drafts`, and likewise for ad sets and ads) makes a draft copy that reuses the same entity `id` (not a new UUID), and its status becomes `ACTIVE_RESTRICTED`.
 
+## Confirmation
+
+This is the single source for when to ask before acting. `language-standards.md` Section 2 sets only how a confirmation is worded.
+
+- `auto_execute: false`: show each request and ask before running it. One yes covers the request it was asked for.
+- `auto_execute: true`: run reads, reports, and draft creates and edits without asking.
+- Always confirm, even when `auto_execute` is true:
+  - Draft `PUBLISH` (it makes the hierarchy live)
+  - Draft DELETE (staged work can't be recovered)
+  - Any direct live write that changes delivery or spend: pause, resume, archive, budget, or bid
+  - Replacing a customer list, or a media file used by active ads
+  - A start time that has already passed
+- Live campaigns, ad sets, and ads can't be deleted. Treat a request to delete one as a request to archive it, and confirm.
+
 ## Live Entity Lifecycle
 
 - There is no DELETE on live campaigns, ad sets, or ads. Use status changes (`PAUSED`, `ARCHIVED`).

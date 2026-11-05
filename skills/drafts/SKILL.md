@@ -572,7 +572,7 @@ Unlike direct entity creation, draft creation accepts incomplete data — requir
 
 ## Execution Behavior
 
-- If `auto_execute` is `true`, execute read, create, edit, delete, and validate calls directly after any required planning or asset-selection confirmation.
+- If `auto_execute` is `true`, execute read, create, edit, and validate calls directly after any required planning or asset-selection confirmation. Draft DELETE and PUBLISH always need a confirmation (`api-behaviors.md`, Confirmation).
 - If `auto_execute` is `false`, present the curl command to the user and ask for confirmation before executing.
 - Never auto-execute `PUBLISH`. Publishing creates live entities and always requires explicit user confirmation immediately before the publish request.
 - Always check the `HTTP_STATUS:` line from curl output to determine success or failure before interpreting the response body.
