@@ -82,6 +82,8 @@ api POST "ad_accounts/{ad_account_id}/ads/$AD_ID/drafts"
 
 Use only the endpoint matching the selected entity type. Do not send a request body.
 
+A campaign can hold only a limited number of ad set drafts, and the limit isn't a fixed public value. If creating an ad set draft returns 400 saying the campaign has reached the maximum number of ad set drafts, stop and report the error message. Skip the PATCH and anything else that depends on the draft. List the campaign's drafts with `api GET "ad_accounts/{ad_account_id}/drafts/ad_sets?campaign_ids=$CAMPAIGN_ID&limit=50"` and offer to publish or delete stale ones (draft DELETE is safe to retry). Act only on the user's choice. Bulk draft-create requests fail as a whole when existing plus requested drafts would exceed the limit, so split them or clean up first. Never retry it unchanged.
+
 #### Step 4: Patch the draft
 
 Build a minimal patch containing only requested changes and send it to the corresponding draft endpoint:
@@ -195,6 +197,8 @@ Set a concrete `delivery_goal` compatible with the parent campaign's `delivery_g
 | `LEAD_GEN` | `LEADS`, `CLICKS` |
 
 Choose the value that matches the user's requested outcome and the live ad product catalog. Never set `delivery_goal` to `UNSET` or omit it when the parent campaign has a non-`UNSET` `delivery_goal_group`.
+
+The live ad product catalog's `start_time` constraint text (in its constraint and required-field lists) states the minimum lead time. Apply it when choosing start times. When the user gives no exact start time, propose one well clear of that minimum, such as the start of the hour after next, so it stays valid through staging and confirmation. If the user wants an exact time close to the minimum, warn that it can expire before validation.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/ad_sets" \
@@ -395,6 +399,8 @@ api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \
   '{"action":"VALIDATE","draft_hierarchy_version":<version>}'
 ```
 
+Before validating, list the hierarchy's draft ad sets (`drafts/ad_sets?campaign_ids=$DRAFT_CAMPAIGN_ID`) and check every `start_time` against the current UTC time and the catalog's minimum lead time. If one falls short, don't validate. Propose a later time, or ask whether the exact time matters, and patch only after the user agrees. If a 400's `error_codes` include `INVALID.AD_SET.START_TIME_TOO_CLOSE`, follow its message, and never re-validate unchanged.
+
 First, fetch the draft campaign to get the current `draft_hierarchy_version`:
 
 ```bash
@@ -449,6 +455,8 @@ api GET "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID"
 ```
 
 #### Step 2: Run validation first
+
+Run the start-time recheck from `validate` first. Validation can pass and the user can then take a while to confirm, so repeat the check right before the PUBLISH request.
 
 ```bash
 api POST "ad_accounts/{ad_account_id}/drafts/campaigns/$DRAFT_CAMPAIGN_ID" \

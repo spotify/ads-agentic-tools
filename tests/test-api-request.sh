@@ -7,6 +7,10 @@
 
 set -uo pipefail
 
+# Host markers leak in when tests run inside an agent shell; start from none so
+# each case sets exactly the platform it means to test.
+unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID
+
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 API="$REPO_ROOT/scripts/api-request.sh"
@@ -219,6 +223,35 @@ out=$(run_record campaigns GET "ad_accounts/{ad_account_id}/campaigns?limit=50")
 assert_eq "recording passes the response through" "HTTP_STATUS:200" "$(printf '%s' "$out" | tail -1)"
 assert_eq "recording saves status and body under the fixture key" $'200\n{"campaigns":[]}' \
   "$(cat "$PROJECT/recorded/GET__ad_accounts__{ad_account_id}__campaigns.http")"
+
+echo "=== platform detection from shell markers ==="
+
+# Claude Code sets CLAUDE_PROJECT_DIR only for hooks; its Bash tool shell has
+# CLAUDECODE=1. Codex exports CODEX_THREAD_ID and never CODEX_PROJECT_DIR.
+DETECT="$TMPDIR/detect"
+for dir in .agents .claude .codex; do
+  mkdir -p "$DETECT/$dir"
+  printf -- '---\naccess_token: "TOKEN%s"\nad_account_id: "acct"\ntoken_expires_at: "2099-01-01T00:00:00Z"\n---\n' \
+    "$dir" > "$DETECT/$dir/spotify-ads-api.local.md"
+done
+detect_env() {
+  (cd "$DETECT" && env -u CODEX_PROJECT_DIR -u CLAUDE_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
+    -u EVAL_ADS_API_FIXTURES -u EVAL_ADS_API_LOG \
+    "$@" bash "$API" campaigns --env)
+}
+check_platform() {
+  local label="$1" product="$2" token="$3"; shift 3
+  local out
+  out=$(detect_env "$@")
+  assert_eq "$label sends $product" "1" "$(printf '%s' "$out" | grep -c "^SDK_HEADER='X-Spotify-Ads-Sdk: $product/")"
+  assert_eq "$label prefers its own settings" "TOKEN='$token'" "$(printf '%s' "$out" | grep '^TOKEN=')"
+}
+check_platform "CLAUDECODE=1 without CLAUDE_PROJECT_DIR" claude-code-plugin TOKEN.claude CLAUDECODE=1
+check_platform "CODEX_THREAD_ID" codex-plugin TOKEN.codex CODEX_THREAD_ID=thread-1
+check_platform "CODEX_SESSION_ID" codex-plugin TOKEN.codex CODEX_SESSION_ID=session-1
+check_platform "CLAUDE_PROJECT_DIR with inherited CODEX_THREAD_ID" claude-code-plugin TOKEN.claude \
+  CLAUDE_PROJECT_DIR="$DETECT" CODEX_THREAD_ID=thread-1
+check_platform "No marker" antigravity-cli-plugin TOKEN.agents FOO=bar
 
 echo
 echo "Passed: $PASS  Failed: $FAIL"

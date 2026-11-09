@@ -4,3 +4,5 @@
 .DS_Store
 *.log
 internal-v3.yaml
+__pycache__/
+*.pyc

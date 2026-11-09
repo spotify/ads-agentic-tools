@@ -27,9 +27,19 @@ elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -d "${CLAUDE_PLUGIN_ROOT:-}" ]; then
 fi
 
 # --- Platform detection (mirrors check-token.sh) ---
+# Explicit *_PROJECT_DIR vars win over the shell markers below, which a nested
+# agent can inherit from its parent (e.g. Claude Code started from a Codex shell).
+# Claude Code sets CLAUDE_PROJECT_DIR only for hooks; its Bash tool shell has
+# CLAUDECODE=1 instead. Codex exports CODEX_THREAD_ID (or CODEX_SESSION_ID) to
+# every shell command and never CODEX_PROJECT_DIR, which is kept for overrides.
+# Antigravity sets no known marker, so it is the default.
 if [ -n "${CODEX_PROJECT_DIR:-}" ]; then
   PLATFORM="codex"
 elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
+  PLATFORM="claude"
+elif [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SESSION_ID:-}" ]; then
+  PLATFORM="codex"
+elif [ "${CLAUDECODE:-}" = "1" ]; then
   PLATFORM="claude"
 else
   PLATFORM="antigravity"
