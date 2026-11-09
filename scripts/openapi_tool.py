@@ -25,8 +25,8 @@ not in the spec, 2 the spec could not be read. Each output line starts with
 
 Names and values the spec does not define are warnings: fields and query
 parameters it does not list, and enum or discriminator values outside its
-lists. The downloaded document can trail the API, so these are reported
-without blocking. Everything else blocks: missing or null required fields (at
+lists. A local block could reject a request the user explicitly asked for, so
+these are reported without blocking. Everything else blocks: missing or null required fields (at
 any depth), required query parameters and bodies, wrong types,
 length/range/item-count bounds, read-only fields, and invalid JSON. Those are
 never valid.

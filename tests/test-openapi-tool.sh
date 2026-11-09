@@ -139,8 +139,8 @@ assert_contains "and says it is null" "error: body.objective: required field is 
 
 echo "=== only missing required values block ==="
 
-# Names and values the spec does not define warn and are sent, because the
-# downloaded document can trail the API. Wrong types and bounds are never valid
+# Names and values the spec does not define warn and are sent, because a local
+# block could reject a request the user explicitly asked for. Wrong types and bounds are never valid
 # and keep blocking (see below).
 validate POST "ad_accounts/abc/campaigns" '{"name":"Spring","objective":"OTHER_VALUE"}'
 assert_eq "enum value outside the spec's enum only warns" "5" "$RC"
@@ -356,6 +356,7 @@ out=$(run_api POST "ad_accounts/{ad_account_id}/campaigns" '{"name":"Spring","ob
 assert_eq "unknown field and enum value are sent" "0" "$?"
 assert_contains "and reach curl" "CURL_CALLED" "$out"
 assert_contains "with a warning that it was sent anyway" "WARNING: Sent anyway" "$out"
+assert_contains "telling the agent to keep fields the user asked for" "If they did, keep it." "$out"
 assert_contains "naming the unknown field" "  - body.extra_field: is not a field the spec defines here." "$out"
 assert_contains "and the unknown enum value" '  - body.objective: "OTHER_VALUE" is not one of' "$out"
 assert_not_contains "warning never echoes the token" "TEST_TOKEN" "$out"
@@ -384,8 +385,10 @@ assert_eq "operation missing from the public spec is still sent" "0" "$?"
 assert_contains "with a warning" "sent without spec validation" "$out"
 assert_contains "and reaches curl" "CURL_CALLED" "$out"
 
+# There is no opt-out: the former escape-hatch variable has no effect.
 out=$(SPOTIFY_ADS_SKIP_SPEC_VALIDATION=1 run_api POST "ad_accounts/{ad_account_id}/campaigns" '{"bogus":1}')
-assert_contains "explicit opt-out sends unvalidated" "CURL_CALLED" "$out"
+assert_eq "SPOTIFY_ADS_SKIP_SPEC_VALIDATION does not bypass a block" "3" "$?"
+assert_not_contains "and the blocked request never reaches curl" "CURL_CALLED" "$out"
 
 rm -f "$FETCHED" "$WORK"/spotify-ads-api-openapi-*.current
 out=$(run_api POST "ad_accounts/{ad_account_id}/campaigns" '{"bogus":1}')

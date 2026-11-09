@@ -77,11 +77,12 @@ sending anything. It checks query parameters and the JSON body at every depth.
   and send the corrected request. Never resend the same request unchanged.
 - **Warns and sends**: fields and query parameters the spec does not define, and enum or
   discriminator values outside the spec's lists. The request goes out, and stderr starts
-  with `WARNING: Sent anyway` and lists each one. The downloaded document can trail the
-  API, so these are not blocked. This does not relax step 2: send only fields and values
-  the spec defines. Treat each warning as a mistake to fix before the next request,
-  usually a typo (the warning suggests the closest defined name) or a guessed field. If
-  the API rejects the request, start from the warning.
+  with `WARNING: Sent anyway` and lists each one. A local block could reject a request
+  the user explicitly asked for, so these are not blocked. Don't add fields or values the
+  spec doesn't define on your own initiative. Treat a warning as a likely mistake, usually
+  a typo (the warning suggests the closest defined name) or a guessed field, unless the
+  user explicitly asked for that field or value; then keep it. If the API rejects the
+  request, start from the warning.
 
 This check enforces the OpenAPI contract only. It does not replace the ad product
 catalog rules, audience estimates, or the API's own validation. An operation the public

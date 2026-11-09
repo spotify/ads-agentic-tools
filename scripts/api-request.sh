@@ -186,9 +186,12 @@ URL="${BASE_URL}/${PATH_ARG}"
 #
 # Names and values the spec does not define are a WARNING and the request is
 # still sent (exit 5 from the validator): undefined fields and query parameters,
-# and enum or discriminator values outside the spec's lists. The downloaded
-# document can trail the API, so a local block could reject a valid request;
-# the warning names each item and suggests the closest defined name.
+# and enum or discriminator values outside the spec's lists. A local block could
+# reject a request the user explicitly asked for; the warning names each item
+# and suggests the closest defined name.
+#
+# There is no opt-out: what still blocks is never valid, and the spec is fetched
+# fresh for each workflow. A wrong rule in the spec is fixed upstream.
 #
 # The document is the one the live OpenAPI preflight already downloaded for this
 # workflow; nothing is downloaded here. Fails open by design when it cannot
@@ -220,9 +223,9 @@ validate_against_spec() {
       ;;
     5)
       {
-        echo "WARNING: Sent anyway, but $METHOD ${PATH_ARG%%\?*} uses fields or values the Spotify Ads API OpenAPI spec does not define:"
+        echo "WARNING: Sent anyway. These fields or values aren't defined in the Spotify Ads API OpenAPI spec:"
         printf '%s\n' "$out" | sed -n 's/^warning: /  - /p'
-        echo "Treat each as a likely typo or guess and fix it before the next request. If the API rejects this one, start there."
+        echo "If the user didn't ask for this field or value, it's likely a mistake; fix it before the next request. If they did, keep it."
       } >&2
       return 0
       ;;
@@ -232,9 +235,7 @@ validate_against_spec() {
   return 0
 }
 
-if [ "${SPOTIFY_ADS_SKIP_SPEC_VALIDATION:-}" != "1" ]; then
-  validate_against_spec || exit $?
-fi
+validate_against_spec || exit $?
 
 # --- Build and execute curl ---
 CURL_ARGS=(-s -w "\nHTTP_STATUS:%{http_code}")
