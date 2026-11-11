@@ -52,4 +52,10 @@ for f in skills/api-reference/SKILL.md skills/build-campaign/SKILL.md skills/ads
   done
 done
 
+# VALIDATE/PUBLISH reject ad set start times inside the catalog minimum lead time.
+for f in skills/build-campaign/SKILL.md skills/drafts/SKILL.md; do
+  grep -qF -- 'recheck staged start times against the current UTC time immediately before each VALIDATE and PUBLISH' "$REPO_ROOT/$f" \
+    || { echo "FAIL: $f missing start-time lead rule"; fail=1; }
+done
+
 [ "$fail" -eq 0 ] && echo "PASS: api-reference files" || exit 1
