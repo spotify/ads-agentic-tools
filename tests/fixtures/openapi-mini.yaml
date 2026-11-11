@@ -141,6 +141,19 @@ paths:
       responses:
         '201':
           description: Created
+  /estimates/audience:
+    post:
+      operationId: estimateAudience
+      summary: Estimate audience
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AudienceEstimateRequest'
+      responses:
+        '200':
+          description: OK
 components:
   parameters:
     ad_account_id:
@@ -280,3 +293,43 @@ components:
           type: string
         seed_audience_id:
           type: string
+    AudienceEstimateRequest:
+      type: object
+      # Mirrors the live spec: bid_micro_amount is required here even though
+      # the ad set schema lets AUTOBID omit it.
+      required: [ad_account_id, start_date, asset_format, bid_strategy, bid_micro_amount, budget, targets]
+      properties:
+        ad_account_id:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        asset_format:
+          type: string
+          enum: [AUDIO, VIDEO, IMAGE]
+        bid_strategy:
+          type: string
+          enum: [MAX_BID, AUTOBID]
+        bid_micro_amount:
+          type: integer
+          format: int64
+          minimum: 0
+        budget:
+          type: object
+          required: [micro_amount, type, currency]
+          properties:
+            micro_amount:
+              type: integer
+            type:
+              type: string
+              enum: [DAILY, LIFETIME]
+            currency:
+              type: string
+        targets:
+          type: object
+          properties:
+            placements:
+              type: array
+              items:
+                type: string
+                enum: [MUSIC, PODCAST]
