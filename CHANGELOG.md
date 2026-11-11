@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+- `scripts/api-request.sh` now checks every request against the workflow's OpenAPI document before sending it. The check covers query parameters and the JSON body at every depth. Missing or null required fields, missing required query parameters, bodies, and `oneOf` discriminators, wrong types, length, range, and item-count bounds, read-only fields, and invalid JSON block the request. It exits with status 3, prints `ERROR: Request not sent.` with one line per problem, and never reaches the API. Fields, query parameters, and enum or discriminator values the spec does not define only warn. The request is sent and `WARNING: Sent anyway` lists each one, with a "did you mean" suggestion where one fits. A local block could reject a request the user explicitly asked for, so these are reported rather than blocked. The check fails open, sending as before, when no document has been fetched, Python is missing, or the operation is not in the public spec, which prints a warning.
+- `scripts/openapi-op.sh describe <METHOD> <path>` prints a compact view of one operation, with `$ref`s resolved, `allOf` merged, `oneOf` branches labelled, required fields marked, read-only fields hidden, and the spec's common-mistake hints shown inline. `openapi-op.sh search <words>` ranks operations by relevance. `live-openapi.md` now tells agents to use it instead of reading the 400 KB YAML
+- `scripts/openapi_tool.py`, a standard-library-only OpenAPI loader, describer, searcher, and validator. It needs no new dependencies
+- `tests/test-openapi-tool.sh` with 84 offline assertions. Setting `OPENAPI_TOOL_LIVE_SPEC` also checks that the published spec parses the same as with Ruby's YAML
+
+### Changed
+- `scripts/fetch-openapi-schema.sh` records where it saved the document, so later shells, which do not inherit `OPENAPI_FILE`, can find it for validation and `openapi-op.sh`. A recorded document is used for up to 6 hours
+
 ### Removed
 - Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`
 
