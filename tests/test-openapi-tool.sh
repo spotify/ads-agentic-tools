@@ -298,7 +298,7 @@ PATH="$WORK/fetchbin:$PATH" bash "$REPO_ROOT/scripts/fetch-openapi-schema.sh" "$
 assert_eq "fetch records the current spec for later shells" "$FETCHED" "$(python3 "$TOOL" locate)"
 out=$(bash "$OP" describe GET "ad_accounts/abc/campaigns")
 assert_contains "openapi-op.sh describe finds the fetched spec" "GET /ad_accounts/{ad_account_id}/campaigns" "$out"
-out=$(bash "$OP" search audience --limit 1)
+out=$(bash "$OP" search audiences --limit 1)
 assert_contains "openapi-op.sh search works" "/audiences" "$out"
 assert_eq "OPENAPI_FILE overrides the pointer" "$SPEC" "$(OPENAPI_FILE="$SPEC" python3 "$TOOL" locate)"
 bash "$OP" bogus >/dev/null 2>&1
@@ -389,6 +389,26 @@ assert_contains "and reaches curl" "CURL_CALLED" "$out"
 out=$(SPOTIFY_ADS_SKIP_SPEC_VALIDATION=1 run_api POST "ad_accounts/{ad_account_id}/campaigns" '{"bogus":1}')
 assert_eq "SPOTIFY_ADS_SKIP_SPEC_VALIDATION does not bypass a block" "3" "$?"
 assert_not_contains "and the blocked request never reaches curl" "CURL_CALLED" "$out"
+
+# Audience estimates require bid_micro_amount even with AUTOBID; the AUTOBID
+# omission applies only to ad set payloads. An estimate built from an AUTOBID ad
+# set body has no bid, which the API rejects with
+# "Validation error on field bidMicroAmount ... must not be null".
+ESTIMATE_BASE='"ad_account_id":"{ad_account_id}","start_date":"2026-12-01T00:00:00Z","asset_format":"AUDIO","bid_strategy":"AUTOBID","budget":{"micro_amount":50000000,"type":"DAILY","currency":"USD"},"targets":{"placements":["MUSIC"]}'
+
+out=$(run_api POST "estimates/audience" "{$ESTIMATE_BASE}")
+assert_eq "AUTOBID estimate without a bid is blocked" "3" "$?"
+assert_not_contains "AUTOBID estimate without a bid never reaches curl" "CURL_CALLED" "$out"
+assert_contains "error names the missing bid" "  - body.bid_micro_amount: required field is missing." "$out"
+
+out=$(run_api POST "estimates/audience" "{$ESTIMATE_BASE,\"bid_micro_amount\":null}")
+assert_eq "estimate with a null bid is blocked" "3" "$?"
+assert_not_contains "estimate with a null bid never reaches curl" "CURL_CALLED" "$out"
+assert_contains "error says the bid is null" "  - body.bid_micro_amount: required field is null." "$out"
+
+out=$(run_api POST "estimates/audience" "{$ESTIMATE_BASE,\"bid_micro_amount\":15000000}")
+assert_eq "AUTOBID estimate with a bid is sent" "0" "$?"
+assert_contains "AUTOBID estimate with a bid reaches curl" "CURL_CALLED" "$out"
 
 rm -f "$FETCHED" "$WORK"/spotify-ads-api-openapi-*.current
 out=$(run_api POST "ad_accounts/{ad_account_id}/campaigns" '{"bogus":1}')
