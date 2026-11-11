@@ -19,6 +19,12 @@ PASS=0
 FAIL=0
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
+# Isolate from any workflow spec in the caller's shell: pre-send validation
+# would otherwise run on these requests. Exporting TMPDIR keeps the wrapper from
+# finding a "current spec" pointer in the system /tmp (TMPDIR is often unset on
+# Linux, so a plain assignment would not reach child processes).
+export TMPDIR
+unset OPENAPI_FILE
 
 assert_eq() {
   local label="$1" expected="$2" actual="$3"

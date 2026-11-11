@@ -15,6 +15,7 @@ The shell regression suites run offline with no credentials, no network, and no 
 bash tests/test-check-token.sh    # hooks/check-token.sh
 bash tests/test-api-request.sh    # scripts/api-request.sh --env
 bash tests/test-openapi-fetch.sh  # scripts/fetch-openapi-schema.sh
+bash tests/test-openapi-tool.sh   # openapi_tool.py, openapi-op.sh, api-request.sh pre-send validation
 bash tests/test-marketplace-metadata.sh
 ```
 
