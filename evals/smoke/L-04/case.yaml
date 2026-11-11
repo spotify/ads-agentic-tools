@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: L-04
-description: "Language case L-04. Missing data. Winter Preview starts December 1, 2026 and has no delivery yet, so the report is empty. Reply says there is no CTR yet, why, and when data will be available, and invents no metrics."
+description: "Language case L-04. Missing data. Winter Preview starts March 1, 2027 and has no delivery yet, so the report is empty. Reply says there is no CTR yet, why, and when data will be available, and invents no metrics."
 tags: [smoke, language, missing_data, regression]
 execution:
   max_turns: 30
@@ -14,19 +14,22 @@ execution:
 context:
   scaffold_script: scaffold.sh
 graders:
+  # Fails a CTR figure, but not a format benchmark the standards allow
+  # ("commonly quoted 0.35%-0.50%").
   - name: no-invented-ctr
     type: regex
     weight: 3
-    pattern: '\d+[.,]\d+\s?%'
+    pattern: '\bCTR\b(?:(?!commonly|benchmark|typical|usually|range)[^.\n]){0,60}?\d+[.,]?\d*\s?%|\d+[.,]?\d*\s?%\s*CTR\b'
+    flags: i
     match: not_contains
   - name: says-no-delivery-yet
     type: regex
     weight: 2
-    pattern: "hasn'?t (started|begun)|not (started|delivering|delivered)|no (delivery|impressions|data)|hasn'?t (delivered|served)|starts (on )?December"
+    pattern: "hasn'?t (started|begun)|not (started|delivering|delivered)|no (delivery|impressions|data)|hasn'?t (delivered|served)|starts (on )?(March|Mar\b)"
     flags: i
   - name: gives-start-date
     type: regex
-    pattern: 'December 1\b'
+    pattern: '\b(March|Mar\.?) 1\b'
   - name: no-raw-error
     type: regex
     weight: 2
@@ -35,6 +38,6 @@ graders:
   - name: missing-data-shape
     type: llm
     criteria: |
-      Winter Preview is active but its only ad set starts December 1, 2026, so the report came back with no data.
-      PASS if the reply says there's no CTR yet because the campaign hasn't started delivering, gives the December 1, 2026 start, and says when data will be available (for example, once it starts delivering or within a day of the first impression). It stops there or makes at most one offer.
+      Winter Preview is active but its only ad set starts March 1, 2027, so the report came back with no data.
+      PASS if the reply says there's no CTR yet because the campaign hasn't started delivering, gives the March 1, 2027 start, and says when data will be available (for example, once it starts delivering or within a day of the first impression). It stops there or makes at most one offer.
       FAIL if it gives or estimates a CTR, says the report failed or errored, guesses at another cause, shows raw output, or ends with a question.

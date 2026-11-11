@@ -3,7 +3,8 @@
 ## [Unreleased]
 
 ### Added
-- Spotify Ads language standards in `skills/api-reference/references/language-standards.md`: hard limits, confirming high-stakes actions, when to act or ask, scope and voice, terms, enum display names, money, number, and date formats by locale, benchmarks, output patterns for success, errors, rejections, and empty states, banned words and punctuation, length limits, and non-English output. Every skill and the request-builder agent now read it before sending any output to a user. Pausing and resuming delivery both need a confirmation
+- Spotify Ads language standards in `skills/api-reference/references/language-standards.md`: hard limits, how to word a confirmation, when to act or ask a clarifying question, scope and voice, terms, enum display names, money, number, and date formats by locale, benchmarks, output patterns for success, errors, rejections, and empty states, banned words and punctuation, length limits, and non-English output. Every skill and the request-builder agent now read it before sending any output to a user.
+- A Confirmation section in `skills/api-reference/references/api-behaviors.md`, the single source for which actions need a confirmation, keyed to `auto_execute`. Pausing and resuming delivery both need one.
 
 ### Removed
 - Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`

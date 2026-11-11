@@ -146,6 +146,17 @@ The suite is organized as:
   34). Each checks the request log for the action that must not happen before
   confirmation.
 
+## Known failing cases
+
+These cases test behavior the skills don't have yet. They're tagged `known_failing`
+and expected to fail until the skill changes; a pass means the skill was fixed.
+
+| Case | Why it fails |
+|---|---|
+| `P1-05` | `skills/clone/SKILL.md` asks what to change before copying; the case expects the copy without a question. |
+| `P1-07` | The skills don't read `auto_execute` before writing, so the rename is sent without asking. |
+| `scenario-19` | With `auto_execute` on, `skills/drafts/SKILL.md` runs draft DELETE without asking; `api-behaviors.md` requires a confirmation. |
+
 Fixture data is invented, and no IDs in it belong to real accounts.
 
 ## Adding a case

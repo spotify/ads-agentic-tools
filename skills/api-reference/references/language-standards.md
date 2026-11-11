@@ -187,7 +187,7 @@ Exceptions (only values the default rule gets wrong; `PUBLISH` and `BOOKABLE` ar
 | "Budget: USD 1.2M" (spend confirmation) | "Budget: USD 1,200,000.00" |
 
 - Always use the ad account's ISO 4217 code, with one space between code and amount. Code first for en-US, en-GB, en-AU, and ja. Amount first for de, fr, fr-CA, es, pt, it, and nl.
-- Detect the locale from the ad account's locale field, then its country mapped to BCP 47, then default to en-US. If you defaulted, say so once.
+- Detect the locale from the ad account's country (`country_code`), mapped to BCP 47. If there's no country, default to en-US. If you defaulted, say so once.
 - When the reply is in English for an account in another locale, numbers and currency still follow the account's locale, and dates can use day-month-year order ("1 to 30 September 2026" for a de account). US month-first order is only for en-US.
 - Abbreviate large numbers (1.2M, 500K) only when space is tight. Never abbreviate in spend confirmations.
 
@@ -252,7 +252,7 @@ When the API returns an error, read the `error_codes` and message in the respons
 
 | Error in the response | Plugin message |
 | --- | --- |
-| `<code for no edit access>` | "You don't have edit access to [campaign name]. Ask an ad account admin for access, or pick a campaign you can edit." |
+| `<code for no edit access>` | "You can't edit [campaign name] directly. I can save the change as a draft instead." (For a pause or resume, which can't be saved as a draft, stop after the first sentence.) |
 | `<code for an unsupported country>` | "The ad account's country isn't supported for this action. Use an ad account in a supported market." |
 | `<code for a rejected creative>` | "The creative was rejected for [reason from the response]. [Fix for that reason], then resubmit." |
 

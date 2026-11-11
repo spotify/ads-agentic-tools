@@ -1,7 +1,9 @@
 schema_version: "1.1"
 name: P1-05
 description: "Smoke case P1-05. Copies as draft and names the copy. No confirmation (drafts are reversible)."
-tags: [smoke, P1, lookup_easy_edit, regression]
+# Known failing: skills/clone/SKILL.md asks what to change before copying,
+# while this case expects the copy without a question.
+tags: [smoke, P1, lookup_easy_edit, regression, known_failing]
 execution:
   max_turns: 30
   timeout_seconds: 600

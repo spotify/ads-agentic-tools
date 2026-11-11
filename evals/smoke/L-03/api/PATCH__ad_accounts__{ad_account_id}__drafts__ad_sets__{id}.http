@@ -1,2 +1,2 @@
 400
-{"errorCodes": ["ERR-40012"], "messages": ["Status PAUSED is not allowed for draft ad sets"]}
+{"errorCodes": ["ERR-40012"], "messages": ["Delivery can not be changed on a draft ad set"]}
