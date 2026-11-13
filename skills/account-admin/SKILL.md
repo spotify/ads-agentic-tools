@@ -16,6 +16,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" account-admin "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 ## Discovery and audit
 
 There is no top-level `GET /ad_accounts`. Discover accounts through businesses:

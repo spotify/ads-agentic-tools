@@ -1,0 +1,36 @@
+schema_version: "1.1"
+name: P1-07
+description: "Smoke case P1-07. Same rename as P1-02, but with auto_execute false. Asks before sending the rename and sends nothing yet."
+# Known failing: the skills don't read auto_execute before writing, so the
+# rename is sent without asking.
+tags: [smoke, P1, confirm_auto_execute_off, regression, known_failing]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    Rename the Weekend Commuters ad set to Friday Drive.
+context:
+  # Uses settings.confirm.local.md (auto_execute: false). A draft rename needs no
+  # confirmation when auto_execute is true (P1-02), but here the agent must ask first.
+  scaffold_script: scaffold.sh
+graders:
+  - name: names-new-name
+    type: regex
+    pattern: 'Friday Drive'
+  - name: no-write-yet
+    type: regex
+    pattern: '^(PATCH|POST|DELETE)__'
+    target: { source: file, path: .claude/.api-requests.log }
+    flags: m
+    match: not_contains
+    weight: 3
+  - name: asks-first
+    type: llm
+    criteria: |
+      auto_execute is false, so the agent must ask before any change.
+      PASS if the reply says it will rename Weekend Commuters to Friday Drive and asks once whether to go ahead, without saying the rename is done.
+      FAIL if it says the ad set was renamed, asks more than one question, or asks which ad set is meant.

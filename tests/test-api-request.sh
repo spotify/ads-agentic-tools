@@ -163,6 +163,14 @@ assert_eq "a numbered fixture answers the second call" '{"call":2}' "$(printf '%
 out=$(run_replay drafts DELETE "ad_accounts/{ad_account_id}/drafts/campaigns/c1")
 assert_eq "a missing fixture answers 404" "404" "$(status_of "$out")"
 
+printf '429\n{"errorCodes":["ERR-42901"],"messages":["Too many requests. Retry after 60 seconds."]}\n' \
+  > "$FIXTURES/GET__ad_accounts__{ad_account_id}__aggregate_reports.http"
+out=$(run_replay report GET "ad_accounts/{ad_account_id}/aggregate_reports?fields=CTR")
+assert_eq "a replayed 429 keeps its status" "429" "$(status_of "$out")"
+assert_eq "a replayed 429 keeps its body" \
+  '{"errorCodes":["ERR-42901"],"messages":["Too many requests. Retry after 60 seconds."]}' \
+  "$(printf '%s' "$out" | head -1)"
+
 printf '200\n{"validated":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-VALIDATE.http"
 printf '200\n{"published":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-PUBLISH.http"
 out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33" '{"action":"PUBLISH","draft_hierarchy_version":2}')
@@ -170,7 +178,7 @@ assert_eq "a match fixture answers by body content" '{"published":true}' "$(prin
 out=$(run_replay drafts POST "ad_accounts/{ad_account_id}/drafts/campaigns/9b3e4c6a-3d9f-4e5a-9c4b-2f7a0d9e8c33" '{"action":"VALIDATE","draft_hierarchy_version":2}')
 assert_eq "a different body picks a different match fixture" '{"validated":true}' "$(printf '%s' "$out" | head -1)"
 
-assert_eq "every request is logged" "6" "$(wc -l < "$PROJECT/.claude/.api-requests.log" | tr -d ' ')"
+assert_eq "every request is logged" "7" "$(wc -l < "$PROJECT/.claude/.api-requests.log" | tr -d ' ')"
 assert_eq "the log records the body" "1" \
   "$(grep -c '^POST__ad_accounts__{ad_account_id}__drafts__campaigns .* {"name":"x"}$' "$PROJECT/.claude/.api-requests.log")"
 
