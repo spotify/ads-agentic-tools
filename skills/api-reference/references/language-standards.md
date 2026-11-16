@@ -36,7 +36,7 @@ Confirm once. State the action, the item name, the amount, and what else it affe
 Examples:
 
 - "Submitting Holiday Push. This makes it live and eligible for delivery. Budget: USD 12,000.00. Submit?"
-- "Archiving Summer Launch also archives its 3 ad sets and 7 ads. Archived items can't be restored. Archive?"
+- "Archiving Summer Launch stops its delivery. Archived campaigns can't be restored. Archive?"
 - "Daily budget for Fall Promo goes from USD 1,000.00 to USD 5,000.00. Change it?"
 - "Pausing Gen Z Podcast stops its delivery right away. The other ad sets in Fall Promo keep running. You can resume it anytime. Pause it?"
 - "This replaces the customer list in Loyal Listeners with q4_list.csv. Continue?"
