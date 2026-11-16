@@ -1,8 +1,9 @@
 ---
 type: regex
-# Flags an ellipsis that trails off a sentence or the reply. An ellipsis inside a
-# quoted or bolded name ("Coming soon...") is the name kept as is, so it passes.
-pattern: '(…|\.\.\.)(?=[ \t]*$|\s+[A-Z])'
+# Flags any ellipsis followed by whitespace or the end of a line, including
+# mid-sentence. An ellipsis that ends a quoted or bolded name ("Coming soon...")
+# is followed by the closing mark, so it passes.
+pattern: '(…|\.\.\.)(?=\s|$)'
 flags: m
 match: not_contains
 ---

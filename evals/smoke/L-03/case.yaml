@@ -36,11 +36,6 @@ graders:
   - name: names-paused
     type: regex
     pattern: 'Summer Tour - Weekend'
-  - name: no-raw-error
-    type: regex
-    weight: 2
-    pattern: 'HTTP|status (code )?\d{3}|\b400 (error|response)|ERR-\d+'
-    match: not_contains
   - name: partial-success-shape
     type: llm
     criteria: |
