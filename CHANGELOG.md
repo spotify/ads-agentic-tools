@@ -11,6 +11,7 @@
 - `tests/test-openapi-tool.sh` with 84 offline assertions. Setting `OPENAPI_TOOL_LIVE_SPEC` also checks that the published spec parses the same as with Ruby's YAML
 
 ### Changed
+- The Confirmation list in `api-behaviors.md` now includes the account, audience, and measurement actions their skills already confirm: removing access, changing roles, cancelling invitations, deleting audiences, revoking CAPI tokens, sending test conversions, and sharing or unsharing. The language checklist judge accepts these confirmations.
 - `scripts/fetch-openapi-schema.sh` records where it saved the document, so later shells, which do not inherit `OPENAPI_FILE`, can find it for validation and `openapi-op.sh`. A recorded document is used for up to 6 hours
 
 ### Removed
