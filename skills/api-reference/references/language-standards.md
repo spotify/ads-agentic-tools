@@ -248,7 +248,7 @@ Why: advertisers copy these numbers into their own reports. An invented figure o
 | "Your bid can't match the minimum clearing price in the auction because other advertisers bid higher for similar targeting, so your ads aren't entering the auction." | "Ads aren't serving because the bid cap is low. A higher cap or the default one fixes this." | Auction mechanics don't help the user fix it. |
 | "Your media file was rejected." | "The media file is over the size limit. Compress it or upload a smaller one." | One cause per message. Never merge two errors into one. |
 
-When the API returns an error, read the `error_codes` and message in the response and translate them into what went wrong and how to fix it. Never show the raw code unless the user asks for it.
+When the API returns an error, read the message and the error codes in the response (the error-code key's casing varies) and translate them into what went wrong and how to fix it. Never show the raw code unless the user asks for it, or the error can't be explained in plain words. Then give the code and `sp_trace_id` so they can contact support.
 
 | Error in the response | Plugin message |
 | --- | --- |
@@ -258,8 +258,8 @@ When the API returns an error, read the `error_codes` and message in the respons
 
 - Validation: "Budget is below the minimum for this ad set. Raise it to at least [minimum from the response] to continue."
 - API failure: "The ad set couldn't be created. Check that targeting and budget are within account limits."
-- Permission: "You need ad account admin access to change billing settings."
-- Missing data: "Can't pull a delivery report because Oct Launch hasn't started delivering. Data is available within 24 hours of the first impression."
+- Permission: "You don't have access to change billing settings for this ad account."
+- Missing data: "Can't pull a delivery report because Oct Launch hasn't started delivering. Data appears once it starts delivering."
 - Rate limit: "Too many requests. Try again in 60 seconds." (Use the wait time the API returns.)
 - Feature not available: "Audience overlap reporting isn't available here. You can view it in Ads Manager."
 - Partial success: "2 of 3 ad sets created. Night Owls failed because it has no targeting. Add targeting to create it, or remove it."

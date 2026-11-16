@@ -11,6 +11,7 @@
 - `tests/test-openapi-tool.sh` with 84 offline assertions. Setting `OPENAPI_TOOL_LIVE_SPEC` also checks that the published spec parses the same as with Ruby's YAML
 
 ### Changed
+- Language standards no longer suggest asking an admin on a permission error or promise data within 24 hours of the first impression. Error codes and `sp_trace_id` are shown when the user asks or an error can't be explained, so users can contact support. `AGENTS.md` now matches.
 - `scripts/fetch-openapi-schema.sh` records where it saved the document, so later shells, which do not inherit `OPENAPI_FILE`, can find it for validation and `openapi-op.sh`. A recorded document is used for up to 6 hours
 
 ### Removed

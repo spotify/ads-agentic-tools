@@ -123,7 +123,7 @@ In skills, agents, documentation, and test scenarios, express standard Ads API v
 
 After execution, check the `HTTP_STATUS:` line first:
 - **2xx**: Request succeeded — parse and display the response body.
-- **4xx/5xx**: Request failed — display the error from the response body. **Never retry a POST or PATCH that returned a non-timeout 4xx** — the request was received and rejected, not lost.
+- **4xx/5xx**: Request failed — explain the error from the response body in plain words, keeping error codes and `sp_trace_id` out of the reply unless the user asks or the error can't be explained. **Never retry a POST or PATCH that returned a non-timeout 4xx** — the request was received and rejected, not lost.
 - **Retry safety**: Only retry on network errors or 5xx responses, and only for idempotent methods (GET). Never automatically retry POST or PATCH — these are non-idempotent and may have already been applied server-side (e.g., a 500 after the entity was created). On POST/PATCH failure, check for the created/modified resource first before suggesting a retry.
 
 ## Ad Account Discovery
