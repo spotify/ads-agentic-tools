@@ -16,6 +16,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" audiences "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 Run `eval $(api --env)` when raw upload curl needs the configured environment. It sets `TOKEN`, `AD_ACCOUNT_ID`, `BASE_URL`, `SDK_HEADER`, and `SKILL_HEADER`; keep `-H "$SDK_HEADER"` and `-H "$SKILL_HEADER"` on those calls so they stay attributable.
 
 ## Operations

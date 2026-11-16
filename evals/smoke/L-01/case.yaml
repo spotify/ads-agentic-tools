@@ -1,0 +1,41 @@
+schema_version: "1.1"
+name: L-01
+description: "Language case L-01. German ad account. Spend and impressions use German number, currency, and date formats."
+tags: [smoke, language, locale, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    How much did Sommerkonzerte spend in September, and how many impressions did it get?
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: spend-german-format
+    type: regex
+    weight: 2
+    pattern: '4\.812,40\s?EUR'
+  - name: impressions-german-format
+    type: regex
+    pattern: '1\.284\.506'
+  - name: no-us-number-format
+    type: regex
+    pattern: '4,812\.40|1,284,506'
+    match: not_contains
+  - name: no-code-first-eur
+    type: regex
+    pattern: 'EUR\s?\d'
+    match: not_contains
+  - name: no-us-date-format
+    type: regex
+    pattern: '\b(Sep|September) \d{1,2}(\s?[-–]\s?\d{1,2})?, 2026|\b09/\d{2}/2026'
+    match: not_contains
+  - name: locale-applied
+    type: llm
+    criteria: |
+      The ad account is in Germany (country DE, currency EUR). The reply should use German formats for numbers, money, and dates, whatever language it's written in.
+      PASS if amounts put the number first with a comma for decimals and a period for thousands ("4.812,40 EUR"), counts use periods for thousands ("1.284.506"), and dates use day-month-year order. German forms ("1. September 2026", "1.–30. September 2026", "01.09.2026") and, in an English reply, UK forms ("1 to 30 September 2026") are both correct.
+      FAIL if any amount or count uses US or UK number formatting, a date uses US month-first order ("September 1-30, 2026"), or money uses the euro symbol.

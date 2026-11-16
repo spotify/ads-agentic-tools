@@ -16,6 +16,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" measurement-debug "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 Measurement paths use `business_id`. Discover it with `GET businesses` when absent.
 
 ## Triage

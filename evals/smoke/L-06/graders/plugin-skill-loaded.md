@@ -1,0 +1,1 @@
+../../../shared-graders/skill-loaded.md

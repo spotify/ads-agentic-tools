@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: L-06
+description: "Language case L-06. Reporting is rate limited. Reply says so with the wait time from the API and invents no metrics."
+tags: [smoke, language, rate_limit, regression]
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  append_system_prompt: "The user is an advertiser who manages campaigns in their Spotify Ads account from this workspace. Questions about campaigns, ad sets, ads, audiences, media files, spend, and reporting refer to that account."
+  env:
+    EVAL_ADS_API_FIXTURES: .git/ads-cache
+  prompt: |
+    What's the CTR on Late Night Jazz?
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: says-too-many-requests
+    type: regex
+    weight: 2
+    pattern: 'too many requests|rate[- ]limit'
+    flags: i
+  - name: gives-wait-time
+    type: regex
+    weight: 2
+    pattern: '\b60[- ]seconds?\b|\b(one|1|a) minute\b'
+    flags: i
+  # Fails a CTR figure, but not a format benchmark the standards allow
+  # ("commonly quoted 0.35%-0.50%").
+  - name: no-invented-ctr
+    type: regex
+    weight: 3
+    pattern: '\bCTR\b(?:(?!commonly|benchmark|typical|usually|range)[^.\n]){0,60}?\d+[.,]?\d*\s?%|\d+[.,]?\d*\s?%\s*CTR\b'
+    flags: i
+    match: not_contains
+  - name: no-raw-error
+    type: regex
+    weight: 2
+    pattern: 'HTTP|status (code )?\d{3}|\b429 (error|response)|ERR-\d+'
+    match: not_contains
+  # api-behaviors.md says not to retry a 429. A retry is the same report request
+  # sent again; two different report requests sent together aren't one.
+  - name: no-retry-after-429
+    type: regex
+    weight: 2
+    pattern: '^(GET__ad_accounts__\{ad_account_id\}__(?:aggregate|insight)_reports\S* .*)$[\s\S]*^\1$'
+    target: { source: file, path: .claude/.api-requests.log }
+    flags: m
+    match: not_contains
+  - name: rate-limit-shape
+    type: llm
+    criteria: |
+      Every reporting request returned "Too many requests. Retry after 60 seconds."
+      PASS if the reply says the CTR couldn't be pulled because of too many requests, tells the user to try again in 60 seconds (the wait the API gave), and stops there or makes at most one offer to try again.
+      FAIL if it gives or estimates a CTR, blames the user, guesses at another cause, gives a different wait than the API's ("a few minutes"), shows a raw error code or HTTP status, or ends with a question.

@@ -20,6 +20,8 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" change-history "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
+Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+
 To retrieve settings values (TOKEN, AD_ACCOUNT_ID, AUTO_EXECUTE, BASE_URL, SDK_HEADER, SKILL_HEADER, PLUGIN_VERSION) for use outside API calls, run `api --env`. The output is eval-safe, so `eval $(api --env)` assigns them all.
 
 ## Endpoint

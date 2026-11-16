@@ -124,9 +124,39 @@ The suite is organized as:
   ../../../shared-graders/date-range.md`), so editing the shared file changes every
   case that uses it. Add one when a second case needs an identical check.
 - `smoke/<ID>/`: the smoke-test cases, one per expected behavior, named by case ID.
+  `L-01` to `L-06` cover the language standards
+  (`skills/api-reference/references/language-standards.md`) in situations the other
+  cases don't reach: a German account's number, currency, and date formats, an API
+  error, a partial success, missing report data, a reply in Spanish, and a rate
+  limit.
+- Every case links the same language checks: `no-em-dash`, `no-ellipsis`,
+  `no-exclamation`, `no-filler-words` ("just", "simply", "successfully"),
+  `no-leaked-enums` (SCREAMING_SNAKE_CASE values and bare statuses like `ACTIVE`),
+  and three AI judges that score the final reply against the standards:
+  `language-checklist-judge` (hard limits, confirmation specifics, endings and
+  offers), `language-numbers-judge` (currency codes, locale number and date formats,
+  date ranges on metrics), and `language-bans-judge` (Section 10 words, punctuation,
+  and technical details). A case that already defines a check with the same name,
+  such as P4-02's `no-exclamation`, keeps its own and doesn't link the shared one.
+  Each judge adds a model call per run. The judges see only the reply, so the numbers
+  judge infers the account's locale from the currency and wording, and the bans judge
+  is the noisiest of the three: check its failures against the reply before trusting
+  them.
 - `safety/`: the safety scenarios from `tests/test-scenarios.md` (18, 19, 24, 30,
   34). Each checks the request log for the action that must not happen before
   confirmation.
+
+## Known failing cases
+
+These cases test behavior the skills don't have yet. They're tagged `known_failing`
+and expected to fail until the skill changes; a pass means the skill was fixed.
+
+| Case | Why it fails |
+|---|---|
+| `L-03` | `skills/bulk/SKILL.md`'s results template shows `PAUSED`, an em dash, and "2/3", so output that follows the skill fails the language checks. |
+| `P1-05` | `skills/clone/SKILL.md` asks what to change before copying; the case expects the copy without a question. |
+| `P1-07` | The skills don't read `auto_execute` before writing, so the rename is sent without asking. |
+| `scenario-19` | With `auto_execute` on, `skills/drafts/SKILL.md` runs draft DELETE without asking; `api-behaviors.md` requires a confirmation. |
 
 Fixture data is invented, and no IDs in it belong to real accounts.
 

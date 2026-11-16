@@ -1,0 +1,1 @@
+../../../shared-graders/language-bans-judge.md

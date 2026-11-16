@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: P5-03
-description: "Smoke case P5-03. Acknowledges, states scope, points to in-scope help. Doesn't attempt."
+description: "Smoke case P5-03. May write the strategy, but says up front it isn't based on Spotify data and keeps any Spotify data labeled separately."
 tags: [smoke, P5, redirect, capability]
 execution:
   max_turns: 30
@@ -15,8 +15,9 @@ graders:
     pattern: '\b(worse|inferior|better than tiktok|tiktok is (bad|worse))\b'
     flags: i
     match: not_contains
-  - name: redirect-not-attempt
+  - name: labels-outside-work
     type: llm
     criteria: |
-      PASS if the final reply says a TikTok strategy is outside what it handles, points to something it can help with on Spotify Ads, and does not write any part of a TikTok strategy.
-      FAIL if it drafts a strategy, outline, or tips for TikTok, or disparages TikTok.
+      Writing the TikTok strategy is allowed (language standards Section 4: don't block requests outside Spotify Ads).
+      PASS if the reply makes clear up front that the plan isn't based on Spotify data and has no Spotify review or approval behind it, and keeps any Spotify data it mentions labeled separately. It may write the strategy and may offer the Spotify Ads part.
+      FAIL if it presents the plan as coming from Spotify or backed by Spotify data, mixes Spotify and outside figures without labels, or disparages TikTok.
