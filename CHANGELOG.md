@@ -11,6 +11,7 @@
 - `tests/test-openapi-tool.sh` with 84 offline assertions. Setting `OPENAPI_TOOL_LIVE_SPEC` also checks that the published spec parses the same as with Ruby's YAML
 
 ### Changed
+- `README.md` and `CONTRIBUTING.md` now match current behavior. The README lists the `drafts` skill, the auto-loaded API reference, and the request-builder agent. It also covers bulk pause and resume as confirmed live changes, which confirmations `auto_execute` does not skip, the `environment` setting, and a new "How requests are made" section on the live OpenAPI download, pre-send checks, `Idempotency-Key`, and attribution headers. Its troubleshooting entries now use the messages the plugin actually prints, and it gives accurate Windows Python Store-stub guidance and a Development section. `CONTRIBUTING.md` now documents the offline regression suites and evals instead of saying there is no automated test suite
 - `scripts/fetch-openapi-schema.sh` records where it saved the document, so later shells, which do not inherit `OPENAPI_FILE`, can find it for validation and `openapi-op.sh`. A recorded document is used for up to 6 hours
 
 ### Removed

@@ -55,7 +55,37 @@ We follow the [GitHub Flow Workflow](https://guides.github.com/introduction/flow
 
 ## Testing
 
-There is no automated test suite. Before submitting a pull request:
+See [`tests/README.md`](tests/README.md) for the full test guide.
+
+### Regression tests
+
+The regression suites run offline, with no credentials, network access, or API
+calls, and exit non-zero on failure. Run the relevant ones after changing
+`hooks/`, `scripts/`, `skills/configure/scripts/`, skill examples, or marketplace
+metadata:
+
+```bash
+bash tests/test-check-token.sh          # hooks/check-token.sh and attribution
+bash tests/test-api-request.sh          # scripts/api-request.sh
+bash tests/test-openapi-fetch.sh        # scripts/fetch-openapi-schema.sh and per-skill preflight
+bash tests/test-openapi-tool.sh         # openapi_tool.py, openapi-op.sh, pre-send validation
+bash tests/test-audience-estimates.sh   # audience estimate examples
+bash tests/test-api-reference-files.sh  # api-reference file layout and links
+bash tests/test-marketplace-metadata.sh # manifests, marketplaces, version alignment
+bash tests/test-pkce-runtime-guard.sh   # no secret-based OAuth paths
+python3 tests/test-oauth-pkce.py        # PKCE OAuth helpers
+```
+
+### Evals
+
+Skill behavior and language are checked with `claude plugin eval`, using
+recorded API responses instead of the live API. See
+[`evals/README.md`](evals/README.md) for how to run them, including the Docker
+runner.
+
+### Manual checks
+
+Before submitting a pull request:
 
 - Verify your changes work against the Spotify Ads API on at least one supported platform (Codex, Claude Code, or Antigravity CLI)
 - Confirm that existing skills (`/spotify-ads-api:campaigns`, `/spotify-ads-api:ads`, etc.) still function correctly
@@ -64,9 +94,10 @@ There is no automated test suite. Before submitting a pull request:
 
 ## Style
 
-- All source files are markdown (`.md`). Follow the structure and conventions of existing files.
+- Most source files are markdown (`.md`); helper scripts are bash and standard-library Python with no third-party dependencies. Follow the structure and conventions of existing files.
 - Skills live in `skills/<skill-name>/SKILL.md`.
-- Keep curl commands consistent with the execution pattern described in `AGENTS.md`.
+- Express Ads API requests with the shared `api()` helper, as described in the execution pattern in `AGENTS.md`, rather than raw `curl`.
+- Add an entry under `[Unreleased]` in `CHANGELOG.md` for user-visible changes.
 
 ## Issues
 
