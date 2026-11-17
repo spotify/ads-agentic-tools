@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.10.0] - 2026-11-17
 
 ### Added
 - Spotify Ads language standards in `skills/api-reference/references/language-standards.md`: hard limits, how to word a confirmation, when to act or ask a clarifying question, scope and voice, terms, enum display names, money, number, and date formats by locale, benchmarks, output patterns for success, errors, rejections, and empty states, banned words and punctuation, length limits, and non-English output. Every skill and the request-builder agent now read it before sending any output to a user.
@@ -8,16 +8,16 @@
 - `scripts/api-request.sh` now checks every request against the workflow's OpenAPI document before sending it. The check covers query parameters and the JSON body at every depth. Missing or null required fields, missing required query parameters, bodies, and `oneOf` discriminators, wrong types, length, range, and item-count bounds, read-only fields, and invalid JSON block the request. It exits with status 3, prints `ERROR: Request not sent.` with one line per problem, and never reaches the API. Fields, query parameters, and enum or discriminator values the spec does not define only warn. The request is sent and `WARNING: Sent anyway` lists each one, with a "did you mean" suggestion where one fits. A local block could reject a request the user explicitly asked for, so these are reported rather than blocked. The check fails open, sending as before, when no document has been fetched, Python is missing, or the operation is not in the public spec, which prints a warning.
 - `scripts/openapi-op.sh describe <METHOD> <path>` prints a compact view of one operation, with `$ref`s resolved, `allOf` merged, `oneOf` branches labelled, required fields marked, read-only fields hidden, and the spec's common-mistake hints shown inline. `openapi-op.sh search <words>` ranks operations by relevance. `live-openapi.md` now tells agents to use it instead of reading the 400 KB YAML
 - `scripts/openapi_tool.py`, a standard-library-only OpenAPI loader, describer, searcher, and validator. It needs no new dependencies
-- `tests/test-openapi-tool.sh` with 84 offline assertions. Setting `OPENAPI_TOOL_LIVE_SPEC` also checks that the published spec parses the same as with Ruby's YAML
+- `tests/test-openapi-tool.sh` with offline assertions for the loader, describer, searcher, and pre-send validation (151 as of this release). Setting `OPENAPI_TOOL_LIVE_SPEC` also checks that the published spec parses the same as with Ruby's YAML
+- An eval suite in `evals/`, run with `claude plugin eval`: smoke cases for lookups and easy edits, resolving from context and safe guesses, confirmations, refusals, and enum display names; safety scenarios for draft publish and delete, bulk budget changes, member removal, and denied direct writes; language cases checked against the language standards; shared graders; and `evals/run-in-docker.sh`, a Linux container runner for cases that need Bash. No case calls the Ads API or needs Ads API credentials
+- Replay and record modes in `scripts/api-request.sh` for evals. When `EVAL_ADS_API_FIXTURES` is set, the wrapper answers from fixture files keyed by method and normalized path instead of calling the API, and logs each request so graders can check what was sent; `fetch-openapi-schema.sh` serves a saved schema snapshot. `EVAL_ADS_API_RECORD` saves real responses as fixtures and refuses anything but GET unless writes are explicitly allowed. Neither mode affects normal requests
+- `tests/test-audience-estimates.sh`, which checks that every audience estimate example in skills and agents includes `bid_micro_amount`, including for `AUTOBID`. `tests/test-openapi-tool.sh` also checks that `api-request.sh` blocks an estimate with a missing or null bid before sending it
+- `tests/test-api-reference-files.sh`, which checks that the removed static API reference copies stay removed and that reference links resolve
 
 ### Changed
 - `README.md` and `CONTRIBUTING.md` now match current behavior. The README lists the `drafts` skill, the auto-loaded API reference, and the request-builder agent. It also covers bulk pause and resume as confirmed live changes, which confirmations `auto_execute` does not skip, the `environment` setting, and a new "How requests are made" section on the live OpenAPI download, pre-send checks, `Idempotency-Key`, and attribution headers. Its troubleshooting entries now use the messages the plugin actually prints, and it gives accurate Windows Python Store-stub guidance and a Development section. `CONTRIBUTING.md` now documents the offline regression suites and evals instead of saying there is no automated test suite
 - `scripts/fetch-openapi-schema.sh` records where it saved the document, so later shells, which do not inherit `OPENAPI_FILE`, can find it for validation and `openapi-op.sh`. A recorded document is used for up to 6 hours
-
-### Removed
-- Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`
-
-### Changed
+- Synced version `1.10.0` across the Claude Code, Codex, and Antigravity manifests
 - Runtime behavior the spec cannot express now lives in `skills/api-reference/references/api-behaviors.md`. It covers micro-amounts, the Reserved Pricing and Forecasting flow, estimates, geo lookup, reporting quirks, draft VALIDATE/PUBLISH semantics, live entity lifecycle, and error handling and retry safety. `build-campaign`, `ads`, `drafts`, `campaign-strategy`, its planning framework, the request-builder agent, `api-reference`, and `AGENTS.md` now point to it
 - Audience estimates no longer rely on a static note saying `bid_micro_amount` is required. The general rule applies instead: include every field the live spec marks as required, and the AUTOBID no-bid exception applies only to ad set payloads
 - `media-plan-to-draft` now reads and follows `live-openapi.md` before its first Ads API v3 call, matching the other skills
@@ -37,6 +37,11 @@
 - `scripts/api-request.sh` now replaces `{ad_account_id}` in the request body as well as the path. Agents that wrote the placeholder into an estimate body sent it literally and got a 400
 - `drafts` now runs an audience estimate for each draft ad set before creating it, using the same rules as `build-campaign`
 - `live-openapi.md` and `AGENTS.md` now state general rules: every request payload must include every field the live spec marks as required, including nested and array-item fields, for every endpoint; only fields the spec defines may be sent; and docs must not name fields the public spec does not define
+- The token-refresh hook now refreshes expired tokens for calls made through the skills' `api()` wrapper. Those commands name neither the API host nor `$BASE_URL`, so the hook did not recognize them and let them run with an expired token. When a refresh fails, the hook's message now includes the refresh helper's last diagnostic line (never a token value)
+- `report` now lists the only reporting endpoints that exist and tells agents not to invent others. It keeps `metrics`, `dimensions`, and `campaign_ids` out of GET report query strings, requires `report_end` as well as `report_start` for DAY granularity, and takes `statuses` and `insight_dimension` values from the live spec enums instead of hard-coded lists. It also checks that date variables are set before building an async report body, since an unset variable produced `"T00:00:00Z"` and a 400. `ads` and `build-campaign` gained estimate payload checks covering required fields and `budget.currency`
+
+### Removed
+- Static API reference files `skills/api-reference/references/endpoints.md`, `schemas.md`, and `enums.md`. They duplicated the live OpenAPI document and drifted from it. Field lists, types, required flags, and enum values now come only from the live spec via `live-openapi.md`
 
 ## [1.9.0] - 2026-10-01
 
