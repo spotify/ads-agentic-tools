@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- GitHub Copilot CLI support. `.plugin/plugin.json` is the Copilot manifest, which Copilot reads before the root Antigravity `plugin.json`, and `.plugin/hooks.json` runs the token-refresh and attribution hook. Install with `copilot plugin marketplace add spotify/ads-agentic-tools`, which reads the existing `.claude-plugin/marketplace.json`
+- Cursor support (IDE and `agent` CLI) through `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`, and a Cursor-native `.cursor-plugin/hooks.json`. The configure skill offers to allow the Spotify hosts in `.cursor/sandbox.json`, because Cursor's agent sandbox blocks network access by default
+- `scripts/lib/platform.sh`, the platform detection now shared by `scripts/api-request.sh` and `hooks/check-token.sh`. It recognizes Cursor and Copilot, which share the `.agents/` settings file, and reports them as `cursor-plugin` and `copilot-cli-plugin` in `X-Spotify-Ads-Sdk`
+
+### Changed
+- On Copilot and Cursor, hook messages (token refreshed, attribution nudges) go in `hookSpecificOutput.additionalContext`, because neither platform shows `systemMessage` to the agent. A message-only reply carries no `permissionDecision`, so it never skips the user's approval prompt
+- Every skill and the request-builder agent now say what to use when no plugin-root variable is set (Antigravity, Copilot, and Cursor), and `tests/test-api-reference-files.sh` checks for it
+
+### Fixed
+- Hand-written `curl` calls on Codex got `X-Spotify-Ads-Sdk: antigravity-cli-plugin` from the hook, and their settings lookup started from `.agents/`. Codex hook processes carry no Codex variable, and the wrapper that supplies the header could not see the payload the hook detects Codex from. The hook now passes its platform to the wrapper
+
 ## [1.10.0] - 2026-11-17
 
 ### Added

@@ -140,10 +140,12 @@ infer_skill() {
 
 # Ask the request wrapper for the SDK header so the injected value cannot drift
 # from what skills send. This needs a settings file; without one the API call
-# would fail regardless, so skipping injection there costs nothing.
+# would fail regardless, so skipping injection there costs nothing. The
+# platform is passed through because the wrapper cannot see the hook payload,
+# and a Codex hook process has no environment marker of its own.
 sdk_header_value() {
-  local env_out
-  env_out=$("$PLUGIN_ROOT/scripts/api-request.sh" --env 2>/dev/null) || return 1
+  local platform="$1" env_out
+  env_out=$(SPOTIFY_ADS_PLATFORM="$platform" "$PLUGIN_ROOT/scripts/api-request.sh" --env 2>/dev/null) || return 1
   printf '%s' "$env_out" | sed -n "s/^SDK_HEADER='\(.*\)'\$/\1/p"
 }
 
@@ -155,7 +157,7 @@ apply_attribution() {
   ATTRIBUTION_NOTE=""
 
   if ! has_sdk_attribution "$original"; then
-    sdk_value=$(sdk_header_value) || sdk_value=""
+    sdk_value=$(sdk_header_value "$platform") || sdk_value=""
     if [ -n "$sdk_value" ]; then
       inject_args="-H '$sdk_value'"
     fi

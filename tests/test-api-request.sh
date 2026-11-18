@@ -9,7 +9,7 @@ set -uo pipefail
 
 # Host markers leak in when tests run inside an agent shell; start from none so
 # each case sets exactly the platform it means to test.
-unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID
+unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID CURSOR_AGENT COPILOT_CLI CURSOR_PROJECT_DIR COPILOT_PROJECT_DIR
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
@@ -242,6 +242,8 @@ echo "=== platform detection from shell markers ==="
 
 # Claude Code sets CLAUDE_PROJECT_DIR only for hooks; its Bash tool shell has
 # CLAUDECODE=1. Codex exports CODEX_THREAD_ID and never CODEX_PROJECT_DIR.
+# Cursor's shell has CURSOR_AGENT=1 and Copilot's has COPILOT_CLI=1. Their hooks
+# (which call --env for the SDK header) also set CLAUDE_PROJECT_DIR as an alias.
 DETECT="$TMPDIR/detect"
 for dir in .agents .claude .codex; do
   mkdir -p "$DETECT/$dir"
@@ -250,6 +252,7 @@ for dir in .agents .claude .codex; do
 done
 detect_env() {
   (cd "$DETECT" && env -u CODEX_PROJECT_DIR -u CLAUDE_PROJECT_DIR -u CLAUDE_PLUGIN_ROOT -u CODEX_PLUGIN_ROOT \
+    -u CURSOR_PROJECT_DIR -u COPILOT_PROJECT_DIR \
     -u EVAL_ADS_API_FIXTURES -u EVAL_ADS_API_LOG \
     "$@" bash "$API" campaigns --env)
 }
@@ -265,6 +268,14 @@ check_platform "CODEX_THREAD_ID" codex-plugin TOKEN.codex CODEX_THREAD_ID=thread
 check_platform "CODEX_SESSION_ID" codex-plugin TOKEN.codex CODEX_SESSION_ID=session-1
 check_platform "CLAUDE_PROJECT_DIR with inherited CODEX_THREAD_ID" claude-code-plugin TOKEN.claude \
   CLAUDE_PROJECT_DIR="$DETECT" CODEX_THREAD_ID=thread-1
+check_platform "CURSOR_AGENT=1" cursor-plugin TOKEN.agents CURSOR_AGENT=1
+check_platform "COPILOT_CLI=1" copilot-cli-plugin TOKEN.agents COPILOT_CLI=1
+check_platform "Cursor hook env with CLAUDE_PROJECT_DIR alias" cursor-plugin TOKEN.agents \
+  CURSOR_PROJECT_DIR="$DETECT" CLAUDE_PROJECT_DIR="$DETECT"
+check_platform "Copilot hook env with CLAUDE_PROJECT_DIR alias" copilot-cli-plugin TOKEN.agents \
+  COPILOT_PROJECT_DIR="$DETECT" CLAUDE_PROJECT_DIR="$DETECT" COPILOT_CLI=1
+check_platform "CLAUDECODE=1 with inherited CURSOR_AGENT" claude-code-plugin TOKEN.claude \
+  CLAUDECODE=1 CURSOR_AGENT=1
 check_platform "No marker" antigravity-cli-plugin TOKEN.agents FOO=bar
 
 echo

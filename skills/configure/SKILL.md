@@ -29,7 +29,7 @@ Never substitute a plugin-global client ID; this plugin does not provide one.
 1. Choose the active settings file:
    - Codex: `.codex/spotify-ads-api.local.md`
    - Claude: `.claude/spotify-ads-api.local.md`
-   - Antigravity: `.agents/spotify-ads-api.local.md`
+   - Antigravity, Copilot, and Cursor: `.agents/spotify-ads-api.local.md`
 
    Read that file if it exists. If it does not, read another platform's settings
    file as defaults, but do not overwrite the other platform's file.
@@ -42,9 +42,22 @@ Never substitute a plugin-global client ID; this plugin does not provide one.
 3. Prompt for `auto_execute` (default `false`). Remind the user that the exact
    loopback redirect URI above must already be registered, then run the helper.
    Pass the active settings path so tokens are written directly to a securely
-   created file and never enter captured stdout. On Antigravity, resolve
-   `PLUGIN_ROOT` to the plugin root (two directories above this skill) because
-   no plugin-root variable is set.
+   created file and never enter captured stdout. On Antigravity, Copilot, and
+   Cursor, resolve `PLUGIN_ROOT` to the plugin root (two directories above this
+   skill) because no plugin-root variable is set.
+
+   On Cursor, the agent sandbox blocks network access by default. Before running
+   the helper, check for `.cursor/sandbox.json` in the workspace. If it does not
+   allow the Spotify hosts, ask the user whether to add them, then merge this
+   into the file without removing existing entries:
+
+```json
+{
+  "networkPolicy": {
+    "allow": ["accounts.spotify.com", "api-partner.spotify.com", "developer.spotify.com"]
+  }
+}
+```
 
 ```bash
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-$PWD}}"
@@ -111,6 +124,8 @@ file after telling the user; it contains live OAuth tokens.
 PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" configure "$@"; }
 ```
+
+On Antigravity, Copilot, and Cursor no plugin-root variable is set: replace the `.` fallback with the absolute path of the plugin root, two directories above this `SKILL.md`.
 
 Before the first Ads API v3 call, read and follow
 `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.

@@ -5,7 +5,7 @@ Use this directory for two related jobs:
 - [`prompt-catalog.md`](prompt-catalog.md) gives users and internal testers a representative prompt for every plugin capability.
 - [`test-scenarios.md`](test-scenarios.md) defines the deeper behavioral checks for API routing, safety, schemas, and multi-step execution.
 - [`test-openapi-fetch.sh`](test-openapi-fetch.sh) verifies public OpenAPI retrieval, failure handling, and preflight coverage across every API-calling skill.
-- [`test-marketplace-metadata.sh`](test-marketplace-metadata.sh) keeps the distinct Codex and Claude marketplace source formats valid and intentional.
+- [`test-marketplace-metadata.sh`](test-marketplace-metadata.sh) keeps the distinct Codex, Claude, and Cursor marketplace source formats valid and intentional, and checks that the Copilot and Cursor manifests point at their own hooks files.
 
 The prompt catalog is the quickest smoke-test surface. The scenarios are the source of truth when validating a release.
 
@@ -27,7 +27,7 @@ Run the relevant suites after changing scripts or marketplace metadata. They exi
 1. A Spotify Developer app with Ads API access
 2. A Spotify Ads business and ad account suitable for testing
 3. Python 3.8+ or `uv` for the secure OAuth and direct-token configuration helpers
-4. Codex, Claude Code, or Antigravity with this source checkout installed
+4. Codex, Claude Code, Copilot CLI, Cursor, or Antigravity with this source checkout installed
 5. Test creative files and a synthetic customer-list CSV when exercising uploads
 
 Never use real customer data in plugin tests. Prefix test campaign, ad set, and ad names with `[Test reject]` so test ads are rejected by review and cannot serve.
