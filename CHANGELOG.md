@@ -8,7 +8,7 @@
 - `scripts/lib/platform.sh`, the platform detection now shared by `scripts/api-request.sh` and `hooks/check-token.sh`. It recognizes Cursor and Copilot, which share the `.agents/` settings file, and reports them as `cursor-plugin` and `copilot-cli-plugin` in `X-Spotify-Ads-Sdk`
 
 ### Changed
-- On Copilot and Cursor, hook messages (token refreshed, attribution nudges) go in `hookSpecificOutput.additionalContext`, because neither platform shows `systemMessage` to the agent. A message-only reply carries no `permissionDecision`, so it never skips the user's approval prompt
+- On Copilot and Cursor, hook messages (token refreshed, attribution nudges) go in `hookSpecificOutput.additionalContext`, because neither platform shows `systemMessage` to the agent. Hook replies there never carry `permissionDecision`, because Copilot treats `allow` as the user's approval and would skip the approval prompt for every rewritten call
 - Every skill and the request-builder agent now say what to use when no plugin-root variable is set (Antigravity, Copilot, and Cursor), and `tests/test-api-reference-files.sh` checks for it
 
 ### Fixed

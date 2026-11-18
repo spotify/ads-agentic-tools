@@ -9,7 +9,7 @@ set -uo pipefail
 
 # Host markers leak in when tests run inside an agent shell; start from none so
 # each case sets exactly the platform it means to test.
-unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID CURSOR_AGENT COPILOT_CLI CURSOR_PROJECT_DIR COPILOT_PROJECT_DIR
+unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID CURSOR_AGENT COPILOT_CLI CURSOR_PROJECT_DIR COPILOT_PROJECT_DIR SPOTIFY_ADS_PLATFORM
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"

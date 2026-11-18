@@ -6,7 +6,7 @@ set -uo pipefail
 
 # Host markers leak in when tests run inside an agent shell; start from none so
 # each case sets exactly the platform it means to test.
-unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID CURSOR_AGENT COPILOT_CLI CURSOR_PROJECT_DIR COPILOT_PROJECT_DIR
+unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID CURSOR_AGENT COPILOT_CLI CURSOR_PROJECT_DIR COPILOT_PROJECT_DIR SPOTIFY_ADS_PLATFORM
 
 PASS=0
 FAIL=0
@@ -637,7 +637,14 @@ if command -v jq &>/dev/null; then
     esac
     assert_contains "raw curl gets the $product SDK header ($case_name)" "X-Spotify-Ads-Sdk: $product/" \
       "$(echo "$output" | jq -r '.hookSpecificOutput.updatedInput.command')"
-    assert_eq "raw curl rewrite is allowed ($case_name)" "allow" "$(echo "$output" | jq -r '.hookSpecificOutput.permissionDecision')"
+    # Copilot treats "allow" as the user's approval, so only Claude and Codex
+    # get one; Copilot and Cursor apply the rewrite without it.
+    case "$case_name" in
+      codex_*) expected_decision=allow ;;
+      *) expected_decision=null ;;
+    esac
+    assert_eq "raw curl rewrite decision ($case_name)" "$expected_decision" \
+      "$(echo "$output" | jq -r '.hookSpecificOutput.permissionDecision')"
   done
   assert_contains "Copilot attribution note reaches the agent" "X-Spotify-Ads-Skill" \
     "$(echo "$output" | jq -r '.hookSpecificOutput.additionalContext')"

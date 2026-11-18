@@ -307,11 +307,12 @@ if [ -f "$ATTRIBUTION_LIB" ]; then
 fi
 
 # --- Emit output ---
-# Claude/Codex/Copilot/Cursor: permissionDecision + updatedInput to rewrite the
-#   command. Copilot and Cursor never show systemMessage to the agent, so there
-#   the message also goes in additionalContext, which reaches it on both.
-#   A message-only reply omits permissionDecision so it never skips the
-#   user's approval prompt.
+# Claude/Codex: permissionDecision + updatedInput to rewrite the command.
+# Copilot/Cursor: updatedInput alone. Both apply it without a decision, and
+#   Copilot treats "allow" as the user's approval, so sending it would skip the
+#   approval prompt for every rewritten call. Neither shows systemMessage to the
+#   agent, so the message also goes in additionalContext, which reaches it on
+#   both.
 # Antigravity: decision + reason (no command rewriting support).
 
 json_escape() {
@@ -319,8 +320,9 @@ json_escape() {
 }
 
 agent_context=""
+approve_rewrite=true
 case "$PLATFORM" in
-  cursor|copilot) agent_context="$system_message" ;;
+  cursor|copilot) agent_context="$system_message"; approve_rewrite=false ;;
 esac
 
 if [ "$PLATFORM" = "antigravity" ]; then
@@ -341,10 +343,14 @@ else
   if [ "$rewrite" = true ] || [ -n "$system_message" ]; then
     if [ "$HAS_JQ" = true ]; then
       jq -n --arg cmd "$modified_command" --arg msg "$system_message" \
-        --arg ctx "$agent_context" --argjson rewrite "$rewrite" '
+        --arg ctx "$agent_context" --argjson rewrite "$rewrite" \
+        --argjson approve "$approve_rewrite" '
         {}
-        | if $rewrite then .hookSpecificOutput = {
+        | if $rewrite and $approve then .hookSpecificOutput = {
             "permissionDecision": "allow",
+            "updatedInput": {"command": $cmd}
+          } elif $rewrite then .hookSpecificOutput = {
+            "hookEventName": "PreToolUse",
             "updatedInput": {"command": $cmd}
           } else . end
         | if $ctx != "" then
@@ -355,11 +361,17 @@ else
       ' 2>/dev/null
     else
       specific=""
-      if [ "$rewrite" = true ]; then
+      if [ "$rewrite" = true ] && [ "$approve_rewrite" = true ]; then
         specific="\"permissionDecision\":\"allow\",\"updatedInput\":{\"command\":\"$(json_escape "$modified_command")\"}"
+      elif [ "$rewrite" = true ]; then
+        specific="\"hookEventName\":\"PreToolUse\",\"updatedInput\":{\"command\":\"$(json_escape "$modified_command")\"}"
       fi
       if [ -n "$agent_context" ]; then
-        specific="${specific:+$specific,}\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"$(json_escape "$agent_context")\""
+        case "$specific" in
+          *hookEventName*) ;;
+          *) specific="${specific:+$specific,}\"hookEventName\":\"PreToolUse\"" ;;
+        esac
+        specific="$specific,\"additionalContext\":\"$(json_escape "$agent_context")\""
       fi
       fields=""
       [ -n "$specific" ] && fields="\"hookSpecificOutput\":{$specific}"
