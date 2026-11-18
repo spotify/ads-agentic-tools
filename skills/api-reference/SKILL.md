@@ -32,6 +32,8 @@ PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
 api() { "$PLUGIN_ROOT/scripts/api-request.sh" <skill-name> "$@"; }
 ```
 
+On Antigravity, Copilot, and Cursor no plugin-root variable is set: replace the `.` fallback with the absolute path of the plugin root, two directories above this `SKILL.md`.
+
 To set up authentication, run the configure skill (`/spotify-ads-api:configure` on Claude/Codex, `/configure` on Antigravity), which supports OAuth 2.0 with automatic token refresh, manual OAuth, or direct token input.
 
 ## Current API Contract

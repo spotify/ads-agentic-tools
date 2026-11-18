@@ -1,7 +1,7 @@
 #!/bin/bash
 set -uo pipefail
 
-# Spotify Ads API pre-tool hook (PreToolUse on Claude/Codex/Antigravity)
+# Spotify Ads API pre-tool hook (PreToolUse on Claude/Codex/Copilot/Cursor/Antigravity)
 #
 # Two jobs, both before any command that targets the Spotify Ads API:
 #   1. Auto-refresh expired OAuth tokens.
@@ -11,6 +11,8 @@ set -uo pipefail
 #
 # Claude/Codex payload: .tool_input.command; supports command rewriting, and
 #   carries .transcript_path (nullable on Codex).
+# Copilot and Cursor payloads: also .tool_input.command, and both accept the
+#   Claude rewrite. Neither sends a transcript path to this hook.
 # Antigravity payload: .toolCall.args.CommandLine; decision allow/deny only (no
 #   rewrite), so attribution there is a nudge rather than an injection.
 
@@ -47,51 +49,37 @@ json_extract_string() {
   printf '%s' "$1" | sed -n 's/.*"'"$2"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1
 }
 
-# --- Platform detection ---
+# --- Platform detection (shared with scripts/api-request.sh) ---
 # Codex passes no CODEX_* variable to hook processes (only CLAUDE_PLUGIN_ROOT and
 # CLAUDE_PLUGIN_DATA, so those do not identify Claude). Its PreToolUse payload has
 # a top-level turn_id, which Claude's does not, so that identifies a Codex hook.
 # Detecting it here rather than in .codex-plugin/hooks.json matters: Codex pins
 # each plugin hook command by hash and skips it once the command changes.
-# Otherwise this mirrors scripts/api-request.sh. Explicit *_PROJECT_DIR vars win
-# over the shell markers below, which a nested agent can inherit from its parent.
-# Claude Code sets CLAUDE_PROJECT_DIR only for hooks; its Bash tool shell has
-# CLAUDECODE=1 instead. Codex exports CODEX_THREAD_ID (or CODEX_SESSION_ID) to
-# every shell command and never CODEX_PROJECT_DIR, which is kept for overrides.
-# Antigravity sets no known marker, so it is the default.
-payload_has_turn_id() {
+# Cursor's payload has a top-level cursor_version, backing up CURSOR_PROJECT_DIR.
+payload_has_key() {
   if [ "$HAS_JQ" = true ]; then
-    printf '%s' "$input" | jq -e 'type == "object" and has("turn_id")' >/dev/null 2>&1
+    printf '%s' "$input" | jq -e --arg k "$1" 'type == "object" and has($k)' >/dev/null 2>&1
   else
-    # A "turn_id" inside a string value is escaped as \"turn_id\", so skip those.
-    printf '%s' "$input" | grep -q '[^\\]"turn_id"[[:space:]]*:'
+    # A key inside a string value is escaped as \"key\", so skip those.
+    printf '%s' "$input" | grep -q '[^\\]"'"$1"'"[[:space:]]*:'
   fi
 }
 
-if [ -n "${CODEX_PROJECT_DIR:-}" ] || payload_has_turn_id; then
-  PLATFORM="codex"
-elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
-  PLATFORM="claude"
-elif [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SESSION_ID:-}" ]; then
-  PLATFORM="codex"
-elif [ "${CLAUDECODE:-}" = "1" ]; then
-  PLATFORM="claude"
-else
-  PLATFORM="antigravity"
+platform_hint=""
+if payload_has_key turn_id; then
+  platform_hint="codex"
+elif payload_has_key cursor_version; then
+  platform_hint="cursor"
 fi
 
-PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
+# shellcheck source=../scripts/lib/platform.sh
+. "$SCRIPT_DIR/../scripts/lib/platform.sh"
+detect_platform "$platform_hint"
 
 find_settings_file() {
-  local order dir candidate
+  local dir candidate
 
-  case "$PLATFORM" in
-    antigravity) order=".agents .claude .codex" ;;
-    claude) order=".claude .codex .agents" ;;
-    *)      order=".codex .claude .agents" ;;
-  esac
-
-  for dir in $order; do
+  for dir in $(settings_dirs); do
     candidate="$PROJECT_DIR/$dir/spotify-ads-api.local.md"
     if [ -f "$candidate" ]; then
       printf '%s\n' "$candidate"
@@ -320,11 +308,22 @@ fi
 
 # --- Emit output ---
 # Claude/Codex: permissionDecision + updatedInput to rewrite the command.
+# Copilot/Cursor: updatedInput alone. Both apply it without a decision, and
+#   Copilot treats "allow" as the user's approval, so sending it would skip the
+#   approval prompt for every rewritten call. Neither shows systemMessage to the
+#   agent, so the message also goes in additionalContext, which reaches it on
+#   both.
 # Antigravity: decision + reason (no command rewriting support).
 
 json_escape() {
   printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' | tr -d '\n'
 }
+
+agent_context=""
+approve_rewrite=true
+case "$PLATFORM" in
+  cursor|copilot) agent_context="$system_message"; approve_rewrite=false ;;
+esac
 
 if [ "$PLATFORM" = "antigravity" ]; then
   if [ -n "$system_message" ]; then
@@ -338,38 +337,48 @@ if [ "$PLATFORM" = "antigravity" ]; then
     fi
   fi
 else
-  if [[ "$modified_command" != "$command" ]]; then
-    if [ -n "$system_message" ]; then
-      if [ "$HAS_JQ" = true ]; then
-        jq -n --arg cmd "$modified_command" --arg msg "$system_message" '{
-          "hookSpecificOutput": {
-            "permissionDecision": "allow",
-            "updatedInput": {"command": $cmd}
-          },
-          "systemMessage": $msg
-        }' 2>/dev/null
-      else
-        printf '{"hookSpecificOutput":{"permissionDecision":"allow","updatedInput":{"command":"%s"}},"systemMessage":"%s"}\n' \
-          "$(json_escape "$modified_command")" "$(json_escape "$system_message")"
-      fi
-    else
-      if [ "$HAS_JQ" = true ]; then
-        jq -n --arg cmd "$modified_command" '{
-          "hookSpecificOutput": {
-            "permissionDecision": "allow",
-            "updatedInput": {"command": $cmd}
-          }
-        }' 2>/dev/null
-      else
-        printf '{"hookSpecificOutput":{"permissionDecision":"allow","updatedInput":{"command":"%s"}}}\n' \
-          "$(json_escape "$modified_command")"
-      fi
-    fi
-  elif [ -n "$system_message" ]; then
+  rewrite=false
+  [[ "$modified_command" != "$command" ]] && rewrite=true
+
+  if [ "$rewrite" = true ] || [ -n "$system_message" ]; then
     if [ "$HAS_JQ" = true ]; then
-      jq -n --arg msg "$system_message" '{"systemMessage": $msg}' 2>/dev/null
+      jq -n --arg cmd "$modified_command" --arg msg "$system_message" \
+        --arg ctx "$agent_context" --argjson rewrite "$rewrite" \
+        --argjson approve "$approve_rewrite" '
+        {}
+        | if $rewrite and $approve then .hookSpecificOutput = {
+            "permissionDecision": "allow",
+            "updatedInput": {"command": $cmd}
+          } elif $rewrite then .hookSpecificOutput = {
+            "hookEventName": "PreToolUse",
+            "updatedInput": {"command": $cmd}
+          } else . end
+        | if $ctx != "" then
+            .hookSpecificOutput.hookEventName = "PreToolUse"
+            | .hookSpecificOutput.additionalContext = $ctx
+          else . end
+        | if $msg != "" then .systemMessage = $msg else . end
+      ' 2>/dev/null
     else
-      printf '{"systemMessage":"%s"}\n' "$(json_escape "$system_message")"
+      specific=""
+      if [ "$rewrite" = true ] && [ "$approve_rewrite" = true ]; then
+        specific="\"permissionDecision\":\"allow\",\"updatedInput\":{\"command\":\"$(json_escape "$modified_command")\"}"
+      elif [ "$rewrite" = true ]; then
+        specific="\"hookEventName\":\"PreToolUse\",\"updatedInput\":{\"command\":\"$(json_escape "$modified_command")\"}"
+      fi
+      if [ -n "$agent_context" ]; then
+        case "$specific" in
+          *hookEventName*) ;;
+          *) specific="${specific:+$specific,}\"hookEventName\":\"PreToolUse\"" ;;
+        esac
+        specific="$specific,\"additionalContext\":\"$(json_escape "$agent_context")\""
+      fi
+      fields=""
+      [ -n "$specific" ] && fields="\"hookSpecificOutput\":{$specific}"
+      if [ -n "$system_message" ]; then
+        fields="${fields:+$fields,}\"systemMessage\":\"$(json_escape "$system_message")\""
+      fi
+      printf '{%s}\n' "$fields"
     fi
   fi
 fi

@@ -56,6 +56,9 @@ If budget, dates, or market are missing, make a conservative recommendation and 
      PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-.}}"
      api() { "$PLUGIN_ROOT/scripts/api-request.sh" campaign-strategy "$@"; }
      ```
+
+     On Antigravity, Copilot, and Cursor no plugin-root variable is set: replace the `.` fallback with the absolute path of the plugin root, two directories above this `SKILL.md`.
+
    - Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
    - Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (Reserved pricing, estimates, geo lookup, micro-amounts).
    - Use `api GET`, `api POST`, etc. for all API calls. The wrapper handles authentication, SDK/skill headers, and status code capture.

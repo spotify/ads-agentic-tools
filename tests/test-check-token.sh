@@ -6,7 +6,7 @@ set -uo pipefail
 
 # Host markers leak in when tests run inside an agent shell; start from none so
 # each case sets exactly the platform it means to test.
-unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID
+unset CLAUDECODE CODEX_THREAD_ID CODEX_SESSION_ID CURSOR_AGENT COPILOT_CLI CURSOR_PROJECT_DIR COPILOT_PROJECT_DIR SPOTIFY_ADS_PLATFORM
 
 PASS=0
 FAIL=0
@@ -168,17 +168,15 @@ assert_eq "ISO 8601 timestamp" "2026-08-07T12:00:00Z" "$(get_setting token_expir
 echo ""
 echo "=== find_settings_file ==="
 
+# Sourced rather than copied, so this exercises the order the scripts use.
+# shellcheck source=../scripts/lib/platform.sh
+. "$PWD/scripts/lib/platform.sh"
+
 find_settings_file() {
-  local platform="$1" project_dir="$2"
-  local order dir candidate
+  local PLATFORM="$1" project_dir="$2"
+  local dir candidate
 
-  case "$platform" in
-    antigravity) order=".agents .claude .codex" ;;
-    claude) order=".claude .codex .agents" ;;
-    *)      order=".codex .claude .agents" ;;
-  esac
-
-  for dir in $order; do
+  for dir in $(settings_dirs); do
     candidate="$project_dir/$dir/spotify-ads-api.local.md"
     if [ -f "$candidate" ]; then
       printf '%s\n' "$candidate"
@@ -207,6 +205,8 @@ touch "$proj/.agents/spotify-ads-api.local.md"
 touch "$proj/.claude/spotify-ads-api.local.md"
 result=$(find_settings_file "antigravity" "$proj")
 assert_eq "antigravity prefers .agents/" "$proj/.agents/spotify-ads-api.local.md" "$result"
+assert_eq "cursor prefers .agents/" "$proj/.agents/spotify-ads-api.local.md" "$(find_settings_file cursor "$proj")"
+assert_eq "copilot prefers .agents/" "$proj/.agents/spotify-ads-api.local.md" "$(find_settings_file copilot "$proj")"
 
 proj="$TMPDIR/proj_fallback"
 mkdir -p "$proj/.codex"
@@ -533,15 +533,22 @@ if command -v jq &>/dev/null; then
     if [ "$platform_var" = codex_payload ]; then
       payload=$(jq -n --arg c "$API_CMD" '{turn_id:"turn-1",hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')
     fi
+    if [ "$platform_var" = cursor_payload ]; then
+      payload=$(jq -n --arg c "$API_CMD" '{cursor_version:"1",hook_event_name:"preToolUse",tool_name:"Shell",tool_input:{command:$c}}')
+    fi
+    # Cursor and Copilot hooks also set CLAUDE_PROJECT_DIR, which must not win.
     case "$platform_var" in
       antigravity) marker= ;;
       CLAUDECODE) marker=CLAUDECODE=1 ;;
       CODEX_THREAD_ID) marker=CODEX_THREAD_ID=thread-1 ;;
       codex_payload) marker=CLAUDE_PLUGIN_ROOT="$FAKE_PLUGIN" ;;
+      cursor_payload) marker="CLAUDE_PROJECT_DIR=$project" ;;
+      CURSOR_PROJECT_DIR|COPILOT_PROJECT_DIR) marker="$platform_var=$project CLAUDE_PROJECT_DIR=$project" ;;
       *) marker="$platform_var=$project" ;;
     esac
     rm -f "$TMPDIR/python-called"
     printf '%s' "$payload" | env -u CODEX_PROJECT_DIR -u CLAUDE_PROJECT_DIR \
+      -u CURSOR_PROJECT_DIR -u COPILOT_PROJECT_DIR \
       PATH="$FAKE_BIN:$PATH" \
       $marker \
       CODEX_PLUGIN_ROOT="$FAKE_PLUGIN" \
@@ -556,23 +563,91 @@ if command -v jq &>/dev/null; then
   # CLAUDECODE and CODEX_THREAD_ID are the markers the agents' own shells carry.
   # Codex hook processes get neither, only CLAUDE_PLUGIN_ROOT, so codex_payload
   # relies on the turn_id that Codex puts in its hook payload.
-  for platform_var in CODEX_PROJECT_DIR CODEX_THREAD_ID codex_payload CLAUDE_PROJECT_DIR CLAUDECODE antigravity; do
+  # Cursor and Copilot read .agents/ first. Their cases also get an unexpired
+  # .claude/ file, so misdetecting them as Claude would skip the refresh.
+  for platform_var in CODEX_PROJECT_DIR CODEX_THREAD_ID codex_payload CLAUDE_PROJECT_DIR CLAUDECODE \
+      CURSOR_PROJECT_DIR cursor_payload COPILOT_PROJECT_DIR antigravity; do
     case "$platform_var" in
       CODEX_*|codex_payload) dir=.codex ;; CLAUDE*) dir=.claude ;; *) dir=.agents ;;
     esac
     project="$TMPDIR/api-wrapper-$platform_var"
     mkdir -p "$project/$dir"
     printf '%s\n' 'access_token: "old_access"' 'refresh_token: "old_refresh"' 'token_expires_at: "2020-01-01T00:00:00Z"' 'client_id: "team_client"' 'auth_flow: "authorization_code_pkce"' > "$project/$dir/spotify-ads-api.local.md"
+    case "$platform_var" in
+      CURSOR_*|cursor_*|COPILOT_*)
+        mkdir -p "$project/.claude"
+        printf '%s\n' 'access_token: "claude_decoy"' 'token_expires_at: "2099-01-01T00:00:00Z"' 'auth_flow: "authorization_code_pkce"' > "$project/.claude/spotify-ads-api.local.md"
+        ;;
+    esac
     output=$(run_api_hook "$project" "$platform_var")
-    assert_eq "api() wrapper call refreshes ($dir)" "invoked" "$(cat "$TMPDIR/python-called" 2>/dev/null)"
-    assert_eq "api() wrapper call stores token ($dir)" 'access_token: "api_access"' "$(grep '^access_token:' "$project/$dir/spotify-ads-api.local.md")"
-    if [ "$dir" = .agents ]; then
-      assert_eq "Antigravity api() refresh allows" "allow" "$(echo "$output" | jq -r '.decision')"
-      assert_contains "Antigravity api() refresh gives reason" "refreshed automatically" "$(echo "$output" | jq -r '.reason')"
-    else
-      assert_contains "api() refresh tells agent ($dir)" "refreshed automatically" "$(echo "$output" | jq -r '.systemMessage')"
-    fi
+    assert_eq "api() wrapper call refreshes ($platform_var)" "invoked" "$(cat "$TMPDIR/python-called" 2>/dev/null)"
+    assert_eq "api() wrapper call stores token ($platform_var)" 'access_token: "api_access"' "$(grep '^access_token:' "$project/$dir/spotify-ads-api.local.md")"
+    case "$platform_var" in
+      antigravity)
+        assert_eq "Antigravity api() refresh allows" "allow" "$(echo "$output" | jq -r '.decision')"
+        assert_contains "Antigravity api() refresh gives reason" "refreshed automatically" "$(echo "$output" | jq -r '.reason')"
+        ;;
+      CURSOR_*|cursor_*|COPILOT_*)
+        # Neither platform shows systemMessage to the agent; additionalContext reaches it.
+        assert_contains "api() refresh reaches the agent ($platform_var)" "refreshed automatically" \
+          "$(echo "$output" | jq -r '.hookSpecificOutput.additionalContext')"
+        assert_eq "message-only reply does not pre-approve ($platform_var)" "null" \
+          "$(echo "$output" | jq -r '.hookSpecificOutput.permissionDecision')"
+        ;;
+      *)
+        assert_contains "api() refresh tells agent ($platform_var)" "refreshed automatically" "$(echo "$output" | jq -r '.systemMessage')"
+        assert_eq "Claude/Codex reply has no additionalContext ($platform_var)" "null" \
+          "$(echo "$output" | jq -r '.hookSpecificOutput.additionalContext')"
+        ;;
+    esac
   done
+
+  # A raw curl gets the SDK header of the platform the hook detected, including
+  # when only the payload identifies it. Codex hooks carry no CODEX_* variable,
+  # and the wrapper that supplies the header cannot see the payload.
+  RAW_CURL='curl -s https://api-partner.spotify.com/ads/v3/businesses'
+  run_raw_curl_hook() {
+    local project="$1" payload="$2"; shift 2
+    printf '%s' "$payload" | env -u CODEX_PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT -u CODEX_PROJECT_DIR \
+      -u CLAUDE_PROJECT_DIR -u CURSOR_PROJECT_DIR -u COPILOT_PROJECT_DIR \
+      "$@" bash -c 'cd "$1" && bash "$2"' _ "$project" "$HOOK"
+  }
+  for case_name in codex_payload cursor_payload cursor_env copilot_env; do
+    project="$TMPDIR/raw-curl-$case_name"
+    mkdir -p "$project/.agents" "$project/.codex"
+    for dir in .agents .codex; do
+      printf '%s\n' 'access_token: "raw_curl"' 'ad_account_id: "acct"' 'token_expires_at: "2099-01-01T00:00:00Z"' 'auth_flow: "authorization_code_pkce"' > "$project/$dir/spotify-ads-api.local.md"
+    done
+    case "$case_name" in
+      codex_payload)
+        product=codex-plugin
+        output=$(run_raw_curl_hook "$project" "$(jq -n --arg c "$RAW_CURL" '{turn_id:"t1",tool_input:{command:$c}}')") ;;
+      cursor_payload)
+        product=cursor-plugin
+        output=$(run_raw_curl_hook "$project" "$(jq -n --arg c "$RAW_CURL" '{cursor_version:"1",tool_input:{command:$c}}')" \
+          CLAUDE_PROJECT_DIR="$project") ;;
+      cursor_env)
+        product=cursor-plugin
+        output=$(run_raw_curl_hook "$project" "$(jq -n --arg c "$RAW_CURL" '{tool_input:{command:$c}}')" \
+          CURSOR_PROJECT_DIR="$project" CLAUDE_PROJECT_DIR="$project") ;;
+      copilot_env)
+        product=copilot-cli-plugin
+        output=$(run_raw_curl_hook "$project" "$(jq -n --arg c "$RAW_CURL" '{tool_input:{command:$c}}')" \
+          COPILOT_PROJECT_DIR="$project" CLAUDE_PROJECT_DIR="$project") ;;
+    esac
+    assert_contains "raw curl gets the $product SDK header ($case_name)" "X-Spotify-Ads-Sdk: $product/" \
+      "$(echo "$output" | jq -r '.hookSpecificOutput.updatedInput.command')"
+    # Copilot treats "allow" as the user's approval, so only Claude and Codex
+    # get one; Copilot and Cursor apply the rewrite without it.
+    case "$case_name" in
+      codex_*) expected_decision=allow ;;
+      *) expected_decision=null ;;
+    esac
+    assert_eq "raw curl rewrite decision ($case_name)" "$expected_decision" \
+      "$(echo "$output" | jq -r '.hookSpecificOutput.permissionDecision')"
+  done
+  assert_contains "Copilot attribution note reaches the agent" "X-Spotify-Ads-Skill" \
+    "$(echo "$output" | jq -r '.hookSpecificOutput.additionalContext')"
 
   project="$TMPDIR/api-wrapper-error"
   mkdir -p "$project/.codex"

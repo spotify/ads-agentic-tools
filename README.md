@@ -1,12 +1,12 @@
 # Spotify Ads Agentic Tools
 
-A Codex, Claude Code, and Antigravity CLI plugin package that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
+A Codex, Claude Code, GitHub Copilot CLI, Cursor, and Antigravity CLI plugin package that lets you manage Spotify advertising campaigns through natural language. Create campaigns, target audiences, launch ads, and pull performance reports — all by describing what you want in plain English.
 
 Check out our post on the [Spotify Engineering Blog](https://engineering.atspotify.com/2026/5/spotify-ads-api-claude-plugins).
 
 ## Prerequisites
 
-- Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), or [Antigravity CLI](https://antigravity.google/)
+- Codex, [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli), [Cursor](https://cursor.com/) (IDE or `agent` CLI), or [Antigravity CLI](https://antigravity.google/)
 - A [Spotify Developer](https://developer.spotify.com/) account with an ads-enabled app
 - A Spotify Ads ad account ID
 - Python 3.8+ or `uv`. Required for the secure configuration helpers and automatic token refresh. Python is also used to check each request against the OpenAPI spec before it is sent; without it, that check is skipped. On Windows, ensure a real `python` or `py` is in your PATH (see [Troubleshooting](#troubleshooting)).
@@ -48,6 +48,29 @@ agy plugin install https://github.com/spotify/ads-agentic-tools
 
 Restart Antigravity CLI, then verify with `/plugins`. On Antigravity, skills activate automatically from natural language (or browse them with `/skills list`); run `/configure` for first-time setup instead of `/spotify-ads-api:configure`.
 
+### GitHub Copilot CLI
+
+```bash
+copilot plugin marketplace add spotify/ads-agentic-tools
+copilot plugin install spotify-ads-api@spotify-ads-api
+```
+
+Copilot reads the plugin from `.plugin/plugin.json`, which it checks before the root `plugin.json` (the Antigravity manifest). Skills activate from natural language.
+
+### Cursor
+
+Add `https://github.com/spotify/ads-agentic-tools` as a plugin marketplace (in the CLI, `agent plugin marketplace add https://github.com/spotify/ads-agentic-tools`), then install **spotify-ads-api** from it. Cursor reads the plugin from `.cursor-plugin/plugin.json`.
+
+Cursor's agent sandbox blocks network access by default, so allow the Spotify hosts in your workspace's `.cursor/sandbox.json`. The configure skill offers to do this for you:
+
+```json
+{
+  "networkPolicy": {
+    "allow": ["accounts.spotify.com", "api-partner.spotify.com", "developer.spotify.com"]
+  }
+}
+```
+
 ## Install from source
 
 Use a source checkout for local development or testing unreleased changes.
@@ -82,7 +105,20 @@ Use a source checkout for local development or testing unreleased changes.
 
    The link is a symlink, so source changes are picked up on the next Antigravity CLI restart.
 
-The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code. Their plugin sources intentionally differ: Codex uses the public Git repository URL for this repository-root plugin, while Claude uses the relative string `"./"` required by its marketplace schema. Antigravity CLI has no marketplace file — it installs directly from the repository using the root `plugin.json` manifest. Keep all three manifests in sync when changing plugin metadata.
+5. For GitHub Copilot CLI, add the checkout as a local marketplace. Copilot loads it live from the checkout, so edits take effect in the next session:
+   ```bash
+   copilot plugin marketplace add "$(pwd)"
+   copilot plugin install spotify-ads-api@spotify-ads-api
+   ```
+
+   To load it for one session only, run `copilot --plugin-dir "$(pwd)"`.
+
+6. For the Cursor CLI, launch with the plugin directory:
+   ```bash
+   agent --plugin-dir "$(pwd)"
+   ```
+
+The repository includes platform-specific marketplace metadata: `.agents/plugins/marketplace.json` for Codex, `.claude-plugin/marketplace.json` for Claude Code (also read by Copilot CLI), and `.cursor-plugin/marketplace.json` for Cursor. Their plugin sources intentionally differ: Codex uses the public Git repository URL for this repository-root plugin, while Claude and Cursor use the relative string `"./"`. Antigravity CLI has no marketplace file — it installs directly from the repository using the root `plugin.json` manifest. Keep all five plugin manifests in sync when changing plugin metadata.
 
 ## Configure
 
@@ -108,7 +144,7 @@ The repository includes platform-specific marketplace metadata: `.agents/plugins
    ```
    /spotify-ads-api:configure
    ```
-   (On Antigravity CLI, run `/configure` instead — the skill names below all apply, but the slash-command prefix is Claude Code/Codex syntax.)
+   (On Antigravity CLI, run `/configure` instead. On Copilot CLI and Cursor, ask the agent to configure the Spotify Ads API plugin. The skill names below all apply, but the slash-command prefix is Claude Code/Codex syntax.)
    This opens your browser for PKCE authorization, then saves your tokens locally with automatic refresh. The authorization URL is also printed so it can be copied if the browser does not open automatically.
 
 2. Create your first campaign:
@@ -128,7 +164,7 @@ Run `/spotify-ads-api:configure token`. The helper securely prompts for a pre-ob
 
 ## Available Skills
 
-Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI, the same skills activate automatically from natural language (browse them with `/skills list`), and setup is `/configure`. You rarely need to name a skill: describing what you want is enough.
+Skill names below use Claude Code/Codex slash-command syntax. On Antigravity CLI, Copilot CLI, and Cursor, the same skills activate automatically from natural language (on Antigravity, browse them with `/skills list`; setup is `/configure`). You rarely need to name a skill: describing what you want is enough.
 
 | Skill | Description |
 |-------|-------------|
@@ -178,12 +214,12 @@ Campaign, ad set, and ad creation or modification is staged through the draft wo
 - **Current API contract.** Before its first API call, each workflow downloads the current public [Ads API v3 OpenAPI document](https://developer.spotify.com/reference/ads-api/v3/api.yaml) and checks every planned request against it. If the document cannot be downloaded, the workflow stops before calling the API.
 - **Checks before sending.** The request wrapper (`scripts/api-request.sh`) checks each request against that document before sending it. A request that can never succeed, for example one with a missing required field, a wrong type, or a read-only field, is not sent: it prints `ERROR: Request not sent.` and the problems it found. A field or value the spec does not define is sent anyway, with `WARNING: Sent anyway`. If no document has been downloaded, Python is not available, or the operation is not in the public spec, the request is sent without this check.
 - **Safe retries.** Supported create requests carry an `Idempotency-Key` derived from the request, so if the same create is sent twice, the server treats the second as a repeat rather than creating a duplicate. The plugin never automatically retries a create or update that failed.
-- **Usage attribution.** Every request includes an `X-Spotify-Ads-Sdk` header (the plugin's platform and version) and an `X-Spotify-Ads-Skill` header (the skill that made the call), so Spotify can measure usage and error rates per skill. On Claude Code and Codex, the token-refresh hook adds these headers to hand-written `curl` commands to the Ads API that lack them. If it has to guess the skill from the conversation, the value ends in `-inferred`. Antigravity's hooks cannot rewrite commands, so there it only warns.
+- **Usage attribution.** Every request includes an `X-Spotify-Ads-Sdk` header (the plugin's platform and version) and an `X-Spotify-Ads-Skill` header (the skill that made the call), so Spotify can measure usage and error rates per skill. On Claude Code, Codex, Copilot CLI, and Cursor, the token-refresh hook adds these headers to hand-written `curl` commands to the Ads API that lack them. If it has to guess the skill from the conversation, the value ends in `-inferred`. Copilot sends the hook no conversation transcript, so there only the platform header is added. Antigravity's hooks cannot rewrite commands, so there it only warns.
 - **Confirmations.** With `auto_execute: false`, the plugin shows each request and asks before running it. With `auto_execute: true`, it runs reads, reports, and draft creates and edits without asking, but always asks first before it publishes a draft, deletes a draft, makes a live change to delivery or spend (pause, resume, archive, budget, or bid), replaces a customer list or a media file used by active ads, or uses a start time that has already passed.
 
 ## Configuration Reference
 
-Settings are stored in `.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, and `.agents/spotify-ads-api.local.md` on Antigravity. Each platform falls back to the other settings files if its preferred file does not exist. All three paths are gitignored.
+Settings are stored in `.codex/spotify-ads-api.local.md` on Codex, `.claude/spotify-ads-api.local.md` on Claude, and `.agents/spotify-ads-api.local.md` on Antigravity, Copilot, and Cursor. Each platform falls back to the other settings files if its preferred file does not exist. All three paths are gitignored.
 
 | Field | Description | Default |
 |-------|-------------|---------|
@@ -231,6 +267,9 @@ The hook (`hooks/check-token.sh`) is a bash script. On Windows it requires Git B
 
 **Skill not activating on Antigravity CLI**
 Run `/skills list` to confirm the plugin's skills loaded, and `/plugins` to confirm the plugin is enabled. Restart Antigravity CLI after installing or linking.
+
+**Requests fail on Cursor with no HTTP status, or the OpenAPI download fails**
+Cursor's agent sandbox blocks network access by default. Allow `accounts.spotify.com`, `api-partner.spotify.com`, and `developer.spotify.com` in `.cursor/sandbox.json` (see [Cursor](#cursor)).
 
 ## Development
 

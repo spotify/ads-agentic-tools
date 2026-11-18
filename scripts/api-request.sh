@@ -26,26 +26,10 @@ elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -d "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   PLUGIN_ROOT="$CLAUDE_PLUGIN_ROOT"
 fi
 
-# --- Platform detection (mirrors check-token.sh) ---
-# Explicit *_PROJECT_DIR vars win over the shell markers below, which a nested
-# agent can inherit from its parent (e.g. Claude Code started from a Codex shell).
-# Claude Code sets CLAUDE_PROJECT_DIR only for hooks; its Bash tool shell has
-# CLAUDECODE=1 instead. Codex exports CODEX_THREAD_ID (or CODEX_SESSION_ID) to
-# every shell command and never CODEX_PROJECT_DIR, which is kept for overrides.
-# Antigravity sets no known marker, so it is the default.
-if [ -n "${CODEX_PROJECT_DIR:-}" ]; then
-  PLATFORM="codex"
-elif [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
-  PLATFORM="claude"
-elif [ -n "${CODEX_THREAD_ID:-}" ] || [ -n "${CODEX_SESSION_ID:-}" ]; then
-  PLATFORM="codex"
-elif [ "${CLAUDECODE:-}" = "1" ]; then
-  PLATFORM="claude"
-else
-  PLATFORM="antigravity"
-fi
-
-PROJECT_DIR="${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}"
+# --- Platform detection (shared with hooks/check-token.sh) ---
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+detect_platform
 
 # Eval replay only: settings must come from the eval workspace. Agents sometimes cd
 # into the plugin before calling this script, and a plugin checkout can hold a real
@@ -64,15 +48,9 @@ fi
 
 # --- Settings file discovery ---
 find_settings_file() {
-  local order dir candidate
+  local dir candidate
 
-  case "$PLATFORM" in
-    antigravity) order=".agents .claude .codex" ;;
-    claude) order=".claude .codex .agents" ;;
-    *)      order=".codex .claude .agents" ;;
-  esac
-
-  for dir in $order; do
+  for dir in $(settings_dirs); do
     candidate="$PROJECT_DIR/$dir/spotify-ads-api.local.md"
     if [ -f "$candidate" ]; then
       printf '%s\n' "$candidate"
@@ -113,13 +91,7 @@ for manifest in "$PLUGIN_ROOT/.codex-plugin/plugin.json" \
   fi
 done
 
-# --- SDK product name ---
-case "$PLATFORM" in
-  codex)  SDK_PRODUCT="codex-plugin" ;;
-  claude) SDK_PRODUCT="claude-code-plugin" ;;
-  *)      SDK_PRODUCT="antigravity-cli-plugin" ;;
-esac
-
+SDK_PRODUCT="$(sdk_product)"
 SDK_HEADER="X-Spotify-Ads-Sdk: ${SDK_PRODUCT}/${PLUGIN_VERSION}"
 
 # --- --env mode: print settings and exit ---

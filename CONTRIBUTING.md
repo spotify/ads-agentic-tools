@@ -8,7 +8,7 @@ Look for issues labeled [`good first issue`](https://github.com/spotify/ads-agen
 
 ## Building the Project
 
-This is a Codex, Claude Code, and Antigravity CLI plugin package made mostly of markdown files. There is no build step, no package manager, and no compiled code.
+This is a Codex, Claude Code, GitHub Copilot CLI, Cursor, and Antigravity CLI plugin package made mostly of markdown files. There is no build step, no package manager, and no compiled code.
 
 To run the plugin locally:
 
@@ -32,6 +32,16 @@ To run the plugin locally:
    For Antigravity CLI:
    ```bash
    agy plugin link /path/to/ads-agentic-tools
+   ```
+
+   For GitHub Copilot CLI:
+   ```bash
+   copilot --plugin-dir /path/to/ads-agentic-tools
+   ```
+
+   For the Cursor CLI:
+   ```bash
+   agent --plugin-dir /path/to/ads-agentic-tools
    ```
 
 3. Configure credentials:
@@ -87,10 +97,10 @@ runner.
 
 Before submitting a pull request:
 
-- Verify your changes work against the Spotify Ads API on at least one supported platform (Codex, Claude Code, or Antigravity CLI)
+- Verify your changes work against the Spotify Ads API on at least one supported platform (Codex, Claude Code, Copilot CLI, Cursor, or Antigravity CLI)
 - Confirm that existing skills (`/spotify-ads-api:campaigns`, `/spotify-ads-api:ads`, etc.) still function correctly
 - If adding a new skill, include a `SKILL.md` following the patterns in existing skill directories
-- If touching `hooks/`, note there are three per-platform hook configs: `hooks.json` at plugin root (Antigravity CLI and 2.0, `PreToolUse`), `.claude-plugin/hooks.json` (Claude), and `.codex-plugin/hooks.json` (Codex) — all calling `check-token.sh`. Test the token-refresh hook on all three platforms
+- If touching `hooks/`, note there are five per-platform hook configs: `hooks.json` at plugin root (Antigravity CLI and 2.0, `PreToolUse`), `.claude-plugin/hooks.json` (Claude), `.codex-plugin/hooks.json` (Codex), `.plugin/hooks.json` (Copilot CLI), and `.cursor-plugin/hooks.json` (Cursor) — all calling `check-token.sh`. Test the token-refresh hook on every platform you can
 
 ## Style
 

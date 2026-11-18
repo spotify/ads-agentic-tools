@@ -42,6 +42,14 @@ for f in "$REPO_ROOT"/skills/*/SKILL.md "$REPO_ROOT/agents/spotify-ads-request-b
   grep -qF -- "$STANDARDS" "$f" || { echo "FAIL: ${f#"$REPO_ROOT"/} lacks language-standards.md pointer"; fail=1; }
 done
 
+# Antigravity, Copilot, and Cursor export no plugin-root variable to the agent's
+# shell, so the `.` fallback only works when the file says what to use instead.
+ROOT_NOTE='On Antigravity, Copilot, and Cursor no plugin-root variable is set: replace the `.` fallback with the absolute path of the plugin root'
+for f in "$REPO_ROOT"/skills/*/SKILL.md "$REPO_ROOT/agents/spotify-ads-request-builder.md"; do
+  grep -qF -- 'CLAUDE_PLUGIN_ROOT:-.}}' "$f" || continue
+  grep -qF -- "$ROOT_NOTE" "$f" || { echo "FAIL: ${f#"$REPO_ROOT"/} lacks the plugin-root note"; fail=1; }
+done
+
 # Every $PLUGIN_ROOT/skills/api-reference/references/*.md path mentioned anywhere must resolve.
 for ref in $(git -C "$REPO_ROOT" grep -h -o -E 'skills/api-reference/references/[A-Za-z0-9_-]+\.md' -- skills agents AGENTS.md ':!CHANGELOG.md' | sort -u) "$BEHAVIORS"; do
   [ -f "$REPO_ROOT/$ref" ] || { echo "FAIL: unresolved $ref"; fail=1; }
