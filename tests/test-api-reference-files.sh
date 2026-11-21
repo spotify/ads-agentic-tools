@@ -37,7 +37,7 @@ fi
 grep -qF '`references/api-behaviors.md`' "$REPO_ROOT/skills/api-reference/SKILL.md" || { echo "FAIL: api-reference SKILL.md lacks api-behaviors.md pointer"; fail=1; }
 
 # Every skill and the agent read the language standards before replying to a user.
-STANDARDS='Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.'
+STANDARDS='Once per workflow, before sending your first output to a human user, read `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`, and follow it in every reply.'
 for f in "$REPO_ROOT"/skills/*/SKILL.md "$REPO_ROOT/agents/spotify-ads-request-builder.md"; do
   grep -qF -- "$STANDARDS" "$f" || { echo "FAIL: ${f#"$REPO_ROOT"/} lacks language-standards.md pointer"; fail=1; }
 done

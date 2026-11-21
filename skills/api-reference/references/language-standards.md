@@ -1,6 +1,6 @@
 # Spotify Ads Language Standards
 
-Read this whole file before replying. Don't stop at the first screen or read only part of it with `head` or a line limit: the rules for display names, numbers, dates, and errors are in the later sections, and replies break them when those sections are skipped.
+Read this whole file once per workflow, before your first reply, and follow it in every reply after that. Don't stop at the first screen or read only part of it with `head` or a line limit: the rules for display names, numbers, dates, and errors are in the later sections, and replies break them when those sections are skipped.
 
 Load before writing any user-facing output. Applies to every skill. Skill files add to this one and must not contradict it. Section 1 sets hard limits. Which actions need a confirmation is set in `api-behaviors.md` (Confirmation), not here; Sections 2 and 3 set how to word a confirmation and when to ask a clarifying question. The rest sets how to say it. For a term Section 5 doesn't cover, use the plain word an advertiser would see in Spotify Ads Manager, and don't invent new terms.
 
@@ -148,7 +148,7 @@ Use the right column. Never show the left column to the user.
 | Invalid input | the specific problem |
 | error (as a label) | what went wrong |
 
-Don't use at all: flight, ad order, order, DMA, on-page placement, promotional content, legacy (as a label). For a campaign's run, say "schedule" or give the dates.
+Don't use at all: flight, ad order, order (meaning a campaign or booking), DMA, on-page placement, promotional content, legacy (as a label). For a campaign's run, say "schedule" or give the dates.
 
 ## 6. Enum display names
 
@@ -180,10 +180,10 @@ Exceptions (only values the default rule gets wrong; `PUBLISH` and `BOOKABLE` ar
 | Don't | Do |
 | --- | --- |
 | "$50" | "USD 50.00" |
-| "50000000" (micro-amount) | "USD 50.00" (divide by 1,000,000, round half up to 2 decimals, also in errors and CSVs) |
+| "50000000" (micro-amount) | "USD 50.00" (divide by 1,000,000, round half up to the currency's minor units: 2 decimals for USD and EUR, none for JPY and KRW, also in errors and CSVs) |
 | "€1.200 → 1.800 EUR" | "1.200,00 EUR → 1.800,00 EUR" (same format on both sides) |
 | "CTR is 0.4%." | "CTR was 0.4% for Sep 1-15, 2026." |
-| "Starts at midnight." | "Starts September 30, 2026 at 12:00 AM EST." |
+| "Starts at midnight." | "Starts September 30, 2026 at 12:00 AM EDT." |
 | "Budget: USD 1.2M" (spend confirmation) | "Budget: USD 1,200,000.00" |
 
 - Always use the ad account's ISO 4217 code, with one space between code and amount. Code first for en-US, en-GB, en-AU, and ja. Amount first for de, fr, fr-CA, es, pt, it, and nl.
@@ -196,7 +196,10 @@ Exceptions (only values the default rule gets wrong; `PUBLISH` and `BOOKABLE` ar
 | en-US | 1,234,567.89 | September 23, 2026 / 09/23/2026 | 12-hour |
 | en-GB, en-AU | 1,234,567.89 | 23 September 2026 / 23/09/2026 | 24-hour |
 | de | 1.234.567,89 | 23. September 2026 / 23.09.2026 | 24-hour |
-| es, pt, it, nl | 1.234.567,89 | 23 septiembre 2026 / 23/09/2026 | 24-hour |
+| es | 1.234.567,89 | 23 de septiembre de 2026 / 23/09/2026 | 24-hour |
+| pt | 1.234.567,89 | 23 de setembro de 2026 / 23/09/2026 | 24-hour |
+| it | 1.234.567,89 | 23 settembre 2026 / 23/09/2026 | 24-hour |
+| nl | 1.234.567,89 | 23 september 2026 / 23-09-2026 | 24-hour |
 | fr | 1 234 567,89 | 23 septembre 2026 / 23/09/2026 | 24-hour |
 | de-CH, fr-CH | 1'234'567.89 | 23.09.2026 | 24-hour |
 | ja, zh, ko | 1,234,567.89 | 2026年9月23日 / 2026/09/23 | 24-hour |
@@ -260,9 +263,9 @@ When the API returns an error, read the message and the error codes in the respo
 - API failure: "The ad set couldn't be created. Check that targeting and budget are within account limits."
 - Permission: "You don't have access to change billing settings for this ad account."
 - Missing data: "Can't pull a delivery report because Oct Launch hasn't started delivering. Data appears once it starts delivering."
-- Rate limit: "Too many requests. Try again in 60 seconds." (Use the wait time the API returns.)
+- Rate limit: "Too many requests. Try again in 60 seconds." (Give a wait time only if the error message states one. Otherwise say "Try again in a few minutes.")
 - Feature not available: "Audience overlap reporting isn't available here. You can view it in Ads Manager."
-- Partial success: "2 of 3 ad sets created. Night Owls failed because it has no targeting. Add targeting to create it, or remove it."
+- Partial success: "2 of 3 ad sets created. Night Owls failed because it has no targeting, so add targeting or remove it."
 
 **Rejection:** [Reason from review]. [The fix]. Never speculate beyond the stated reason.
 
@@ -305,7 +308,7 @@ Button/CTA 20 · Label 25 (noun phrase, no punctuation) · Tooltip 80 · Helper 
 
 - Translate statuses and enum labels into the user's language everywhere, including labels and table cells. Start from the English display name in Section 6 and translate it ("Active" becomes "Activa" in Spanish).
 - Keep Spotify product names in English: Spotify Ads Manager, Canvas, Now Playing view.
-- Numbers and currency follow the ad account's locale (Section 7), whatever language the reply is in: a Spanish reply for an en-US account shows "USD 2,890.11", "412,870", and "0.38%". Write dates in the reply's language, in day-month-year order: "3 de septiembre de 2026".
+- Numbers and currency follow the ad account's locale (Section 7), whatever language the reply is in: a Spanish reply for an en-US account shows "USD 2,890.11", "412,870", and "0.38%". Write dates in the reply's language, in that language's date order from Section 7: "3 de septiembre de 2026" in Spanish, "2026年9月3日" in Japanese.
 - Use idiomatic constructions native to the locale, and follow its capitalization. Carry over the intent of each Section 9 pattern, not its English wording.
 - In RTL locales (ar, he), wrap Latin-script variables in Unicode directional isolates.
 - Never guess legal, policy, or compliance wording. State the intent in English and flag it for localized review.

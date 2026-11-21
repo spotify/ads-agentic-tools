@@ -22,7 +22,7 @@ api() { "$PLUGIN_ROOT/scripts/api-request.sh" clone "$@"; }
 
 Before the first Ads API v3 call, read and follow `$PLUGIN_ROOT/skills/api-reference/references/live-openapi.md`.
 
-Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+Once per workflow, before sending your first output to a human user, read `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`, and follow it in every reply.
 
 Also read `$PLUGIN_ROOT/skills/api-reference/references/api-behaviors.md` for API behaviour the spec does not express (micro-amounts, geo lookup, estimates, retry safety).
 

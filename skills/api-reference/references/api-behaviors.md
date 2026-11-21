@@ -87,4 +87,4 @@ This is the single source for when to ask before acting. `language-standards.md`
 - Common statuses: 400 validation error, 403 insufficient permissions, 404 not found, 422 unprocessable (e.g., insufficient insight data), 500 server error.
 - Check the wrapper's `HTTP_STATUS:` line first.
 - Retry only on network errors or 5xx, and only for idempotent methods (GET). Never retry a POST or PATCH automatically. A non-timeout 4xx means the request was received and rejected. A 5xx may mean the change was already applied, so check for the created or modified resource before suggesting a retry. For creates, follow `create-retry-safety.md`.
-- On a 429 (too many requests), don't retry. Tell the user the wait time the API returned, using the rate-limit wording in `language-standards.md`.
+- On a 429 (too many requests), don't retry. The request wrapper doesn't show response headers, so give a wait time only if the error message states one. Use the rate-limit wording in `language-standards.md`.
