@@ -1,6 +1,15 @@
 # Spotify Ads API Plugin
 
-Manage Spotify ad campaigns with natural language. Capabilities are packaged as Agent Skills (campaigns, ads, assets, reporting, dashboards, monitoring, bulk operations, cloning, exports, and a full campaign builder). Describe what you want — e.g. "show my campaign dashboard" or "create a campaign for my podcast" — or run `/skills list` to see everything available.
+Manage Spotify ad campaigns with natural language. Capabilities are packaged as Agent Skills:
+
+- **Plan and build:** `campaign-strategy`, `media-plan-to-draft`, `build-campaign`, and `drafts`
+- **Campaigns, ad sets, and ads:** `campaigns`, `ads`, `bulk`, and `clone`
+- **Creative and audiences:** `assets` and `audiences`
+- **Measurement:** `measurement-setup` and `measurement-debug` (Pixel, Conversions API, and datasets)
+- **Performance:** `report`, `dashboard`, `monitor`, and `export`
+- **Account:** `account-admin`, `change-history`, and `configure`
+
+The `spotify-ads-api-reference` skill loads automatically whenever the Spotify Ads API comes up. Describe what you want — e.g. "show my campaign dashboard" or "create a campaign for my podcast" — or run `/skills list` to see everything available.
 
 ## Settings
 
@@ -11,6 +20,16 @@ Never commit these files. OAuth uses Authorization Code with PKCE and the team's
 ## First-Time Setup
 
 Run `/configure` (or ask to "configure Spotify Ads API credentials") to set up OAuth 2.0 authentication and select an ad account. Documentation elsewhere may reference `/spotify-ads-api:configure` — that is the Claude Code/Codex name for the same configure skill.
+
+## Writes and Confirmations
+
+Campaign, ad set, and ad creates and changes go through the `drafts` workflow by default, even when the user does not say "draft": stage drafts, validate the whole hierarchy, and publish only after the user explicitly confirms. Pausing, resuming, or changing delivery on ad sets and ads is the exception. Drafts cannot carry delivery, so these are live changes made after confirmation.
+
+Which actions need a confirmation, with or without `auto_execute`, is defined in one place: the Confirmation section of `skills/api-reference/references/api-behaviors.md`. Follow it rather than any summary.
+
+## API Contract
+
+Before the first Ads API call in a workflow, fetch the current public OpenAPI document as described in `skills/api-reference/references/live-openapi.md`, and use `scripts/openapi-op.sh describe <METHOD> <path>` to inspect an operation instead of reading the whole spec. The request wrapper checks every request against that document before sending it. `ERROR: Request not sent.` means nothing reached the API: fix the listed fields and send again. `WARNING: Sent anyway` means the request included a field or value the spec does not define.
 
 ## Tracking Headers
 
