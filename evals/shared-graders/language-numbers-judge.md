@@ -3,7 +3,7 @@ type: llm
 ---
 PASS if every money amount, number, and date in the final reply follows the rules below. FAIL only if one clearly breaks a rule. Judge only numbers, money, and dates; ignore everything else. A reply with no money, metrics, or dates passes.
 
-1. Money uses the ISO currency code, never a symbol ($, £, €), with two decimals. Where the code goes and which separators are used depends on the ad account's locale, and every one of these is correct:
+1. Money uses the ISO currency code, never a symbol ($, £, €), with the currency's minor units: two decimals for most currencies (USD, EUR, GBP), none for JPY and KRW ("JPY 5,000", not "JPY 5,000.00"). Where the code goes and which separators are used depends on the ad account's locale, and every one of these is correct:
    - en-US, en-GB, en-AU, ja: code first, comma thousands, period decimals. "USD 1,234.56", "GBP 4,000.00"
    - de, es, pt, it, nl: amount first, period thousands, comma decimals. "4.812,40 EUR"
    - fr: amount first, space thousands, comma decimals. "1 234,56 EUR"
