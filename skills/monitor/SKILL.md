@@ -89,21 +89,21 @@ Run these diagnostics against the fetched data:
 For each active campaign, compare spend progress to flight progress:
 
 - **DAILY budgets**: Sum the daily budgets of all active ad sets under the campaign. Compare today's spend to the total daily budget.
-  - Display: `$142.50 / $200.00 daily (71%)`
+  - Display: `USD 142.50 / USD 200.00 daily (71%)`
 
 - **LIFETIME budgets**: Compare total lifetime spend to total lifetime budget, and compare against elapsed flight percentage.
   - `elapsed_pct = (today - start_date) / (end_date - start_date) * 100`
   - `spend_pct = total_spend / total_budget * 100`
-  - Display: `$2,100 / $5,000 lifetime (42% spent, 35% of flight elapsed)`
+  - Display: `USD 2,100.00 / USD 5,000.00 lifetime (42% spent, 35% of schedule elapsed)`
 
 **Alert levels:**
-- **OK**: Spend % and elapsed % within 20 points of each other
-- **WARNING**: 20-40 point gap between spend % and elapsed %
-- **CRITICAL**: >40 point gap, OR zero spend with >24 hours elapsed since campaign start
+- **On track**: Spend % and elapsed % within 20 points of each other
+- **Needs attention**: 20-40 point gap between spend % and elapsed %
+- **Action needed**: more than 40 point gap, OR zero spend with >24 hours elapsed since campaign start
 
 #### 2. Stalled Delivery Check
 
-- If an ACTIVE campaign has zero impressions today AND its start_time is more than 4 hours ago, flag as **STALLED**.
+- If an ACTIVE campaign has zero impressions today AND its start_time is more than 4 hours ago, flag it as **not delivering**.
 - Exclude campaigns that started within the last 4 hours (they may still be ramping up).
 
 #### 3. Budget Exhaustion Check
@@ -126,14 +126,14 @@ Time: 2026-05-14 14:30 UTC
 
 | Campaign | Status | Spend Today | Pacing | Issues |
 |----------|--------|-------------|--------|--------|
-| Summer Promo | OK | $142.50 / $200 daily (71%) | On track | — |
-| Q2 Brand | WARNING | $28.00 / $100 daily (28%) | Underpacing | 1 stalled ad set |
-| Podcast Launch | CRITICAL | $0.00 / $75 daily (0%) | Stalled | No delivery today |
+| Summer Promo | On track | USD 142.50 / USD 200.00 daily (71%) | On track | None |
+| Q2 Brand | Needs attention | USD 28.00 / USD 100.00 daily (28%) | Underpacing | 1 ad set not delivering |
+| Podcast Launch | Action needed | USD 0.00 / USD 75.00 daily (0%) | Not delivering | No delivery today |
 
 Issues Found (2):
-  1. [WARNING] Q2 Brand: Spending at 28% of daily budget with 62% of day elapsed
+  1. Q2 Brand (needs attention): Spending at 28% of daily budget with 62% of day elapsed
      → Consider increasing bid or broadening targeting. Run: /spotify-ads-api:dashboard <campaign_id>
-  2. [CRITICAL] Podcast Launch: Zero impressions today (campaign started 2026-05-12)
+  2. Podcast Launch (action needed): Zero impressions today (campaign started May 12, 2026)
      → Campaign may have delivery issues. Check ad approval status with: /spotify-ads-api:monitor <campaign_id>
 ```
 
@@ -223,21 +223,21 @@ In addition to the pacing, stalled, and exhaustion checks from the account-wide 
 ### Display Format
 
 ```
-=== Summer Promo — Deep Health Check ===
-Campaign: ACTIVE | Objective: REACH | Created: 2026-04-01
+=== Summer Promo: deep health check ===
+Campaign: Active | Objective: Reach | Created: April 1, 2026
 
 Ad Set Health:
 | Ad Set | Format | Budget | Spend Today | Pacing | Freq | Issues |
 |--------|--------|--------|-------------|--------|------|--------|
-| US 18-34 Audio | AUDIO | $75/day | $68.50 (91%) | OK | 1.8 | — |
-| US 25-54 Video | VIDEO | $50/day | $12.00 (24%) | WARNING | 0.4 | Underpacing |
+| US 18-34 Audio | Audio | USD 75.00 daily | USD 68.50 (91%) | On track | 1.8 | None |
+| US 25-54 Video | Video | USD 50.00 daily | USD 12.00 (24%) | Needs attention | 0.4 | Underpacing |
 
 Ad Health:
 | Ad | Ad Set | Status | Delivery | Issues |
 |----|--------|--------|----------|--------|
-| 30s Spot A | US 18-34 Audio | APPROVED | ON | — |
-| 30s Spot B | US 18-34 Audio | REJECTED | — | Rejected |
-| 15s Video | US 25-54 Video | PENDING | ON | Pending >24h |
+| 30s Spot A | US 18-34 Audio | Approved | On | None |
+| 30s Spot B | US 18-34 Audio | Rejected | Off | Rejected |
+| 15s Video | US 25-54 Video | Pending approval | On | Pending for more than 24 hours |
 
 Recommendations:
   1. "US 25-54 Video" is underpacing at 24% spend. Consider:

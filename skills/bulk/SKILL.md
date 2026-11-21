@@ -54,11 +54,11 @@ Fetch entities matching the operation's criteria. Present as a numbered table:
 Active Ad Sets (5 found):
 | # | ID | Name | Campaign | Budget | Format |
 |---|----|------|----------|--------|--------|
-| 1 | abc... | US 18-34 Audio | Summer Promo | $75/day | AUDIO |
-| 2 | def... | US 25-54 Video | Summer Promo | $50/day | VIDEO |
-| 3 | ghi... | UK All Audio | Q2 Brand | $100/day | AUDIO |
-| 4 | jkl... | CA 18-44 Audio | Q2 Brand | $60/day | AUDIO |
-| 5 | mno... | US All Display | Podcast Launch | $40/day | IMAGE |
+| 1 | abc... | US 18-34 Audio | Summer Promo | USD 75.00 daily | AUDIO |
+| 2 | def... | US 25-54 Video | Summer Promo | USD 50.00 daily | VIDEO |
+| 3 | ghi... | UK All Audio | Q2 Brand | USD 100.00 daily | AUDIO |
+| 4 | jkl... | CA 18-44 Audio | Q2 Brand | USD 60.00 daily | AUDIO |
+| 5 | mno... | US All Display | Podcast Launch | USD 40.00 daily | IMAGE |
 ```
 
 ### 2. Select targets
@@ -124,11 +124,11 @@ Display a final summary table:
 Bulk Pause Staging Results:
 | Campaign | Status | Result |
 |--------|--------|--------|
-| Summer Sale | PAUSED | Staged; validation passed |
-| Holiday Promo | PAUSED | Staged; validation passed |
-| Spring Launch | — | Failed: [what went wrong, in plain words] |
+| Summer Sale | Paused | Saved as a draft, passed validation |
+| Holiday Promo | Paused | Saved as a draft, passed validation |
+| Spring Launch | Not changed | Failed: [what went wrong, in plain words] |
 
-2/3 changes staged. Nothing was published.
+2 of 3 changes saved as drafts. Nothing was published.
 ```
 
 For live `delivery` changes, use the result "Applied live" and say the changes are already in effect instead of "Nothing was published".
@@ -222,8 +222,8 @@ After selection, ask how to change the budget:
 Budget changes (+20%):
 | Ad Set | Budget Type | Current | New |
 |--------|-------------|---------|-----|
-| US 18-34 Audio | DAILY | $75.00 | $90.00 |
-| UK All Audio | DAILY | $100.00 | $120.00 |
+| US 18-34 Audio | DAILY | USD 75.00 | USD 90.00 |
+| UK All Audio | DAILY | USD 100.00 | USD 120.00 |
 
 Proceed with these changes?
 ```
@@ -399,8 +399,8 @@ Resolve each draft ad's parent draft campaign and validate once per affected cam
 Creative Swap Results:
 | Draft Ad | Published ID | Asset | Result |
 |----------|--------------|-------|--------|
-| 30s Spot A | abc... | new-audio.mp3 | Staged; validation passed |
-| 30s Spot B | ghi... | new-audio.mp3 | Staged; validation passed |
+| 30s Spot A | abc... | new-audio.mp3 | Saved as a draft, passed validation |
+| 30s Spot B | ghi... | new-audio.mp3 | Saved as a draft, passed validation |
 
 2/2 swaps staged. Nothing was published.
 ```

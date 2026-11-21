@@ -194,7 +194,7 @@ For direct-token mode, set `auth_flow: "direct_token"` and leave
 
 ## Verification Results
 
-- **200**: Configuration saved and verified successfully.
+- **200**: Configuration saved and verified.
 - **401/403**: Token may be invalid, expired, or unauthorized for the account.
 - **404**: The selected ad account ID may be incorrect.
 - Other errors: report the status and the response error without exposing tokens.

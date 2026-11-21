@@ -124,9 +124,9 @@ Before making any mutating API calls, present the full parsed plan as a visual t
 
 ```
 Campaign: "My Campaign" (objective: REACH)
-├── Ad Set 1: "Ad Set A" (AUDIO, $75/day, US, ages 25-54, Mar 1 start)
+├── Ad Set 1: "Ad Set A" (AUDIO, USD 75.00 daily, US, ages 25-54, Mar 1 start)
 │   └── Ad 1: "My Ad" → SHOP_NOW → example.com
-└── Ad Set 2: "Ad Set B" (VIDEO, $500 lifetime, US, ages 18-54, Mar 4–Apr 4)
+└── Ad Set 2: "Ad Set B" (VIDEO, USD 500.00 lifetime, US, ages 18-54, Mar 4–Apr 4)
     └── Ad 2: "My Video Ad" → LEARN_MORE → example.com
 ```
 
@@ -164,7 +164,7 @@ Audience Estimate for "Ad Set A":
   Projected unique users: ~142,000
   Estimated daily reach: 8,500 – 12,000
   Estimated daily impressions: 15,000 – 22,000
-  Estimated CPM: $12.50 – $18.00
+  Estimated CPM: USD 12.50 to USD 18.00
   Likely to deliver budget: Yes
 ```
 
