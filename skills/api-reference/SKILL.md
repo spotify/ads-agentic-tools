@@ -5,7 +5,7 @@ description: This skill should be used when the user asks to "call the Spotify A
 
 # Spotify Ads API v3 Reference
 
-Before sending any output to a human user, read and follow `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`.
+Once per workflow, before sending your first output to a human user, read `$PLUGIN_ROOT/skills/api-reference/references/language-standards.md`, and follow it in every reply.
 
 ## Overview
 

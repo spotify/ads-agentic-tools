@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Language standards no longer suggest asking an admin on a permission error or promise data within 24 hours of the first impression. Error codes and `sp_trace_id` are shown when the user asks or an error can't be explained, so users can contact support. `AGENTS.md` now matches.
+- Language standards fixes: dates follow each language's own order (year first for Japanese, Chinese, and Korean), Portuguese, Italian, and Dutch have their own month names, money rounds to the currency's minor units (none for JPY and KRW), the September example says EDT, and "order" is banned only when it means a campaign. The partial-success example now fits the two-sentence error limit.
+- Skills and the request-builder agent read the language standards once per workflow instead of before every message.
+- On a 429, agents give a wait time only when the error message states one, because the request wrapper doesn't show response headers.
+- Behavior changes from 1.10.0 that the Added entry left out: replies no longer show `sp_trace_id` or error codes by default, and agents don't retry a 429.
+
 ## [1.10.0] - 2026-11-17
 
 ### Added
