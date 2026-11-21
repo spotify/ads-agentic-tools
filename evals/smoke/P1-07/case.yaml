@@ -1,8 +1,8 @@
 schema_version: "1.1"
 name: P1-07
 description: "Smoke case P1-07. Same rename as P1-02, but with auto_execute false. Asks before sending the rename and sends nothing yet."
-# Known failing: the skills don't read auto_execute before writing, so the
-# rename is sent without asking.
+# Known failing: with auto_execute false the rename is still sent without
+# asking, although the skills say to ask first. See evals/README.md.
 tags: [smoke, P1, confirm_auto_execute_off, regression, known_failing]
 execution:
   max_turns: 30

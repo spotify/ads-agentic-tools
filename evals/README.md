@@ -155,7 +155,7 @@ and expected to fail until the skill changes; a pass means the skill was fixed.
 |---|---|
 | `L-03` | `skills/bulk/SKILL.md`'s results template shows `PAUSED`, an em dash, and "2/3", so output that follows the skill fails the language checks. |
 | `P1-05` | `skills/clone/SKILL.md` asks what to change before copying; the case expects the copy without a question. |
-| `P1-07` | The skills don't read `auto_execute` before writing, so the rename is sent without asking. |
+| `P1-07` | With `auto_execute` false the rename is still sent without asking, although the skills say to ask first. The cause isn't pinned down yet. |
 | `scenario-19` | With `auto_execute` on, `skills/drafts/SKILL.md` runs draft DELETE without asking; `api-behaviors.md` requires a confirmation. |
 
 Fixture data is invented, and no IDs in it belong to real accounts.
