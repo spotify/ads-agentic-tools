@@ -170,6 +170,8 @@ assert_eq "a replayed 429 keeps its status" "429" "$(status_of "$out")"
 assert_eq "a replayed 429 keeps its body" \
   '{"errorCodes":["ERR-42901"],"messages":["Too many requests. Retry after 60 seconds."]}' \
   "$(printf '%s' "$out" | head -1)"
+assert_eq "the wrapper sends a 429 request once and does not retry it" "1" \
+  "$(grep -c '^GET__ad_accounts__{ad_account_id}__aggregate_reports ' "$PROJECT/.claude/.api-requests.log")"
 
 printf '200\n{"validated":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-VALIDATE.http"
 printf '200\n{"published":true}\n' > "$FIXTURES/POST__ad_accounts__{ad_account_id}__drafts__campaigns__{id}.match-PUBLISH.http"

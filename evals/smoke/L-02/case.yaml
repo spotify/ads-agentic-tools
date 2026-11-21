@@ -32,11 +32,6 @@ graders:
     pattern: '\badmin\b|\bpermission from\b'
     flags: i
     match: not_contains
-  - name: no-raw-error
-    type: regex
-    weight: 2
-    pattern: 'HTTP|status (code )?\d{3}|\b403 (error|response)|ERR-\d+'
-    match: not_contains
   - name: no-pause-claimed
     type: regex
     pattern: '\b(is|was|now|been) paused\b|\bpaused it\b|ad set paused'

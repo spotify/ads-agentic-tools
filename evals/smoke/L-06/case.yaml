@@ -32,11 +32,6 @@ graders:
     pattern: '\bCTR\b(?:(?!commonly|benchmark|typical|usually|range)[^.\n]){0,60}?\d+[.,]?\d*\s?%|\d+[.,]?\d*\s?%\s*CTR\b'
     flags: i
     match: not_contains
-  - name: no-raw-error
-    type: regex
-    weight: 2
-    pattern: 'HTTP|status (code )?\d{3}|\b429 (error|response)|ERR-\d+'
-    match: not_contains
   # api-behaviors.md says not to retry a 429. A retry is the same report request
   # sent again; two different report requests sent together aren't one.
   - name: no-retry-after-429

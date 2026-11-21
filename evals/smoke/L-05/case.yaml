@@ -28,7 +28,7 @@ graders:
     flags: i
   - name: spanish-date-range
     type: regex
-    pattern: '\b\d{1,2}\s+(de\s+)?septiembre\b|\bsept?\.?\s'
+    pattern: '\b\d{1,2}\s+(de\s+)?(septiembre|sept?)\b\.?'
     flags: i
   - name: non-english-rules
     type: llm
