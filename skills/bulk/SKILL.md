@@ -54,11 +54,11 @@ Fetch entities matching the operation's criteria. Present as a numbered table:
 Active Ad Sets (5 found):
 | # | ID | Name | Campaign | Budget | Format |
 |---|----|------|----------|--------|--------|
-| 1 | abc... | US 18-34 Audio | Summer Promo | USD 75.00 daily | AUDIO |
-| 2 | def... | US 25-54 Video | Summer Promo | USD 50.00 daily | VIDEO |
-| 3 | ghi... | UK All Audio | Q2 Brand | USD 100.00 daily | AUDIO |
-| 4 | jkl... | CA 18-44 Audio | Q2 Brand | USD 60.00 daily | AUDIO |
-| 5 | mno... | US All Display | Podcast Launch | USD 40.00 daily | IMAGE |
+| 1 | 7f3a2c91 | US 18-34 Audio | Summer Promo | USD 75.00 daily | Audio |
+| 2 | b84e0d17 | US 25-54 Video | Summer Promo | USD 50.00 daily | Video |
+| 3 | 2c9e5a40 | UK All Audio | Q2 Brand | USD 100.00 daily | Audio |
+| 4 | e61b7f08 | CA 18-44 Audio | Q2 Brand | USD 60.00 daily | Audio |
+| 5 | 94d0c3ab | US All Display | Podcast Launch | USD 40.00 daily | Image |
 ```
 
 ### 2. Select targets
@@ -222,8 +222,8 @@ After selection, ask how to change the budget:
 Budget changes (+20%):
 | Ad Set | Budget Type | Current | New |
 |--------|-------------|---------|-----|
-| US 18-34 Audio | DAILY | USD 75.00 | USD 90.00 |
-| UK All Audio | DAILY | USD 100.00 | USD 120.00 |
+| US 18-34 Audio | Daily | USD 75.00 | USD 90.00 |
+| UK All Audio | Daily | USD 100.00 | USD 120.00 |
 
 Proceed with these changes?
 ```
@@ -399,8 +399,8 @@ Resolve each draft ad's parent draft campaign and validate once per affected cam
 Creative Swap Results:
 | Draft Ad | Published ID | Asset | Result |
 |----------|--------------|-------|--------|
-| 30s Spot A | abc... | new-audio.mp3 | Saved as a draft, passed validation |
-| 30s Spot B | ghi... | new-audio.mp3 | Saved as a draft, passed validation |
+| 30s Spot A | 7f3a2c91 | new-audio.mp3 | Saved as a draft, passed validation |
+| 30s Spot B | 2c9e5a40 | new-audio.mp3 | Saved as a draft, passed validation |
 
 2 of 2 swaps saved as drafts. Nothing was published.
 ```

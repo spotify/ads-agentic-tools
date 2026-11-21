@@ -123,11 +123,11 @@ applicable rules while constructing the plan. Do not display a per-field checkli
 Before making any mutating API calls, present the full parsed plan as a visual tree:
 
 ```
-Campaign: "My Campaign" (objective: REACH)
-├── Ad Set 1: "Ad Set A" (AUDIO, USD 75.00 daily, US, ages 25-54, Mar 1 start)
-│   └── Ad 1: "My Ad" → SHOP_NOW → example.com
-└── Ad Set 2: "Ad Set B" (VIDEO, USD 500.00 lifetime, US, ages 18-54, Mar 4–Apr 4)
-    └── Ad 2: "My Video Ad" → LEARN_MORE → example.com
+Campaign: "My Campaign" (objective: Reach)
+├── Ad Set 1: "Ad Set A" (Audio, USD 75.00 daily, US, ages 25-54, starts March 1, 2026)
+│   └── Ad 1: "My Ad" → Shop now → example.com
+└── Ad Set 2: "Ad Set B" (Video, USD 500.00 lifetime, US, ages 18-54, March 4 to April 4, 2026)
+    └── Ad 2: "My Video Ad" → Learn more → example.com
 ```
 
 Also show a table with all field values for each entity. Ask the user to confirm or adjust.

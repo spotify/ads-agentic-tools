@@ -135,13 +135,13 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID&limit=50"
 ### Display format
 
 ```
-=== Summer Promo (REACH) ===
-Status: ACTIVE | Created: 2026-02-15
+=== Summer Promo (Reach) ===
+Status: Active | Created: February 15, 2026
 
 | Ad Set           | Format | Budget     | Impressions |   Spend |  Reach | Clicks | Completes |
 |------------------|--------|------------|-------------|---------|--------|--------|-----------|
-| US 18-34 Audio   | AUDIO  | USD 75.00 daily    |      98,000 | USD 300.00 | 28,500 |    890 |    85,000 |
-| US 25-54 Video   | VIDEO  | USD 50.00 daily    |      58,234 | USD 150.00 | 13,600 |    344 |    42,000 |
+| US 18-34 Audio   | Audio  | USD 75.00 daily    |      98,000 | USD 300.00 | 28,500 |    890 |    85,000 |
+| US 25-54 Video   | Video  | USD 50.00 daily    |      58,234 | USD 150.00 | 13,600 |    344 |    42,000 |
 ```
 
 Apply the same formatting rules as the account overview (spend from reports is already in the billing currency; budget micro_amount from entity details must be divided by 1,000,000).
@@ -186,13 +186,13 @@ Active campaigns: 2 | Total spend: USD 675.50
 Summer Promo (Reach): USD 450.00 spent
 | Ad Set           | Format | Impressions |   Spend |  Reach | Clicks |
 |------------------|--------|-------------|---------|--------|--------|
-| US 18-34 Audio   | AUDIO  |      98,000 | USD 300.00 | 28,500 |    890 |
-| US 25-54 Video   | VIDEO  |      58,234 | USD 150.00 | 13,600 |    344 |
+| US 18-34 Audio   | Audio  |      98,000 | USD 300.00 | 28,500 |    890 |
+| US 25-54 Video   | Video  |      58,234 | USD 150.00 | 13,600 |    344 |
 
 Q2 Brand (Clicks): USD 225.50 spent
 | Ad Set           | Format | Impressions |   Spend |  Reach | Clicks |
 |------------------|--------|-------------|---------|--------|--------|
-| US All Audio     | AUDIO  |      89,456 | USD 225.50 | 28,200 |    567 |
+| US All Audio     | Audio  |      89,456 | USD 225.50 | 28,200 |    567 |
 ```
 
 ---
