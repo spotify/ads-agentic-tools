@@ -136,11 +136,11 @@ Before creating draft ad sets, run the audience estimate from `build-campaign` S
 Present the plan as a visual tree, clearly labeled as **DRAFT**:
 
 ```
-DRAFT Campaign: "My Campaign" (AWARENESS)
-├── DRAFT Ad Set 1: "Ad Set A" (AUDIO, $75/day, US, ages 25-54, Mar 1 start)
-│   └── DRAFT Ad 1: "My Ad" → SHOP_NOW → example.com
-└── DRAFT Ad Set 2: "Ad Set B" (VIDEO, $500 lifetime, US, ages 18-54, Mar 4–Apr 4)
-    └── DRAFT Ad 2: "My Video Ad" → LEARN_MORE → example.com
+Draft campaign: "My Campaign" (Awareness)
+├── Draft ad set 1: "Ad Set A" (Audio, USD 75.00 daily, US, ages 25-54, starts March 1, 2026)
+│   └── Draft ad 1: "My Ad" → Shop now → example.com
+└── Draft ad set 2: "Ad Set B" (Video, USD 500.00 lifetime, US, ages 18-54, March 4 to April 4, 2026)
+    └── Draft ad 2: "My Video Ad" → Learn more → example.com
 ```
 
 Ask the user to confirm or adjust before creating drafts.
@@ -474,9 +474,9 @@ Show the full draft hierarchy that will be published and ask for confirmation:
 
 ```
 Ready to publish draft campaign "My Campaign":
-├── Ad Set 1: "Ad Set A" (AUDIO, $75/day)
+├── Ad Set 1: "Ad Set A" (AUDIO, USD 75.00 daily)
 │   └── Ad 1: "My Ad"
-└── Ad Set 2: "Ad Set B" (VIDEO, $500 lifetime)
+└── Ad Set 2: "Ad Set B" (VIDEO, USD 500.00 lifetime)
     └── Ad 2: "My Video Ad"
 
 This will create live entities. Proceed?

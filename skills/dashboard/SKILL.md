@@ -61,18 +61,18 @@ api GET "ad_accounts/{ad_account_id}/campaigns?limit=50&sort_direction=DESC"
 
 ```
 === Campaign Dashboard ===
-Active campaigns: 3 | Total spend: $1,234.56
+Active campaigns: 3 | Total spend: USD 1,234.56
 
 | Campaign         | Impressions |    Spend |  Reach | Clicks |  CTR  | Frequency |
 |------------------|-------------|----------|--------|--------|-------|-----------|
-| Summer Promo     |     156,234 | $450.00  | 42,100 |  1,234 | 0.79% |      1.10 |
-| Q2 Brand         |      89,456 | $225.50  | 28,200 |    567 | 0.63% |      1.14 |
-| Podcast Launch   |      45,000 | $112.30  | 15,800 |    289 | 0.64% |      1.02 |
+| Summer Promo     |     156,234 | USD 450.00  | 42,100 |  1,234 | 0.79% |      1.10 |
+| Q2 Brand         |      89,456 | USD 225.50  | 28,200 |    567 | 0.63% |      1.14 |
+| Podcast Launch   |      45,000 | USD 112.30  | 15,800 |    289 | 0.64% |      1.02 |
 ```
 
 ### Formatting rules
 
-- **Spend from `aggregate_reports`**: Already in the ad account's billing currency — display directly as `$X.XX` (do NOT divide by 1,000,000)
+- **Spend from `aggregate_reports`**: Already in the ad account's billing currency — display directly with the ISO currency code, such as `USD 450.00`, formatted for the account's locale as in `language-standards.md` Section 7 (do NOT divide by 1,000,000)
 - **Budget `micro_amount` from entity details** (campaigns, ad sets): In micro-units — divide by 1,000,000 to get the billing currency amount
 - **Impressions/Reach/Clicks**: Format with thousands separators (e.g., `156,234`)
 - **CTR**: Display as percentage with 2 decimal places (e.g., `0.79%`)
@@ -83,10 +83,10 @@ Active campaigns: 3 | Total spend: $1,234.56
 
 When budget info is available from campaign/ad set details:
 
-- **DAILY budgets**: Compare today's spend to daily budget. Display as: `$450 / $500 daily (90%)`
-- **LIFETIME budgets**: Compare total spend to total budget and % of flight elapsed. Display as: `$2,100 / $5,000 lifetime (42%, 35% of flight elapsed)`
+- **DAILY budgets**: Compare today's spend to daily budget. Display as: `USD 450.00 / USD 500.00 daily (90%)`
+- **LIFETIME budgets**: Compare total spend to total budget and % of schedule elapsed. Display as: `USD 2,100.00 / USD 5,000.00 lifetime (42%, 35% of schedule elapsed)`
 
-To calculate flight elapsed percentage:
+To calculate the elapsed share of the schedule:
 ```
 elapsed_pct = (today - start_date) / (end_date - start_date) * 100
 ```
@@ -135,13 +135,13 @@ api GET "ad_accounts/{ad_account_id}/ad_sets?campaign_ids=$CAMPAIGN_ID&limit=50"
 ### Display format
 
 ```
-=== Summer Promo (REACH) ===
-Status: ACTIVE | Created: 2026-02-15
+=== Summer Promo (Reach) ===
+Status: Active | Created: February 15, 2026
 
 | Ad Set           | Format | Budget     | Impressions |   Spend |  Reach | Clicks | Completes |
 |------------------|--------|------------|-------------|---------|--------|--------|-----------|
-| US 18-34 Audio   | AUDIO  | $75/day    |      98,000 | $300.00 | 28,500 |    890 |    85,000 |
-| US 25-54 Video   | VIDEO  | $50/day    |      58,234 | $150.00 | 13,600 |    344 |    42,000 |
+| US 18-34 Audio   | Audio  | USD 75.00 daily    |      98,000 | USD 300.00 | 28,500 |    890 |    85,000 |
+| US 25-54 Video   | Video  | USD 50.00 daily    |      58,234 | USD 150.00 | 13,600 |    344 |    42,000 |
 ```
 
 Apply the same formatting rules as the account overview (spend from reports is already in the billing currency; budget micro_amount from entity details must be divided by 1,000,000).
@@ -181,18 +181,18 @@ Group ad sets under their parent campaign:
 
 ```
 === Campaign Dashboard (Detailed) ===
-Active campaigns: 2 | Total spend: $675.50
+Active campaigns: 2 | Total spend: USD 675.50
 
-Summer Promo (REACH) — $450.00 spent
+Summer Promo (Reach): USD 450.00 spent
 | Ad Set           | Format | Impressions |   Spend |  Reach | Clicks |
 |------------------|--------|-------------|---------|--------|--------|
-| US 18-34 Audio   | AUDIO  |      98,000 | $300.00 | 28,500 |    890 |
-| US 25-54 Video   | VIDEO  |      58,234 | $150.00 | 13,600 |    344 |
+| US 18-34 Audio   | Audio  |      98,000 | USD 300.00 | 28,500 |    890 |
+| US 25-54 Video   | Video  |      58,234 | USD 150.00 | 13,600 |    344 |
 
-Q2 Brand (CLICKS) — $225.50 spent
+Q2 Brand (Clicks): USD 225.50 spent
 | Ad Set           | Format | Impressions |   Spend |  Reach | Clicks |
 |------------------|--------|-------------|---------|--------|--------|
-| US All Audio     | AUDIO  |      89,456 | $225.50 | 28,200 |    567 |
+| US All Audio     | Audio  |      89,456 | USD 225.50 | 28,200 |    567 |
 ```
 
 ---

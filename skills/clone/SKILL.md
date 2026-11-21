@@ -70,13 +70,13 @@ Paginate with `offset` if `total_results > 50`.
 Present the source hierarchy in tree format:
 
 ```
-Source: "Summer Promo" (REACH) — campaign_id: abc-123
-├── Ad Set: "US 18-34 Audio" (AUDIO, $75/day, US, ages 18-34, Jun 1 – Jun 30)
-│   ├── Ad: "30s Spot A" → SHOP_NOW → example.com [APPROVED]
-│   └── Ad: "30s Spot B" → LEARN_MORE → example.com [APPROVED]
-└── Ad Set: "US 25-54 Video" (VIDEO, $50/day, US, ages 25-54, Jun 1 – Jun 30)
-    ├── Ad: "15s Video" → WATCH_NOW → example.com [APPROVED]
-    └── Ad: "Old Creative" → SHOP_NOW → example.com [ARCHIVED] ← will be skipped
+Source: "Summer Promo" (Reach), ID abc-123
+├── Ad Set: "US 18-34 Audio" (Audio, USD 75.00 daily, US, ages 18-34, June 1 to 30, 2026)
+│   ├── Ad: "30s Spot A" → Shop now → example.com (Approved)
+│   └── Ad: "30s Spot B" → Learn more → example.com (Approved)
+└── Ad Set: "US 25-54 Video" (Video, USD 50.00 daily, US, ages 25-54, June 1 to 30, 2026)
+    ├── Ad: "15s Video" → Watch now → example.com (Approved)
+    └── Ad: "Old Creative" → Shop now → example.com (Archived) ← will be skipped
 ```
 
 Note how many entities will be cloned and how many will be skipped (ARCHIVED or REJECTED ads are skipped by default).
@@ -158,12 +158,12 @@ Show the full plan with changes highlighted:
 
 ```
 Clone Plan:
-Campaign: "Summer Promo (Copy)" (REACH) ← name changed
-├── Ad Set: "US 18-34 Audio (Copy)" (AUDIO, $90/day ← was $75, US, ages 18-34, Jul 1 – Jul 31 ← was Jun 1-30)
-│   ├── Ad: "30s Spot A" → SHOP_NOW → example.com
-│   └── Ad: "30s Spot B" → LEARN_MORE → example.com
-└── Ad Set: "US 25-54 Video (Copy)" (VIDEO, $60/day ← was $50, US, ages 25-54, Jul 1 – Jul 31)
-    └── Ad: "15s Video" → WATCH_NOW → example.com
+Campaign: "Summer Promo (Copy)" (Reach) ← name changed
+├── Ad Set: "US 18-34 Audio (Copy)" (Audio, USD 90.00 daily ← was USD 75.00, US, ages 18-34, July 1 to 31, 2026 ← was June 1 to 30, 2026)
+│   ├── Ad: "30s Spot A" → Shop now → example.com
+│   └── Ad: "30s Spot B" → Learn more → example.com
+└── Ad Set: "US 25-54 Video (Copy)" (Video, USD 60.00 daily ← was USD 50.00, US, ages 25-54, July 1 to 31, 2026)
+    └── Ad: "15s Video" → Watch now → example.com
 
 Entities to create: 1 campaign, 2 ad sets, 3 ads
 Skipped: 1 archived ad ("Old Creative")

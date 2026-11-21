@@ -16,3 +16,4 @@ These are allowed and never break a rule:
 - Labeled caveats about missing or incomplete data: "the real remainder is probably lower because October spend isn't counted yet".
 - Campaign, ad set, ad, and audience names, their IDs, destination URLs, and media file names the user works with (drums.wav).
 - Product names such as Spotify Ads Manager.
+- Technical output the task needs (standards Section 10): the path of a file the user asked to export, a Pixel or CAPI code snippet to install, or the request shown for confirmation when `auto_execute` is false, including the field names and values inside it.

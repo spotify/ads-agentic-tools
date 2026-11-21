@@ -184,7 +184,7 @@ Audience Estimate:
   Projected unique users: ~142,000
   Estimated daily reach: 8,500 – 12,000
   Estimated daily impressions: 15,000 – 22,000
-  Estimated CPM: $12.50 – $18.00
+  Estimated CPM: USD 12.50 to USD 18.00
 ```
 
 If the audience is too small (low projected users or a "Min audience threshold was not met" 400), warn the user and suggest:

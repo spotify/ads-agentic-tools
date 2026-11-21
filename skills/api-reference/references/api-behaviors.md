@@ -74,6 +74,9 @@ This is the single source for when to ask before acting. `language-standards.md`
   - Any direct live write that changes delivery or spend: pause, resume, archive, budget, or bid
   - Replacing a customer list, or a media file used by active ads
   - A start time that has already passed
+  - Removing a member's access, changing a member's role, or cancelling an invitation
+  - Deleting an audience, revoking a CAPI token, or sending test conversions
+  - Sharing or unsharing a dataset or Pixel with another ad account
 - Live campaigns, ad sets, and ads can't be deleted. Treat a request to delete one as a request to archive it, and confirm.
 
 ## Live Entity Lifecycle

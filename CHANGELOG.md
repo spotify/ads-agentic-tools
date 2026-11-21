@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Output templates in the monitor, dashboard, bulk, clone, drafts, build-campaign, ads, and configure skills now follow the language standards: currency codes instead of `$`, plain-language health labels instead of WARNING, CRITICAL, and STALLED, full dates, and no "successfully".
+- The language standards now allow file paths, code snippets, and request previews when the task needs them: an exported file's path, a Pixel or CAPI snippet, or the request shown for confirmation when `auto_execute` is false.
+- The Confirmation list in `api-behaviors.md` now includes the account, audience, and measurement actions their skills already confirm: removing access, changing roles, cancelling invitations, deleting audiences, revoking CAPI tokens, sending test conversions, and sharing or unsharing. The language checklist judge accepts these confirmations.
+
 ## [1.10.0] - 2026-11-17
 
 ### Added
