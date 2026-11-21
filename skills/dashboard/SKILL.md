@@ -72,7 +72,7 @@ Active campaigns: 3 | Total spend: USD 1,234.56
 
 ### Formatting rules
 
-- **Spend from `aggregate_reports`**: Already in the ad account's billing currency — display directly as `$X.XX` (do NOT divide by 1,000,000)
+- **Spend from `aggregate_reports`**: Already in the ad account's billing currency — display directly with the ISO currency code, such as `USD 450.00`, formatted for the account's locale as in `language-standards.md` Section 7 (do NOT divide by 1,000,000)
 - **Budget `micro_amount` from entity details** (campaigns, ad sets): In micro-units — divide by 1,000,000 to get the billing currency amount
 - **Impressions/Reach/Clicks**: Format with thousands separators (e.g., `156,234`)
 - **CTR**: Display as percentage with 2 decimal places (e.g., `0.79%`)
@@ -86,7 +86,7 @@ When budget info is available from campaign/ad set details:
 - **DAILY budgets**: Compare today's spend to daily budget. Display as: `USD 450.00 / USD 500.00 daily (90%)`
 - **LIFETIME budgets**: Compare total spend to total budget and % of schedule elapsed. Display as: `USD 2,100.00 / USD 5,000.00 lifetime (42%, 35% of schedule elapsed)`
 
-To calculate flight elapsed percentage:
+To calculate the elapsed share of the schedule:
 ```
 elapsed_pct = (today - start_date) / (end_date - start_date) * 100
 ```

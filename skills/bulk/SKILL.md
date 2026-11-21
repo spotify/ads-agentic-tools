@@ -402,7 +402,7 @@ Creative Swap Results:
 | 30s Spot A | abc... | new-audio.mp3 | Saved as a draft, passed validation |
 | 30s Spot B | ghi... | new-audio.mp3 | Saved as a draft, passed validation |
 
-2/2 swaps staged. Nothing was published.
+2 of 2 swaps saved as drafts. Nothing was published.
 ```
 
 ---

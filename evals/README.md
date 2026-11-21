@@ -138,6 +138,9 @@ The suite is organized as:
   date ranges on metrics), and `language-bans-judge` (Section 10 words, punctuation,
   and technical details). A case that already defines a check with the same name,
   such as P4-02's `no-exclamation`, keeps its own and doesn't link the shared one.
+  A case whose final reply can show the request for confirmation (`auto_execute:
+  false`, such as P1-07) doesn't link `no-leaked-enums`, because the standards allow
+  enum values inside that preview; `language-bans-judge` still checks the rest.
   Each judge adds a model call per run. The judges see only the reply, so the numbers
   judge infers the account's locale from the currency and wording, and the bans judge
   is the noisiest of the three: check its failures against the reply before trusting

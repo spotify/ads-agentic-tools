@@ -86,12 +86,12 @@ Run these diagnostics against the fetched data:
 
 #### 1. Pacing Check
 
-For each active campaign, compare spend progress to flight progress:
+For each active campaign, compare spend progress to schedule progress:
 
 - **DAILY budgets**: Sum the daily budgets of all active ad sets under the campaign. Compare today's spend to the total daily budget.
   - Display: `USD 142.50 / USD 200.00 daily (71%)`
 
-- **LIFETIME budgets**: Compare total lifetime spend to total lifetime budget, and compare against elapsed flight percentage.
+- **LIFETIME budgets**: Compare total lifetime spend to total lifetime budget, and compare against the elapsed share of the schedule.
   - `elapsed_pct = (today - start_date) / (end_date - start_date) * 100`
   - `spend_pct = total_spend / total_budget * 100`
   - Display: `USD 2,100.00 / USD 5,000.00 lifetime (42% spent, 35% of schedule elapsed)`
@@ -270,7 +270,7 @@ To monitor automatically, schedule a recurring run of:
 
 ## Formatting Rules
 
-- **Spend from `aggregate_reports`**: Already in the ad account's billing currency — display directly as `$X.XX`.
+- **Spend from `aggregate_reports`**: Already in the ad account's billing currency — display directly with the ISO currency code, such as `USD 450.00`, formatted for the account's locale as in `language-standards.md` Section 7.
 - **Budget `micro_amount` from entity details**: In micro-units — divide by 1,000,000 to get the billing currency amount.
 - **Impressions/Reach/Clicks**: Format with thousands separators (e.g., `156,234`).
 - **CTR**: Display as percentage with 2 decimal places (e.g., `0.79%`).

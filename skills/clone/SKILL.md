@@ -159,10 +159,10 @@ Show the full plan with changes highlighted:
 ```
 Clone Plan:
 Campaign: "Summer Promo (Copy)" (REACH) ← name changed
-├── Ad Set: "US 18-34 Audio (Copy)" (AUDIO, USD 90.00 daily ← was USD 75,.00 US, ages 18-34, Jul 1 – Jul 31 ← was Jun 1-30)
+├── Ad Set: "US 18-34 Audio (Copy)" (AUDIO, USD 90.00 daily ← was USD 75.00, US, ages 18-34, Jul 1 – Jul 31 ← was Jun 1-30)
 │   ├── Ad: "30s Spot A" → SHOP_NOW → example.com
 │   └── Ad: "30s Spot B" → LEARN_MORE → example.com
-└── Ad Set: "US 25-54 Video (Copy)" (VIDEO, USD 60.00 daily ← was USD 50,.00 US, ages 25-54, Jul 1 – Jul 31)
+└── Ad Set: "US 25-54 Video (Copy)" (VIDEO, USD 60.00 daily ← was USD 50.00, US, ages 25-54, Jul 1 – Jul 31)
     └── Ad: "15s Video" → WATCH_NOW → example.com
 
 Entities to create: 1 campaign, 2 ad sets, 3 ads
